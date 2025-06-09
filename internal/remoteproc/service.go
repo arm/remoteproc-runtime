@@ -2,16 +2,16 @@ package remoteproc
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"os"
 
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
-	apitypes "github.com/containerd/containerd/api/types"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
 	"github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
 	"github.com/containerd/errdefs"
+	"github.com/containerd/log"
 	"github.com/containerd/plugin"
 	"github.com/containerd/plugin/registry"
 	"github.com/containerd/ttrpc"
@@ -39,36 +39,6 @@ func init() {
 	})
 }
 
-func NewManager(name string) shim.Manager {
-	return manager{name: name}
-}
-
-type manager struct {
-	name string
-}
-
-func (m manager) Name() string {
-	return m.name
-}
-
-func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shim.BootstrapParams, error) {
-	return shim.BootstrapParams{}, errdefs.ErrNotImplemented
-}
-
-func (m manager) Stop(ctx context.Context, id string) (shim.StopStatus, error) {
-	return shim.StopStatus{}, errdefs.ErrNotImplemented
-}
-
-func (m manager) Info(ctx context.Context, optionsR io.Reader) (*apitypes.RuntimeInfo, error) {
-	info := &apitypes.RuntimeInfo{
-		Name: "io.containerd.example.v1",
-		Version: &apitypes.RuntimeVersion{
-			Version: "v1.0.0",
-		},
-	}
-	return info, nil
-}
-
 func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
 	// The shim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
@@ -90,6 +60,8 @@ func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 
 // Create a new container
 func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *taskAPI.CreateTaskResponse, err error) {
+	log.G(ctx).WithField("opts", fmt.Sprintf("%#v", r)).Debug("Create")
+
 	return nil, errdefs.ErrNotImplemented
 }
 
