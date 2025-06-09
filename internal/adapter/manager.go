@@ -1,4 +1,4 @@
-package remoteproc
+package adapter
 
 import (
 	"context"
@@ -63,12 +63,13 @@ func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shi
 }
 
 func (m manager) Stop(ctx context.Context, id string) (shim.StopStatus, error) {
+	log.G(ctx).WithField("id", id).Debug("stop has been called")
 	return shim.StopStatus{}, errdefs.ErrNotImplemented
 }
 
 func (m manager) Info(ctx context.Context, optionsR io.Reader) (*apitypes.RuntimeInfo, error) {
 	info := &apitypes.RuntimeInfo{
-		Name: "io.containerd.example.v1",
+		Name: "io.containerd.remoteproc.v1",
 		Version: &apitypes.RuntimeVersion{
 			Version: "v1.0.0",
 		},

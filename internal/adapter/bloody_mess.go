@@ -1,4 +1,4 @@
-package remoteproc
+package adapter
 
 import (
 	"context"

@@ -1,8 +1,7 @@
-package remoteproc
+package adapter
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
@@ -11,7 +10,6 @@ import (
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
 	"github.com/containerd/errdefs"
-	"github.com/containerd/log"
 	"github.com/containerd/plugin"
 	"github.com/containerd/plugin/registry"
 	"github.com/containerd/ttrpc"
@@ -59,9 +57,11 @@ func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 }
 
 // Create a new container
-func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (_ *taskAPI.CreateTaskResponse, err error) {
-	log.G(ctx).WithField("opts", fmt.Sprintf("%#v", r)).Debug("Create")
-
+func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
+	err := CreateContainer(r)
+	if err != nil {
+		return nil, err
+	}
 	return nil, errdefs.ErrNotImplemented
 }
 
