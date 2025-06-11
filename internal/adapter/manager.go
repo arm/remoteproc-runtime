@@ -63,11 +63,12 @@ func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shi
 }
 
 func (m manager) Stop(ctx context.Context, id string) (shim.StopStatus, error) {
-	log.G(ctx).WithField("id", id).Debug("stop has been called")
+	log.L.WithField("id", id).Info("manager.Stop")
 	return shim.StopStatus{}, errdefs.ErrNotImplemented
 }
 
 func (m manager) Info(ctx context.Context, optionsR io.Reader) (*apitypes.RuntimeInfo, error) {
+	log.L.Info("manager.Info")
 	info := &apitypes.RuntimeInfo{
 		Name: "io.containerd.remoteproc.v1",
 		Version: &apitypes.RuntimeVersion{
