@@ -2,6 +2,6 @@
 
 package remoteproc
 
-func ListMCUs() ([]string, error) {
-	return []string{"imx-rproc"}, nil
+func FindMCUDirectory(_ string) (string, error) {
+	return "/sys/class/remoteproc/remoteproc0", nil
 }

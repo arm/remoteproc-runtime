@@ -4,45 +4,35 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
+	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
 	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/devicetree"
 	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	"github.com/containerd/containerd/api/types"
-	"github.com/containerd/containerd/v2/pkg/oci"
-	"github.com/containerd/log"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func CreateContainer(req *taskAPI.CreateTaskRequest) error {
+func CreateContainer(req *taskAPI.CreateTaskRequest) (uint32, error) {
 	params, err := newContainerParams(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
-
-	log.L.WithField("params", fmt.Sprintf("%#v", params)).Info("remoteproc.CreateContainer")
-
-	container, err := createContainer(params)
-	if err != nil {
-		return err
-	}
-
-	log.L.WithField("container", fmt.Sprintf("%#v", container)).Info("remoteproc.CreateContainer")
-
-	return fmt.Errorf("not implemented yet")
-}
-
-type containerParams struct {
-	ContainerID  string
-	FirmwarePath string
-	FirmwareName string
-	target
+	return createContainer(params)
 }
 
 type target struct {
-	MCU   string
 	Board string
+	MCU   string
+}
+
+type containerParams struct {
+	ID           string
+	BundlePath   string
+	FirmwarePath string
+	FirmwareName string
+	target
 }
 
 func newContainerParams(req *taskAPI.CreateTaskRequest) (containerParams, error) {
@@ -67,7 +57,8 @@ func newContainerParams(req *taskAPI.CreateTaskRequest) (containerParams, error)
 	}
 
 	return containerParams{
-		ContainerID:  req.ID,
+		ID:           req.ID,
+		BundlePath:   req.Bundle,
 		FirmwarePath: firmwarePath,
 		FirmwareName: firmwareName,
 		target:       t,
@@ -89,17 +80,14 @@ func extractFirmwarePathFromRootFS(rootFS []*types.Mount) (string, error) {
 	return "", fmt.Errorf("lowerdir option not found in top mount")
 }
 
-type Bundle struct {
-}
-
-func extractFirmwareName(spec *oci.Spec) (string, error) {
+func extractFirmwareName(spec *specs.Spec) (string, error) {
 	if len(spec.Process.Args) != 1 {
 		return "", fmt.Errorf("expected exactly one process argument")
 	}
 	return spec.Process.Args[0], nil
 }
 
-func extractTarget(spec *oci.Spec) (target, error) {
+func extractTarget(spec *specs.Spec) (target, error) {
 	env := parseEnvVars(spec.Process.Env)
 	mcu, ok := env["MCU"]
 	if !ok {
@@ -133,47 +121,51 @@ func parseEnvVars(envVars []string) map[string]string {
 	return result
 }
 
-type container struct {
-}
+const pid uint32 = 1
 
-func createContainer(params containerParams) (container, error) {
-	if err := validateContainerParams(params); err != nil {
-		return container{}, err
+func createContainer(params containerParams) (uint32, error) {
+	if err := validateFirmwareExists(params.FirmwarePath, params.FirmwareName); err != nil {
+		return 0, err
+	}
+	if err := validateBoardMatchesModel(params.Board); err != nil {
+		return 0, err
 	}
 
-	// 1. Validate that board and mcu matches the HOST
-	// 1. Prepare and set container labels - we're going to use them later to start the container - DETERMINE what exactly is required to start
-	// 2.
+	mcuPath, err := remoteproc.FindMCUDirectory(params.MCU)
+	if err != nil {
+		return 0, fmt.Errorf("can't determine remoteproc mcu path: %w", err)
+	}
 
-	return container{}, nil
+	state := oci.NewState(params.ID, int(pid), params.BundlePath)
+	annotations := oci.MCUAnnotations{
+		Requested:    params.MCU,
+		ResolvedPath: mcuPath,
+	}
+	annotations.Apply(state)
+	if err := oci.WriteStateFile(state); err != nil {
+		return 0, err
+	}
+
+	return pid, nil
 }
 
-func validateContainerParams(params containerParams) error {
-	firmwareFilePath := filepath.Join(params.FirmwarePath, params.FirmwareName)
+func validateFirmwareExists(firmwarePath, firmwareName string) error {
+	firmwareFilePath := filepath.Join(firmwarePath, firmwareName)
 	if _, err := os.Stat(firmwareFilePath); err != nil {
 		return fmt.Errorf("firmware file %s not accessible: %w", firmwareFilePath, err)
 	}
+	return nil
+}
 
-	mcus, err := remoteproc.ListMCUs()
-	if err != nil {
-		return fmt.Errorf("failed to list mcus: %w", err)
-	}
-	if len(mcus) == 0 {
-		return fmt.Errorf("no mcus available")
-	}
-	if !slices.Contains(mcus, params.MCU) {
-		return fmt.Errorf("%s is not in the list of available mcus %v", params.MCU, mcus)
-	}
-
+func validateBoardMatchesModel(wantBoard string) error {
 	sysModel, err := devicetree.GetModel()
 	if err != nil {
 		return fmt.Errorf("failed to get model: %w", err)
 	}
-	if sysModel != params.Board {
+	if sysModel != wantBoard {
 		return fmt.Errorf(
-			"target board %s does not match system model %s", params.Board, sysModel,
+			"target board %s does not match system model %s", wantBoard, sysModel,
 		)
 	}
-
 	return nil
 }

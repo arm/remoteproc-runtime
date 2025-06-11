@@ -58,11 +58,15 @@ func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 
 // Create a new container
 func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
-	err := CreateContainer(r)
+	pid, err := CreateContainer(r)
 	if err != nil {
 		return nil, err
 	}
-	return nil, errdefs.ErrNotImplemented
+
+	// TODO: publish event
+	return &taskAPI.CreateTaskResponse{
+		Pid: pid,
+	}, nil
 }
 
 // Start the primary user process inside the container
