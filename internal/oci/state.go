@@ -26,20 +26,50 @@ func NewState(containerID string, pid int, bundlePath string) *specs.State {
 	}
 }
 
-type MCUAnnotations struct {
-	Requested    string
+type RemoteprocAnnotations struct {
+	RequestedMCU string
 	ResolvedPath string
 }
 
-func (a MCUAnnotations) Apply(state *specs.State) {
+const requestedMCUAnnotationKey = "remoteproc.requestedMCU"
+const resolvedPathAnnotationKey = "remoteproc.resolvedPath"
+
+func (a RemoteprocAnnotations) Apply(state *specs.State) {
 	if state.Annotations == nil {
 		state.Annotations = map[string]string{}
 	}
-	state.Annotations["remoteproc.requested"] = a.Requested
-	state.Annotations["remoteproc.resolved"] = a.ResolvedPath
+	state.Annotations[requestedMCUAnnotationKey] = a.RequestedMCU
+	state.Annotations[resolvedPathAnnotationKey] = a.ResolvedPath
 }
 
-func WriteStateFile(state *specs.State) error {
+func NewRemoteprocAnnotations(state *specs.State) (RemoteprocAnnotations, error) {
+	requestedMCU, err := readAnnotation(state, requestedMCUAnnotationKey)
+	if err != nil {
+		return RemoteprocAnnotations{}, err
+	}
+	resolvedPath, err := readAnnotation(state, resolvedPathAnnotationKey)
+	if err != nil {
+		return RemoteprocAnnotations{}, err
+	}
+
+	return RemoteprocAnnotations{
+		RequestedMCU: requestedMCU,
+		ResolvedPath: resolvedPath,
+	}, nil
+}
+
+func readAnnotation(state *specs.State, key string) (string, error) {
+	if state.Annotations == nil {
+		return "", fmt.Errorf("state does not contain any annotations")
+	}
+	value, ok := state.Annotations[key]
+	if !ok {
+		return "", fmt.Errorf("state does not contain value for %s annotation", key)
+	}
+	return value, nil
+}
+
+func WriteState(state *specs.State) error {
 	containerStateDir := filepath.Join(stateDir, state.ID)
 	if err := os.MkdirAll(containerStateDir, 0755); err != nil {
 		return fmt.Errorf("failed to create state directory: %w", err)
@@ -69,6 +99,24 @@ func atomicWrite(filePath string, content []byte) error {
 	return nil
 }
 
-func RemoveStateFile(containerID string) error {
+func ReadState(containerID string) (*specs.State, error) {
+	stateFilePath := filepath.Join(stateDir, containerID, stateFileName)
+	f, err := os.Open(stateFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file %s: %w", stateFilePath, err)
+	}
+	defer f.Close()
+	var s specs.State
+	if err := json.NewDecoder(f).Decode(&s); err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func RemoveState(containerID string) error {
+	containerStateDir := filepath.Join(stateDir, containerID)
+	if err := os.RemoveAll(containerStateDir); err != nil {
+		return fmt.Errorf("cannot remove container state dir: %w", err)
+	}
 	return nil
 }

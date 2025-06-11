@@ -2,19 +2,21 @@ package adapter
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"time"
 
+	"github.com/Arm-Debug/remoteproc-shim/internal/runtime"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
+	ttypes "github.com/containerd/containerd/api/types/task"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
 	"github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
 	"github.com/containerd/errdefs"
-	"github.com/containerd/log"
 	"github.com/containerd/plugin"
 	"github.com/containerd/plugin/registry"
 	"github.com/containerd/ttrpc"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func init() {
@@ -60,111 +62,183 @@ func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 
 // Create a new container
 func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Create")
+	// TODO: figure out ttrpc interceptors
+	logRequest("service.Create", r)
 	pid, err := CreateContainer(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: publish event
-	return &taskAPI.CreateTaskResponse{
+	response := &taskAPI.CreateTaskResponse{
 		Pid: pid,
-	}, nil
+	}
+	logResponse("service.Create", response)
+	return response, nil
 }
 
 // Start the primary user process inside the container
 func (s *exampleTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Start")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.Start", r)
+	pid, err := runtime.Start(r.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := &taskAPI.StartResponse{Pid: pid}
+	logResponse("service.Start", response)
+	return response, nil
 }
 
 // Delete a process or container
 func (s *exampleTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Delete")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.Delete", r)
+	if err := runtime.Delete(r.ID); err != nil {
+		return nil, err
+	}
+	response := &taskAPI.DeleteResponse{}
+	logResponse("service.Delete", response)
+	return response, nil
 }
 
 // Exec an additional process inside the container
 func (s *exampleTaskService) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Exec")
+	logRequest("service.Exec", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // ResizePty of a process
 func (s *exampleTaskService) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.ResizePty")
+	logRequest("service.ResizePty", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // State returns runtime state of a process
 func (s *exampleTaskService) State(ctx context.Context, r *taskAPI.StateRequest) (*taskAPI.StateResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.State")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.State", r)
+	state, err := runtime.State(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &taskAPI.StateResponse{
+		ID:     state.ID,
+		Bundle: state.Bundle,
+		Pid:    uint32(state.Pid),
+	}
+
+	switch state.Status {
+	case specs.StateCreated:
+		response.Status = ttypes.Status_CREATED
+	case specs.StateCreating:
+		response.Status = ttypes.Status_CREATED
+	case specs.StateRunning:
+		response.Status = ttypes.Status_RUNNING
+	case specs.StateStopped:
+		response.Status = ttypes.Status_STOPPED
+	default:
+		response.Status = ttypes.Status_UNKNOWN
+	}
+
+	logResponse("service.State", response)
+	return response, nil
 }
 
 // Pause the container
 func (s *exampleTaskService) Pause(ctx context.Context, r *taskAPI.PauseRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Pause")
+	logRequest("service.Pause", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Resume the container
 func (s *exampleTaskService) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Resume")
+	logRequest("service.Resume", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Kill a process
 func (s *exampleTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Kill")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.Kill", r)
+	err := runtime.Kill(r.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := &ptypes.Empty{}
+	logResponse("service.Kill", response)
+	return response, nil
 }
 
 // Pids returns all pids inside the container
 func (s *exampleTaskService) Pids(ctx context.Context, r *taskAPI.PidsRequest) (*taskAPI.PidsResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Pids")
+	logRequest("service.Pids", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // CloseIO of a process
 func (s *exampleTaskService) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.CloseIO")
+	logRequest("service.CloseIO", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Checkpoint the container
 func (s *exampleTaskService) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Checkpoint")
+	logRequest("service.Checkpoint", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Connect returns shim information of the underlying service
 func (s *exampleTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Connect")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.Connect", r)
+	state, err := runtime.State(r.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := &taskAPI.ConnectResponse{
+		ShimPid: uint32(os.Getpid()),
+		TaskPid: uint32(state.Pid),
+	}
+	logResponse("service.Connect", response)
+	return response, nil
 }
 
 // Shutdown is called after the underlying resources of the shim are cleaned up and the service can be stopped
 func (s *exampleTaskService) Shutdown(ctx context.Context, r *taskAPI.ShutdownRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Shutdown")
+	logRequest("service.Shutdown", r)
 	os.Exit(0)
 	return &ptypes.Empty{}, nil
 }
 
 // Stats returns container level system stats for a container and its processes
 func (s *exampleTaskService) Stats(ctx context.Context, r *taskAPI.StatsRequest) (*taskAPI.StatsResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Stats")
+	logRequest("service.Stats", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Update the live container
 func (s *exampleTaskService) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (*ptypes.Empty, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Update")
+	logRequest("service.Update", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Wait for a process to exit
 func (s *exampleTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest) (*taskAPI.WaitResponse, error) {
-	log.L.WithField("request", fmt.Sprintf("%#v", r)).Info("service.Wait")
-	return nil, errdefs.ErrNotImplemented
+	logRequest("service.Wait", r)
+	const interval = 1 * time.Second
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			state, err := runtime.State(r.ID)
+			if err != nil {
+				return nil, err
+			}
+			if state.Status == specs.StateStopped {
+				response := &taskAPI.WaitResponse{ExitStatus: 0}
+				logResponse("service.Wait", response)
+				return response, nil
+			}
+		}
+	}
 }

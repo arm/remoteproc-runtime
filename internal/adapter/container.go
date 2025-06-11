@@ -14,6 +14,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// TODO: this needs to eventually live in `runtime` namespace, but currently is coupled to `RootFS` from CreateTaskRequest. Looks like `rootfs` specified in `config.json` is empty, so the request is the only way to get our hands on the firmware.
 func CreateContainer(req *taskAPI.CreateTaskRequest) (uint32, error) {
 	params, err := newContainerParams(req)
 	if err != nil {
@@ -137,12 +138,12 @@ func createContainer(params containerParams) (uint32, error) {
 	}
 
 	state := oci.NewState(params.ID, int(pid), params.BundlePath)
-	annotations := oci.MCUAnnotations{
-		Requested:    params.MCU,
+	annotations := oci.RemoteprocAnnotations{
+		RequestedMCU: params.MCU,
 		ResolvedPath: mcuPath,
 	}
 	annotations.Apply(state)
-	if err := oci.WriteStateFile(state); err != nil {
+	if err := oci.WriteState(state); err != nil {
 		return 0, err
 	}
 

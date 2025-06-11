@@ -9,6 +9,7 @@ import (
 )
 
 const classPath = "/sys/class/remoteproc"
+const stateFileName = "state"
 
 func FindMCUDirectory(mcu string) (string, error) {
 	files, err := os.ReadDir(classPath)
@@ -39,4 +40,17 @@ func readInstanceName(instancePath string) (string, error) {
 		return "", err
 	}
 	return string(nameFileContents), nil
+}
+
+func GetState(mcuDirectory string) (State, error) {
+	stateFilePath := filepath.Join(mcuDirectory, stateFileName)
+	rawState, err := os.ReadFile(stateFilePath)
+	if err != nil {
+		return "", fmt.Errorf("can't read state file %s: %w", stateFilePath, err)
+	}
+	state, err := NewState(string(rawState))
+	if err != nil {
+		return "", fmt.Errorf("can't parse state from %s %w", stateFilePath, err)
+	}
+	return state, nil
 }
