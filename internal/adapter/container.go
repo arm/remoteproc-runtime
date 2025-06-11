@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
-	"github.com/Arm-Debug/remoteproc-shim/internal/remoteproc"
+	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/devicetree"
+	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	"github.com/containerd/containerd/api/types"
 	"github.com/containerd/containerd/v2/pkg/oci"
@@ -152,8 +154,25 @@ func validateContainerParams(params containerParams) error {
 		return fmt.Errorf("firmware file %s not accessible: %w", firmwareFilePath, err)
 	}
 
-	if err := remoteproc.CheckMCUExists(params.target.MCU); err != nil {
-		return fmt.Errorf("mcu check failed: %w", err)
+	mcus, err := remoteproc.ListMCUs()
+	if err != nil {
+		return fmt.Errorf("failed to list mcus: %w", err)
+	}
+	if len(mcus) == 0 {
+		return fmt.Errorf("no mcus available")
+	}
+	if !slices.Contains(mcus, params.MCU) {
+		return fmt.Errorf("%s is not in the list of available mcus %v", params.MCU, mcus)
+	}
+
+	sysModel, err := devicetree.GetModel()
+	if err != nil {
+		return fmt.Errorf("failed to get model: %w", err)
+	}
+	if sysModel != params.Board {
+		return fmt.Errorf(
+			"target board %s does not match system model %s", params.Board, sysModel,
+		)
 	}
 
 	return nil
