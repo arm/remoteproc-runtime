@@ -64,15 +64,13 @@ func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
 	// TODO: figure out ttrpc interceptors
 	logRequest("service.Create", r)
-	pid, err := CreateContainer(r)
+	err := CreateContainer(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: publish event
-	response := &taskAPI.CreateTaskResponse{
-		Pid: pid,
-	}
+	response := &taskAPI.CreateTaskResponse{}
 	logResponse("service.Create", response)
 	return response, nil
 }
@@ -80,11 +78,11 @@ func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRe
 // Start the primary user process inside the container
 func (s *exampleTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
 	logRequest("service.Start", r)
-	pid, err := runtime.Start(r.ID)
+	err := runtime.Start(r.ID)
 	if err != nil {
 		return nil, err
 	}
-	response := &taskAPI.StartResponse{Pid: pid}
+	response := &taskAPI.StartResponse{}
 	logResponse("service.Start", response)
 	return response, nil
 }
@@ -188,13 +186,8 @@ func (s *exampleTaskService) Checkpoint(ctx context.Context, r *taskAPI.Checkpoi
 // Connect returns shim information of the underlying service
 func (s *exampleTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
 	logRequest("service.Connect", r)
-	state, err := runtime.State(r.ID)
-	if err != nil {
-		return nil, err
-	}
 	response := &taskAPI.ConnectResponse{
 		ShimPid: uint32(os.Getpid()),
-		TaskPid: uint32(state.Pid),
 	}
 	logResponse("service.Connect", response)
 	return response, nil

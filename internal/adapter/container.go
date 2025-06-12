@@ -15,10 +15,10 @@ import (
 )
 
 // TODO: this needs to eventually live in `runtime` namespace, but currently is coupled to `RootFS` from CreateTaskRequest. Looks like `rootfs` specified in `config.json` is empty, so the request is the only way to get our hands on the firmware.
-func CreateContainer(req *taskAPI.CreateTaskRequest) (uint32, error) {
+func CreateContainer(req *taskAPI.CreateTaskRequest) error {
 	params, err := newContainerParams(req)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	return createContainer(params)
 }
@@ -124,17 +124,17 @@ func parseEnvVars(envVars []string) map[string]string {
 
 const pid uint32 = 1
 
-func createContainer(params containerParams) (uint32, error) {
+func createContainer(params containerParams) error {
 	if err := validateFirmwareExists(params.FirmwarePath, params.FirmwareName); err != nil {
-		return 0, err
+		return err
 	}
 	if err := validateBoardMatchesModel(params.Board); err != nil {
-		return 0, err
+		return err
 	}
 
 	mcuPath, err := remoteproc.FindMCUDirectory(params.MCU)
 	if err != nil {
-		return 0, fmt.Errorf("can't determine remoteproc mcu path: %w", err)
+		return fmt.Errorf("can't determine remoteproc mcu path: %w", err)
 	}
 
 	state := oci.NewState(params.ID, int(pid), params.BundlePath)
@@ -144,10 +144,10 @@ func createContainer(params containerParams) (uint32, error) {
 	}
 	annotations.Apply(state)
 	if err := oci.WriteState(state); err != nil {
-		return 0, err
+		return err
 	}
 
-	return pid, nil
+	return nil
 }
 
 func validateFirmwareExists(firmwarePath, firmwareName string) error {

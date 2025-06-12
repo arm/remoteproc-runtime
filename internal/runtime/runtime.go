@@ -7,18 +7,18 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func Start(containerID string) (uint32, error) {
+func Start(containerID string) error {
 	// TODO: actual echo start > /sys/class/remoteproc/...
 	ociState, err := oci.ReadState(containerID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to read state: %w", err)
+		return fmt.Errorf("failed to read state: %w", err)
 	}
 	ociState.Status = specs.StateRunning
 	if err := oci.WriteState(ociState); err != nil {
-		return 0, fmt.Errorf("failed to write state: %w", err)
+		return fmt.Errorf("failed to write state: %w", err)
 	}
 
-	return uint32(ociState.Pid), nil
+	return nil
 }
 
 func Kill(containerID string) error {
