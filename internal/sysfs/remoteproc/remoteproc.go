@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
-	rprocClassPath        = "/sys/class/remoteproc"
-	rprocStateFileName    = "state"
-	rprocFirmwareFileName = "firmware"
+	rprocClassPath            = "/sys/class/remoteproc"
+	rprocStateFileName        = "state"
+	rprocInstanceNameFileName = "name"
+	rprocFirmwareFileName     = "firmware"
 )
 
 func FindDevicePath(mcu string) (string, error) {
@@ -23,7 +25,7 @@ func FindDevicePath(mcu string) (string, error) {
 	availableMCUs := []string{}
 	for _, file := range files {
 		instancePath := filepath.Join(rprocClassPath, file.Name())
-		instanceName, err := readInstanceName(instancePath)
+		instanceName, err := readFile(filepath.Join(instancePath, rprocInstanceNameFileName))
 		if err != nil {
 			continue
 		}
@@ -36,24 +38,15 @@ func FindDevicePath(mcu string) (string, error) {
 	return "", fmt.Errorf("%s is not in the list of available mcus %v", mcu, availableMCUs)
 }
 
-func readInstanceName(instancePath string) (string, error) {
-	instanceNamePath := filepath.Join(instancePath, "name")
-	nameFileContents, err := os.ReadFile(instanceNamePath)
+func GetState(devicePath string) (State, error) {
+	stateFilePath := buildStateFilePath(devicePath)
+	rawState, err := readFile(stateFilePath)
 	if err != nil {
 		return "", err
 	}
-	return string(nameFileContents), nil
-}
-
-func GetState(devicePath string) (State, error) {
-	stateFilePath := buildStateFilePath(devicePath)
-	rawState, err := os.ReadFile(stateFilePath)
-	if err != nil {
-		return "", fmt.Errorf("can't read state file %s: %w", stateFilePath, err)
-	}
 	state, err := NewState(string(rawState))
 	if err != nil {
-		return "", fmt.Errorf("can't parse state from %s %w", stateFilePath, err)
+		return "", fmt.Errorf("can't parse state from %s: %w", stateFilePath, err)
 	}
 	return state, nil
 }
@@ -88,4 +81,12 @@ func buildStateFilePath(devicePath string) string {
 
 func buildFirmwareFilePath(devicePath string) string {
 	return filepath.Join(devicePath, rprocFirmwareFileName)
+}
+
+func readFile(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file %s: %w", path, err)
+	}
+	return strings.TrimSpace(string(content)), nil
 }
