@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 
@@ -34,7 +35,18 @@ func newShimSocket(ctx context.Context, path, id string) (*shimSocket, error) {
 	}
 	socket, err := shim.NewSocket(address)
 	if err != nil {
-		return &shimSocket{addr: address}, errSocketAlreadyExists
+		if !shim.SocketEaddrinuse(err) {
+			return nil, fmt.Errorf("create new shim socket: %w", err)
+		}
+		if shim.CanConnect(address) {
+			return &shimSocket{addr: address}, errSocketAlreadyExists
+		}
+		if err := shim.RemoveSocket(address); err != nil {
+			return nil, fmt.Errorf("can't remove pre-existing socket: %w", err)
+		}
+		if socket, err = shim.NewSocket(address); err != nil {
+			return nil, fmt.Errorf("failed to create new shim socket after purging pre-existing: %w", err)
+		}
 	}
 	s := &shimSocket{
 		addr:   address,
