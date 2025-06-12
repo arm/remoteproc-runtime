@@ -125,33 +125,48 @@ func parseEnvVars(envVars []string) map[string]string {
 const pid uint32 = 1
 
 func createContainer(params containerParams) error {
-	if err := validateFirmwareExists(params.FirmwarePath, params.FirmwareName); err != nil {
-		return err
-	}
 	if err := validateBoardMatchesModel(params.Board); err != nil {
 		return err
 	}
 
-	mcuPath, err := remoteproc.FindMCUDirectory(params.MCU)
+	devicePath, err := remoteproc.FindDevicePath(params.MCU)
 	if err != nil {
 		return fmt.Errorf("can't determine remoteproc mcu path: %w", err)
 	}
 
+	firmwarePath := filepath.Join(params.FirmwarePath, params.FirmwareName)
+	if err := validateFirmwareExists(firmwarePath); err != nil {
+		return err
+	}
+	storedFirmwareName, err := remoteproc.StoreFirmware(firmwarePath)
+	if err != nil {
+		return err
+	}
+
+	needCleanup := true
+	defer func() {
+		if needCleanup {
+			_ = remoteproc.RemoveFirmware(storedFirmwareName)
+		}
+	}()
+
 	state := oci.NewState(params.ID, int(pid), params.BundlePath)
 	annotations := oci.RemoteprocAnnotations{
-		RequestedMCU: params.MCU,
-		ResolvedPath: mcuPath,
+		MCU:          params.MCU,
+		DevicePath:   devicePath,
+		FirmwareName: storedFirmwareName,
 	}
 	annotations.Apply(state)
+
 	if err := oci.WriteState(state); err != nil {
 		return err
 	}
 
+	needCleanup = false
 	return nil
 }
 
-func validateFirmwareExists(firmwarePath, firmwareName string) error {
-	firmwareFilePath := filepath.Join(firmwarePath, firmwareName)
+func validateFirmwareExists(firmwareFilePath string) error {
 	if _, err := os.Stat(firmwareFilePath); err != nil {
 		return fmt.Errorf("firmware file %s not accessible: %w", firmwareFilePath, err)
 	}

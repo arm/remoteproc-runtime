@@ -4,15 +4,24 @@ import (
 	"fmt"
 
 	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
+	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func Start(containerID string) error {
-	// TODO: actual echo start > /sys/class/remoteproc/...
 	ociState, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
+	annotations, err := oci.NewRemoteprocAnnotations(ociState)
+	if err != nil {
+		return fmt.Errorf("failed to read state annotations: %w", err)
+	}
+
+	if err := remoteproc.SetFirmwareAndStart(annotations.DevicePath, annotations.FirmwareName); err != nil {
+		return fmt.Errorf("failed to run firmware: %w", err)
+	}
+
 	ociState.Status = specs.StateRunning
 	if err := oci.WriteState(ociState); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
@@ -27,6 +36,13 @@ func Kill(containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
+	annotations, err := oci.NewRemoteprocAnnotations(ociState)
+	if err != nil {
+		return fmt.Errorf("failed to read state annotations: %w", err)
+	}
+	if err := remoteproc.Stop(annotations.DevicePath); err != nil {
+		return fmt.Errorf("failed to stop firmware: %w")
+	}
 	ociState.Status = specs.StateStopped
 	if err := oci.WriteState(ociState); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
@@ -35,9 +51,17 @@ func Kill(containerID string) error {
 }
 
 func Delete(containerID string) error {
-	// TODO: Does rproc need additional cleanup?
-	//       - restore path where firmware is loaded from
-	//       - delete firmware file if moved outside of rootfs
+	state, err := oci.ReadState(containerID)
+	if err != nil {
+		return fmt.Errorf("failed to read state: %w", err)
+	}
+
+	annotations, err := oci.NewRemoteprocAnnotations(state)
+	if err != nil {
+		return fmt.Errorf("failed to read state annotations: %w", err)
+	}
+	_ = remoteproc.RemoveFirmware(annotations.FirmwareName)
+
 	if err := oci.RemoveState(containerID); err != nil {
 		return fmt.Errorf("failed to remove state: %w", err)
 	}

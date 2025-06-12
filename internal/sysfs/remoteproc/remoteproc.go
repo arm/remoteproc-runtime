@@ -8,18 +8,21 @@ import (
 	"path/filepath"
 )
 
-const classPath = "/sys/class/remoteproc"
-const stateFileName = "state"
+const (
+	rprocClassPath        = "/sys/class/remoteproc"
+	rprocStateFileName    = "state"
+	rprocFirmwareFileName = "firmware"
+)
 
-func FindMCUDirectory(mcu string) (string, error) {
-	files, err := os.ReadDir(classPath)
+func FindDevicePath(mcu string) (string, error) {
+	files, err := os.ReadDir(rprocClassPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read remoteproc directory %s: %w", classPath, err)
+		return "", fmt.Errorf("failed to read remoteproc directory %s: %w", rprocClassPath, err)
 	}
 
 	availableMCUs := []string{}
 	for _, file := range files {
-		instancePath := filepath.Join(classPath, file.Name())
+		instancePath := filepath.Join(rprocClassPath, file.Name())
 		instanceName, err := readInstanceName(instancePath)
 		if err != nil {
 			continue
@@ -42,8 +45,8 @@ func readInstanceName(instancePath string) (string, error) {
 	return string(nameFileContents), nil
 }
 
-func GetState(mcuDirectory string) (State, error) {
-	stateFilePath := filepath.Join(mcuDirectory, stateFileName)
+func GetState(devicePath string) (State, error) {
+	stateFilePath := buildStateFilePath(devicePath)
 	rawState, err := os.ReadFile(stateFilePath)
 	if err != nil {
 		return "", fmt.Errorf("can't read state file %s: %w", stateFilePath, err)
@@ -53,4 +56,36 @@ func GetState(mcuDirectory string) (State, error) {
 		return "", fmt.Errorf("can't parse state from %s %w", stateFilePath, err)
 	}
 	return state, nil
+}
+
+func SetFirmwareAndStart(devicePath string, firmwareFileName string) error {
+	state, err := GetState(devicePath)
+	if err != nil {
+		return fmt.Errorf("pre-flight state check failed: %w", err)
+	}
+	if state == StateRunning {
+		return fmt.Errorf("remote processor is already running")
+	}
+	if err := os.WriteFile(buildFirmwareFilePath(devicePath), []byte(firmwareFileName), 0644); err != nil {
+		return fmt.Errorf("failed to set firmware %s: %w", firmwareFileName, err)
+	}
+	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("start"), 0644); err != nil {
+		return fmt.Errorf("failed to start remote processor: %w", err)
+	}
+	return nil
+}
+
+func Stop(devicePath string) error {
+	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("stop"), 0644); err != nil {
+		return fmt.Errorf("failed to stop remote processor: %w", err)
+	}
+	return nil
+}
+
+func buildStateFilePath(devicePath string) string {
+	return filepath.Join(devicePath, rprocStateFileName)
+}
+
+func buildFirmwareFilePath(devicePath string) string {
+	return filepath.Join(devicePath, rprocFirmwareFileName)
 }

@@ -16,11 +16,11 @@ func WaitForExit(ctx context.Context, containerID string) (uint32, error) {
 
 	annotations, err := oci.NewRemoteprocAnnotations(ociState)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to read state annotations: %w", err)
 	}
 
 	// TODO: actual polling of /sys/class/remoteproc/.../state
-	remoteprocState, err := remoteproc.GetState(annotations.ResolvedPath)
+	remoteprocState, err := remoteproc.GetState(annotations.DevicePath)
 	if err != nil {
 		return 0, err
 	}

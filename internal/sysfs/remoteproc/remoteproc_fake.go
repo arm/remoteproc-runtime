@@ -2,10 +2,18 @@
 
 package remoteproc
 
-func FindMCUDirectory(_ string) (string, error) {
+func FindDevicePath(_ string) (string, error) {
 	return "/sys/class/remoteproc/remoteproc0", nil
 }
 
 func GetState(_ string) (State, error) {
 	return StateOffline, nil
+}
+
+func SetFirmwareAndStart(_, _ string) error {
+	return nil
+}
+
+func Stop(_ string) error {
+	return nil
 }

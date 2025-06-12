@@ -27,46 +27,53 @@ func NewState(containerID string, pid int, bundlePath string) *specs.State {
 }
 
 type RemoteprocAnnotations struct {
-	RequestedMCU string
-	ResolvedPath string
+	MCU          string
+	DevicePath   string
+	FirmwareName string
 }
 
-const requestedMCUAnnotationKey = "remoteproc.requestedMCU"
-const resolvedPathAnnotationKey = "remoteproc.resolvedPath"
+const mcuRequestedKey = "remoteproc.mcuRequested"
+const mcuResolvedPathKey = "remoteproc.mcuResolvedPath"
+const firmwareNameKey = "remoteproc.firmwareName"
 
 func (a RemoteprocAnnotations) Apply(state *specs.State) {
 	if state.Annotations == nil {
 		state.Annotations = map[string]string{}
 	}
-	state.Annotations[requestedMCUAnnotationKey] = a.RequestedMCU
-	state.Annotations[resolvedPathAnnotationKey] = a.ResolvedPath
+	state.Annotations[mcuRequestedKey] = a.MCU
+	state.Annotations[mcuResolvedPathKey] = a.DevicePath
+	state.Annotations[firmwareNameKey] = a.FirmwareName
 }
 
 func NewRemoteprocAnnotations(state *specs.State) (RemoteprocAnnotations, error) {
-	requestedMCU, err := readAnnotation(state, requestedMCUAnnotationKey)
+	mcuRequested, err := readAnnotation(state, mcuRequestedKey)
 	if err != nil {
 		return RemoteprocAnnotations{}, err
 	}
-	resolvedPath, err := readAnnotation(state, resolvedPathAnnotationKey)
+	mcuResolvedPath, err := readAnnotation(state, mcuResolvedPathKey)
+	if err != nil {
+		return RemoteprocAnnotations{}, err
+	}
+	firmwareName, err := readAnnotation(state, firmwareNameKey)
 	if err != nil {
 		return RemoteprocAnnotations{}, err
 	}
 
 	return RemoteprocAnnotations{
-		RequestedMCU: requestedMCU,
-		ResolvedPath: resolvedPath,
+		MCU:          mcuRequested,
+		DevicePath:   mcuResolvedPath,
+		FirmwareName: firmwareName,
 	}, nil
 }
 
 func readAnnotation(state *specs.State, key string) (string, error) {
-	if state.Annotations == nil {
-		return "", fmt.Errorf("state does not contain any annotations")
+	if state.Annotations != nil {
+		value, ok := state.Annotations[key]
+		if ok {
+			return value, nil
+		}
 	}
-	value, ok := state.Annotations[key]
-	if !ok {
-		return "", fmt.Errorf("state does not contain value for %s annotation", key)
-	}
-	return value, nil
+	return "", fmt.Errorf("state does not contain value for %s annotation", key)
 }
 
 func WriteState(state *specs.State) error {
