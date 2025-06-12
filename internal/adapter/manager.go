@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"time"
 
 	apitypes "github.com/containerd/containerd/api/types"
 	"github.com/containerd/containerd/v2/pkg/shim"
-	"github.com/containerd/errdefs"
-	"github.com/containerd/log"
 )
 
 func NewManager(name string) shim.Manager {
@@ -63,12 +63,13 @@ func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shi
 }
 
 func (m manager) Stop(ctx context.Context, id string) (shim.StopStatus, error) {
-	log.L.WithField("id", id).Info("manager.Stop")
-	return shim.StopStatus{}, errdefs.ErrNotImplemented
+	return shim.StopStatus{
+		ExitedAt: time.Now(),
+		Pid:      os.Getpid(),
+	}, nil
 }
 
 func (m manager) Info(ctx context.Context, optionsR io.Reader) (*apitypes.RuntimeInfo, error) {
-	log.L.Info("manager.Info")
 	info := &apitypes.RuntimeInfo{
 		Name: "io.containerd.remoteproc.v1",
 		Version: &apitypes.RuntimeVersion{
