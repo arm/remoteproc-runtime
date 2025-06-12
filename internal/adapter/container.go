@@ -180,7 +180,7 @@ func validateBoardMatchesModel(wantBoard string) error {
 	}
 	if sysModel != wantBoard {
 		return fmt.Errorf(
-			"target board %s does not match system model %s", wantBoard, sysModel,
+			"target board %q does not match system model %q", wantBoard, sysModel,
 		)
 	}
 	return nil
