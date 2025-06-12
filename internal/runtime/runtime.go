@@ -31,7 +31,6 @@ func Start(containerID string) error {
 }
 
 func Kill(containerID string) error {
-	// TODO: actual echo stop > /sys/class/remoteproc/...
 	ociState, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
