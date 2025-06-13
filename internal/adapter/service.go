@@ -6,9 +6,14 @@ import (
 	"time"
 
 	"github.com/Arm-Debug/remoteproc-shim/internal/runtime"
+	eventstypes "github.com/containerd/containerd/api/events"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	ttypes "github.com/containerd/containerd/api/types/task"
+	containerdRuntime "github.com/containerd/containerd/v2/core/runtime"
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
+	"github.com/containerd/log"
+
 	"github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
@@ -44,7 +49,19 @@ func init() {
 func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
 	// The shim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
-	return &remoteprocTaskService{}, nil
+	service := &remoteprocTaskService{
+		events:   make(chan any, 128),
+		shutdown: sd,
+	}
+
+	sd.RegisterCallback(func(context.Context) error {
+		close(service.events)
+		return nil
+	})
+
+	go service.forward(ctx, publisher)
+
+	return service, nil
 }
 
 var (
@@ -52,6 +69,8 @@ var (
 )
 
 type remoteprocTaskService struct {
+	events   chan any
+	shutdown shutdown.Service
 }
 
 // RegisterTTRPC allows TTRPC services to be registered with the underlying server
@@ -62,14 +81,22 @@ func (s *remoteprocTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 
 // Create a new container
 func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
-	// TODO: figure out ttrpc interceptors
+	// TODO: figure out ttrpc interceptors for logging
 	logRequest("service.Create", r)
 	err := CreateContainer(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: publish event
+	s.send(&eventstypes.TaskCreate{
+		ContainerID: r.ID,
+		Bundle:      r.Bundle,
+		Rootfs:      r.Rootfs,
+		// IO:          &eventstypes.TaskIO{},
+		// Checkpoint:  "",
+		// Pid:         0,
+	})
+
 	response := &taskAPI.CreateTaskResponse{}
 	logResponse("service.Create", response)
 	return response, nil
@@ -82,6 +109,12 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 	if err != nil {
 		return nil, err
 	}
+
+	s.send(&eventstypes.TaskStart{
+		ContainerID: r.ID,
+		// Pid:         0,
+	})
+
 	response := &taskAPI.StartResponse{}
 	logResponse("service.Start", response)
 	return response, nil
@@ -93,6 +126,14 @@ func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteReq
 	if err := runtime.Delete(r.ID); err != nil {
 		return nil, err
 	}
+	s.send(&eventstypes.TaskDelete{
+		ContainerID: r.ID,
+		// Pid:        0,
+		// ExitStatus: 0,
+		// ExitedAt:   &timestamppb.Timestamp{},
+		// ID:         "",
+	})
+
 	response := &taskAPI.DeleteResponse{}
 	logResponse("service.Delete", response)
 	return response, nil
@@ -160,6 +201,14 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 	if err != nil {
 		return nil, err
 	}
+	s.send(&eventstypes.TaskExit{
+		ContainerID: r.ID,
+		ID:          r.ID,
+		// Pid:         uint32(e.Pid),
+		// ExitStatus:  uint32(e.Status),
+		// ExitedAt:    protobuf.ToTimestamp(p.ExitedAt()),
+	})
+
 	response := &ptypes.Empty{}
 	logResponse("service.Kill", response)
 	return response, nil
@@ -196,6 +245,8 @@ func (s *remoteprocTaskService) Connect(ctx context.Context, r *taskAPI.ConnectR
 // Shutdown is called after the underlying resources of the shim are cleaned up and the service can be stopped
 func (s *remoteprocTaskService) Shutdown(ctx context.Context, r *taskAPI.ShutdownRequest) (*ptypes.Empty, error) {
 	logRequest("service.Shutdown", r)
+	s.shutdown.Shutdown()
+	<-s.shutdown.Done()
 	os.Exit(0)
 	return &ptypes.Empty{}, nil
 }
@@ -234,4 +285,20 @@ func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest
 			}
 		}
 	}
+}
+
+func (s *remoteprocTaskService) send(event any) {
+	s.events <- event
+}
+
+func (s *remoteprocTaskService) forward(ctx context.Context, publisher shim.Publisher) {
+	ns, _ := namespaces.Namespace(ctx)
+	ctx = namespaces.WithNamespace(context.Background(), ns)
+	for e := range s.events {
+		err := publisher.Publish(ctx, containerdRuntime.GetTopic(e), e)
+		if err != nil {
+			log.L.WithError(err).Error("post event")
+		}
+	}
+	publisher.Close()
 }
