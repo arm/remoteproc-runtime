@@ -29,23 +29,20 @@ type target struct {
 }
 
 type containerParams struct {
-	ID           string
-	BundlePath   string
-	FirmwarePath string
-	FirmwareName string
+	ID                  string
+	BundlePath          string
+	FirmwareLookupPaths []string
+	FirmwareName        string
 	target
 }
 
 func newContainerParams(req *taskAPI.CreateTaskRequest) (containerParams, error) {
-	firmwarePath, err := extractFirmwarePathFromRootFS(req.Rootfs)
-	if err != nil {
-		return containerParams{}, fmt.Errorf("can't extract firmware path: %w", err)
-	}
-
 	spec, err := oci.ReadSpec(filepath.Join(req.Bundle, "config.json"))
 	if err != nil {
 		return containerParams{}, fmt.Errorf("can't read spec: %w", err)
 	}
+
+	firmwareLookupPaths := listFirmwareLookupPaths(req.Bundle, spec, req.Rootfs)
 
 	firmwareName, err := extractFirmwareName(spec)
 	if err != nil {
@@ -58,27 +55,34 @@ func newContainerParams(req *taskAPI.CreateTaskRequest) (containerParams, error)
 	}
 
 	return containerParams{
-		ID:           req.ID,
-		BundlePath:   req.Bundle,
-		FirmwarePath: firmwarePath,
-		FirmwareName: firmwareName,
-		target:       t,
+		ID:                  req.ID,
+		BundlePath:          req.Bundle,
+		FirmwareLookupPaths: firmwareLookupPaths,
+		FirmwareName:        firmwareName,
+		target:              t,
 	}, nil
 }
 
-func extractFirmwarePathFromRootFS(rootFS []*types.Mount) (string, error) {
-	if len(rootFS) == 0 {
-		return "", fmt.Errorf("rootfs is empty")
+func listFirmwareLookupPaths(bundlePath string, spec *specs.Spec, rootFS []*types.Mount) []string {
+	paths := []string{}
+	if spec.Root != nil && spec.Root.Path != "" {
+		root := spec.Root.Path
+		if !filepath.IsAbs(root) {
+			root = filepath.Join(bundlePath, root)
+		}
+		paths = append(paths, root)
 	}
-	// Firmware must exist in top-most layer
-	topMount := rootFS[0]
-	const prefix = "lowerdir="
-	for _, option := range topMount.Options {
-		if path, found := strings.CutPrefix(option, prefix); found {
-			return path, nil
+
+	for _, mount := range rootFS {
+		const prefix = "lowerdir="
+		for _, option := range mount.Options {
+			if path, found := strings.CutPrefix(option, prefix); found {
+				paths = append(paths, path)
+			}
 		}
 	}
-	return "", fmt.Errorf("lowerdir option not found in top mount")
+
+	return paths
 }
 
 func extractFirmwareName(spec *specs.Spec) (string, error) {
@@ -134,13 +138,13 @@ func createContainer(params containerParams) error {
 		return fmt.Errorf("can't determine remoteproc mcu path: %w", err)
 	}
 
-	firmwarePath := filepath.Join(params.FirmwarePath, params.FirmwareName)
-	if err := validateFirmwareExists(firmwarePath); err != nil {
+	firmwarePath, err := findFirmware(params.FirmwareLookupPaths, params.FirmwareName)
+	if err != nil {
 		return err
 	}
 	storedFirmwareName, err := remoteproc.StoreFirmware(firmwarePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
 	}
 
 	needCleanup := true
@@ -166,11 +170,14 @@ func createContainer(params containerParams) error {
 	return nil
 }
 
-func validateFirmwareExists(firmwareFilePath string) error {
-	if _, err := os.Stat(firmwareFilePath); err != nil {
-		return fmt.Errorf("firmware file %s not accessible: %w", firmwareFilePath, err)
+func findFirmware(lookupPaths []string, firmwareFileName string) (string, error) {
+	for _, path := range lookupPaths {
+		fullPath := filepath.Join(path, firmwareFileName)
+		if _, err := os.Stat(fullPath); err == nil {
+			return fullPath, nil
+		}
 	}
-	return nil
+	return "", fmt.Errorf("firmware %s not found in any of the provided paths %v", firmwareFileName, lookupPaths)
 }
 
 func validateBoardMatchesModel(wantBoard string) error {
