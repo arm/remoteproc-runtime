@@ -44,24 +44,24 @@ func init() {
 func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
 	// The shim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
-	return &exampleTaskService{}, nil
+	return &remoteprocTaskService{}, nil
 }
 
 var (
-	_ = shim.TTRPCService(&exampleTaskService{})
+	_ = shim.TTRPCService(&remoteprocTaskService{})
 )
 
-type exampleTaskService struct {
+type remoteprocTaskService struct {
 }
 
 // RegisterTTRPC allows TTRPC services to be registered with the underlying server
-func (s *exampleTaskService) RegisterTTRPC(server *ttrpc.Server) error {
+func (s *remoteprocTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 	taskAPI.RegisterTaskService(server, s)
 	return nil
 }
 
 // Create a new container
-func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
+func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
 	// TODO: figure out ttrpc interceptors
 	logRequest("service.Create", r)
 	err := CreateContainer(r)
@@ -76,7 +76,7 @@ func (s *exampleTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRe
 }
 
 // Start the primary user process inside the container
-func (s *exampleTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
+func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
 	logRequest("service.Start", r)
 	err := runtime.Start(r.ID)
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *exampleTaskService) Start(ctx context.Context, r *taskAPI.StartRequest)
 }
 
 // Delete a process or container
-func (s *exampleTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
+func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
 	logRequest("service.Delete", r)
 	if err := runtime.Delete(r.ID); err != nil {
 		return nil, err
@@ -99,19 +99,19 @@ func (s *exampleTaskService) Delete(ctx context.Context, r *taskAPI.DeleteReques
 }
 
 // Exec an additional process inside the container
-func (s *exampleTaskService) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (*ptypes.Empty, error) {
 	logRequest("service.Exec", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // ResizePty of a process
-func (s *exampleTaskService) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (*ptypes.Empty, error) {
 	logRequest("service.ResizePty", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // State returns runtime state of a process
-func (s *exampleTaskService) State(ctx context.Context, r *taskAPI.StateRequest) (*taskAPI.StateResponse, error) {
+func (s *remoteprocTaskService) State(ctx context.Context, r *taskAPI.StateRequest) (*taskAPI.StateResponse, error) {
 	logRequest("service.State", r)
 	state, err := runtime.State(r.ID)
 	if err != nil {
@@ -142,19 +142,19 @@ func (s *exampleTaskService) State(ctx context.Context, r *taskAPI.StateRequest)
 }
 
 // Pause the container
-func (s *exampleTaskService) Pause(ctx context.Context, r *taskAPI.PauseRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Pause(ctx context.Context, r *taskAPI.PauseRequest) (*ptypes.Empty, error) {
 	logRequest("service.Pause", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Resume the container
-func (s *exampleTaskService) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (*ptypes.Empty, error) {
 	logRequest("service.Resume", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Kill a process
-func (s *exampleTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
 	logRequest("service.Kill", r)
 	err := runtime.Kill(r.ID)
 	if err != nil {
@@ -166,25 +166,25 @@ func (s *exampleTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (
 }
 
 // Pids returns all pids inside the container
-func (s *exampleTaskService) Pids(ctx context.Context, r *taskAPI.PidsRequest) (*taskAPI.PidsResponse, error) {
+func (s *remoteprocTaskService) Pids(ctx context.Context, r *taskAPI.PidsRequest) (*taskAPI.PidsResponse, error) {
 	logRequest("service.Pids", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // CloseIO of a process
-func (s *exampleTaskService) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*ptypes.Empty, error) {
 	logRequest("service.CloseIO", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Checkpoint the container
-func (s *exampleTaskService) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskRequest) (*ptypes.Empty, error) {
 	logRequest("service.Checkpoint", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Connect returns shim information of the underlying service
-func (s *exampleTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
+func (s *remoteprocTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
 	logRequest("service.Connect", r)
 	response := &taskAPI.ConnectResponse{
 		ShimPid: uint32(os.Getpid()),
@@ -194,26 +194,26 @@ func (s *exampleTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequ
 }
 
 // Shutdown is called after the underlying resources of the shim are cleaned up and the service can be stopped
-func (s *exampleTaskService) Shutdown(ctx context.Context, r *taskAPI.ShutdownRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Shutdown(ctx context.Context, r *taskAPI.ShutdownRequest) (*ptypes.Empty, error) {
 	logRequest("service.Shutdown", r)
 	os.Exit(0)
 	return &ptypes.Empty{}, nil
 }
 
 // Stats returns container level system stats for a container and its processes
-func (s *exampleTaskService) Stats(ctx context.Context, r *taskAPI.StatsRequest) (*taskAPI.StatsResponse, error) {
+func (s *remoteprocTaskService) Stats(ctx context.Context, r *taskAPI.StatsRequest) (*taskAPI.StatsResponse, error) {
 	logRequest("service.Stats", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Update the live container
-func (s *exampleTaskService) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (*ptypes.Empty, error) {
+func (s *remoteprocTaskService) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (*ptypes.Empty, error) {
 	logRequest("service.Update", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Wait for a process to exit
-func (s *exampleTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest) (*taskAPI.WaitResponse, error) {
+func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest) (*taskAPI.WaitResponse, error) {
 	logRequest("service.Wait", r)
 	const interval = 1 * time.Second
 	ticker := time.NewTicker(interval)
