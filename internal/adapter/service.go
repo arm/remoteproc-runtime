@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
 	"github.com/containerd/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
@@ -52,6 +54,7 @@ func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.S
 	service := &remoteprocTaskService{
 		events:   make(chan any, 128),
 		shutdown: sd,
+		logger:   log.G(ctx),
 	}
 
 	sd.RegisterCallback(func(context.Context) error {
@@ -71,6 +74,7 @@ var (
 type remoteprocTaskService struct {
 	events   chan any
 	shutdown shutdown.Service
+	logger   logrus.FieldLogger
 }
 
 // RegisterTTRPC allows TTRPC services to be registered with the underlying server
@@ -81,8 +85,7 @@ func (s *remoteprocTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 
 // Create a new container
 func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
-	// TODO: figure out ttrpc interceptors for logging
-	logRequest("service.Create", r)
+	s.logPayload("-> service.Create", r)
 	err := CreateContainer(r)
 	if err != nil {
 		return nil, err
@@ -98,13 +101,13 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 	})
 
 	response := &taskAPI.CreateTaskResponse{}
-	logResponse("service.Create", response)
+	s.logPayload("<- service.Create", response)
 	return response, nil
 }
 
 // Start the primary user process inside the container
 func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
-	logRequest("service.Start", r)
+	s.logPayload("-> service.Start", r)
 	err := runtime.Start(r.ID)
 	if err != nil {
 		return nil, err
@@ -116,13 +119,13 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 	})
 
 	response := &taskAPI.StartResponse{}
-	logResponse("service.Start", response)
+	s.logPayload("<- service.Start", response)
 	return response, nil
 }
 
 // Delete a process or container
 func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
-	logRequest("service.Delete", r)
+	s.logPayload("-> service.Delete", r)
 	if err := runtime.Delete(r.ID); err != nil {
 		return nil, err
 	}
@@ -135,25 +138,25 @@ func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteReq
 	})
 
 	response := &taskAPI.DeleteResponse{}
-	logResponse("service.Delete", response)
+	s.logPayload("<- service.Delete", response)
 	return response, nil
 }
 
 // Exec an additional process inside the container
 func (s *remoteprocTaskService) Exec(ctx context.Context, r *taskAPI.ExecProcessRequest) (*ptypes.Empty, error) {
-	logRequest("service.Exec", r)
+	s.logPayload("-> service.Exec", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // ResizePty of a process
 func (s *remoteprocTaskService) ResizePty(ctx context.Context, r *taskAPI.ResizePtyRequest) (*ptypes.Empty, error) {
-	logRequest("service.ResizePty", r)
+	s.logPayload("-> service.ResizePty", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // State returns runtime state of a process
 func (s *remoteprocTaskService) State(ctx context.Context, r *taskAPI.StateRequest) (*taskAPI.StateResponse, error) {
-	logRequest("service.State", r)
+	s.logPayload("-> service.State", r)
 	state, err := runtime.State(r.ID)
 	if err != nil {
 		return nil, err
@@ -178,25 +181,25 @@ func (s *remoteprocTaskService) State(ctx context.Context, r *taskAPI.StateReque
 		response.Status = ttypes.Status_UNKNOWN
 	}
 
-	logResponse("service.State", response)
+	s.logPayload("<- service.State", response)
 	return response, nil
 }
 
 // Pause the container
 func (s *remoteprocTaskService) Pause(ctx context.Context, r *taskAPI.PauseRequest) (*ptypes.Empty, error) {
-	logRequest("service.Pause", r)
+	s.logPayload("-> service.Pause", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Resume the container
 func (s *remoteprocTaskService) Resume(ctx context.Context, r *taskAPI.ResumeRequest) (*ptypes.Empty, error) {
-	logRequest("service.Resume", r)
+	s.logPayload("-> service.Resume", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Kill a process
 func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
-	logRequest("service.Kill", r)
+	s.logPayload("-> service.Kill", r)
 	err := runtime.Kill(r.ID)
 	if err != nil {
 		return nil, err
@@ -210,41 +213,41 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 	})
 
 	response := &ptypes.Empty{}
-	logResponse("service.Kill", response)
+	s.logPayload("<- service.Kill", response)
 	return response, nil
 }
 
 // Pids returns all pids inside the container
 func (s *remoteprocTaskService) Pids(ctx context.Context, r *taskAPI.PidsRequest) (*taskAPI.PidsResponse, error) {
-	logRequest("service.Pids", r)
+	s.logPayload("-> service.Pids", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // CloseIO of a process
 func (s *remoteprocTaskService) CloseIO(ctx context.Context, r *taskAPI.CloseIORequest) (*ptypes.Empty, error) {
-	logRequest("service.CloseIO", r)
+	s.logPayload("-> service.CloseIO", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Checkpoint the container
 func (s *remoteprocTaskService) Checkpoint(ctx context.Context, r *taskAPI.CheckpointTaskRequest) (*ptypes.Empty, error) {
-	logRequest("service.Checkpoint", r)
+	s.logPayload("-> service.Checkpoint", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Connect returns shim information of the underlying service
 func (s *remoteprocTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
-	logRequest("service.Connect", r)
+	s.logPayload("-> service.Connect", r)
 	response := &taskAPI.ConnectResponse{
 		ShimPid: uint32(os.Getpid()),
 	}
-	logResponse("service.Connect", response)
+	s.logPayload("<- service.Connect", response)
 	return response, nil
 }
 
 // Shutdown is called after the underlying resources of the shim are cleaned up and the service can be stopped
 func (s *remoteprocTaskService) Shutdown(ctx context.Context, r *taskAPI.ShutdownRequest) (*ptypes.Empty, error) {
-	logRequest("service.Shutdown", r)
+	s.logPayload("-> service.Shutdown", r)
 	s.shutdown.Shutdown()
 	<-s.shutdown.Done()
 	os.Exit(0)
@@ -253,19 +256,19 @@ func (s *remoteprocTaskService) Shutdown(ctx context.Context, r *taskAPI.Shutdow
 
 // Stats returns container level system stats for a container and its processes
 func (s *remoteprocTaskService) Stats(ctx context.Context, r *taskAPI.StatsRequest) (*taskAPI.StatsResponse, error) {
-	logRequest("service.Stats", r)
+	s.logPayload("-> service.Stats", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Update the live container
 func (s *remoteprocTaskService) Update(ctx context.Context, r *taskAPI.UpdateTaskRequest) (*ptypes.Empty, error) {
-	logRequest("service.Update", r)
+	s.logPayload("-> service.Update", r)
 	return nil, errdefs.ErrNotImplemented
 }
 
 // Wait for a process to exit
 func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest) (*taskAPI.WaitResponse, error) {
-	logRequest("service.Wait", r)
+	s.logPayload("-> service.Wait", r)
 	const interval = 1 * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -280,7 +283,7 @@ func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest
 			}
 			if state.Status == specs.StateStopped {
 				response := &taskAPI.WaitResponse{ExitStatus: 0}
-				logResponse("service.Wait", response)
+				s.logPayload("<- service.Wait", response)
 				return response, nil
 			}
 		}
@@ -297,8 +300,16 @@ func (s *remoteprocTaskService) forward(ctx context.Context, publisher shim.Publ
 	for e := range s.events {
 		err := publisher.Publish(ctx, containerdRuntime.GetTopic(e), e)
 		if err != nil {
-			log.L.WithError(err).Error("post event")
+			s.logger.WithError(err).Error("post event")
 		}
 	}
 	publisher.Close()
+}
+
+func (s *remoteprocTaskService) logPayload(name string, payload any) {
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		s.logger.WithField("err", err).Debug(name)
+	}
+	s.logger.WithField("payload", string(payloadJSON)).Debug(name)
 }
