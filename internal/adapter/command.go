@@ -9,7 +9,7 @@ import (
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 )
 
-func newCommand(ctx context.Context, containerdAddress, id string) (*exec.Cmd, error) {
+func newCommand(ctx context.Context, containerdAddress, id string, debug bool) (*exec.Cmd, error) {
 	namespace, err := namespaces.NamespaceRequired(ctx)
 	if err != nil {
 		return nil, err
@@ -27,6 +27,9 @@ func newCommand(ctx context.Context, containerdAddress, id string) (*exec.Cmd, e
 		"-id", id,
 		"-address", containerdAddress,
 		"-publish-binary", self,
+	}
+	if debug {
+		args = append(args, "-debug")
 	}
 	cmd := exec.Command(self, args...)
 	cmd.Dir = cwd

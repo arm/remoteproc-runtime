@@ -45,7 +45,7 @@ func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shi
 		}
 	}()
 
-	cmd, retErr := newCommand(ctx, opts.Address, id)
+	cmd, retErr := newCommand(ctx, opts.Address, id, opts.Debug)
 	if retErr != nil {
 		return params, fmt.Errorf("failed to create command: %w", err)
 	}
