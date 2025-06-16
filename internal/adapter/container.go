@@ -14,7 +14,8 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-// TODO: this needs to eventually live in `runtime` namespace, but currently is coupled to `RootFS` from CreateTaskRequest. Looks like `rootfs` specified in `config.json` is empty, so the request is the only way to get our hands on the firmware.
+// TODO: this needs to eventually live in `runtime` namespace, but currently is coupled to `RootFS` from CreateTaskRequest.
+// At least for `ctr` use-case it looks like `rootfs` specified in `config.json` is empty, so the mounts from the request is the only way to get our hands on the firmware.
 func CreateContainer(req *taskAPI.CreateTaskRequest) error {
 	params, err := newContainerParams(req)
 	if err != nil {
