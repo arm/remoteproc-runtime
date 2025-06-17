@@ -26,56 +26,6 @@ func NewState(containerID string, bundlePath string) *specs.State {
 	}
 }
 
-type RemoteprocAnnotations struct {
-	MCU          string
-	DevicePath   string
-	FirmwareName string
-}
-
-const mcuRequestedKey = "remoteproc.mcu-requested"
-const mcuResolvedPathKey = "remoteproc.mcu-resolved-path"
-const firmwareNameKey = "remoteproc.firmware-name"
-
-func (a RemoteprocAnnotations) Apply(state *specs.State) {
-	if state.Annotations == nil {
-		state.Annotations = map[string]string{}
-	}
-	state.Annotations[mcuRequestedKey] = a.MCU
-	state.Annotations[mcuResolvedPathKey] = a.DevicePath
-	state.Annotations[firmwareNameKey] = a.FirmwareName
-}
-
-func NewRemoteprocAnnotations(state *specs.State) (RemoteprocAnnotations, error) {
-	mcuRequested, err := readAnnotation(state, mcuRequestedKey)
-	if err != nil {
-		return RemoteprocAnnotations{}, err
-	}
-	mcuResolvedPath, err := readAnnotation(state, mcuResolvedPathKey)
-	if err != nil {
-		return RemoteprocAnnotations{}, err
-	}
-	firmwareName, err := readAnnotation(state, firmwareNameKey)
-	if err != nil {
-		return RemoteprocAnnotations{}, err
-	}
-
-	return RemoteprocAnnotations{
-		MCU:          mcuRequested,
-		DevicePath:   mcuResolvedPath,
-		FirmwareName: firmwareName,
-	}, nil
-}
-
-func readAnnotation(state *specs.State, key string) (string, error) {
-	if state.Annotations != nil {
-		value, ok := state.Annotations[key]
-		if ok {
-			return value, nil
-		}
-	}
-	return "", fmt.Errorf("state does not contain value for %s annotation", key)
-}
-
 func WriteState(state *specs.State) error {
 	containerStateDir := filepath.Join(stateDir, state.ID)
 	if err := os.MkdirAll(containerStateDir, 0755); err != nil {
@@ -115,6 +65,9 @@ func ReadState(containerID string) (*specs.State, error) {
 	defer f.Close()
 	var s specs.State
 	if err := json.NewDecoder(f).Decode(&s); err != nil {
+		return nil, err
+	}
+	if err := validateStateAnnotations(&s); err != nil {
 		return nil, err
 	}
 	return &s, nil

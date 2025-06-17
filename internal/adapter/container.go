@@ -139,13 +139,8 @@ func createContainer(params containerParams) error {
 	}()
 
 	state := oci.NewState(params.ID, params.BundlePath)
-	annotations := oci.RemoteprocAnnotations{
-		MCU:          params.MCU,
-		DevicePath:   devicePath,
-		FirmwareName: storedFirmwareName,
-	}
-	annotations.Apply(state)
-
+	state.Annotations[oci.StateMCUResolvedPath] = devicePath
+	state.Annotations[oci.StateFirmwareName] = storedFirmwareName
 	if err := oci.WriteState(state); err != nil {
 		return err
 	}

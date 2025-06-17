@@ -17,5 +17,8 @@ func ReadSpec(path string) (*specs.Spec, error) {
 	if err := json.NewDecoder(f).Decode(&s); err != nil {
 		return nil, err
 	}
+	if err := validateSpecAnnotations(&s); err != nil {
+		return nil, err
+	}
 	return &s, nil
 }

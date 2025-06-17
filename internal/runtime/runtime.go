@@ -9,21 +9,19 @@ import (
 )
 
 func Start(containerID string) error {
-	ociState, err := oci.ReadState(containerID)
+	state, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
-	annotations, err := oci.NewRemoteprocAnnotations(ociState)
-	if err != nil {
-		return fmt.Errorf("failed to read state annotations: %w", err)
-	}
-
-	if err := remoteproc.SetFirmwareAndStart(annotations.DevicePath, annotations.FirmwareName); err != nil {
+	if err := remoteproc.SetFirmwareAndStart(
+		state.Annotations[oci.StateMCUResolvedPath],
+		state.Annotations[oci.StateFirmwareName],
+	); err != nil {
 		return fmt.Errorf("failed to run firmware: %w", err)
 	}
 
-	ociState.Status = specs.StateRunning
-	if err := oci.WriteState(ociState); err != nil {
+	state.Status = specs.StateRunning
+	if err := oci.WriteState(state); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
 
@@ -31,19 +29,15 @@ func Start(containerID string) error {
 }
 
 func Kill(containerID string) error {
-	ociState, err := oci.ReadState(containerID)
+	state, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
-	annotations, err := oci.NewRemoteprocAnnotations(ociState)
-	if err != nil {
-		return fmt.Errorf("failed to read state annotations: %w", err)
+	if err := remoteproc.Stop(state.Annotations[oci.StateMCUResolvedPath]); err != nil {
+		return fmt.Errorf("failed to stop firmware: %w", err)
 	}
-	if err := remoteproc.Stop(annotations.DevicePath); err != nil {
-		return fmt.Errorf("failed to stop firmware: %w")
-	}
-	ociState.Status = specs.StateStopped
-	if err := oci.WriteState(ociState); err != nil {
+	state.Status = specs.StateStopped
+	if err := oci.WriteState(state); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
 	return nil
@@ -55,11 +49,7 @@ func Delete(containerID string) error {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
 
-	annotations, err := oci.NewRemoteprocAnnotations(state)
-	if err != nil {
-		return fmt.Errorf("failed to read state annotations: %w", err)
-	}
-	_ = remoteproc.RemoveFirmware(annotations.FirmwareName)
+	_ = remoteproc.RemoveFirmware(state.Annotations[oci.StateFirmwareName])
 
 	if err := oci.RemoveState(containerID); err != nil {
 		return fmt.Errorf("failed to remove state: %w", err)
@@ -68,9 +58,9 @@ func Delete(containerID string) error {
 }
 
 func State(containerID string) (*specs.State, error) {
-	ociState, err := oci.ReadState(containerID)
+	state, err := oci.ReadState(containerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read state: %w", err)
 	}
-	return ociState, nil
+	return state, nil
 }
