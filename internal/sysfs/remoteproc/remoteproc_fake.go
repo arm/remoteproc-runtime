@@ -2,8 +2,14 @@
 
 package remoteproc
 
-func FindDevicePath(_ string) (string, error) {
-	return "/sys/class/remoteproc/remoteproc0", nil
+import "fmt"
+
+func FindDevicePath(mcu string) (string, error) {
+	if mcu == "imx-rproc" {
+		return "/sys/class/remoteproc/remoteproc0", nil
+	}
+	availableMCUs := []string{"imx-rproc"}
+	return "", fmt.Errorf("%s is not in the list of available mcus %v", mcu, availableMCUs)
 }
 
 func GetState(_ string) (State, error) {
