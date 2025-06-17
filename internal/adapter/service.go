@@ -3,13 +3,16 @@ package adapter
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Arm-Debug/remoteproc-shim/internal/runtime"
 	eventstypes "github.com/containerd/containerd/api/events"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	ttypes "github.com/containerd/containerd/api/types/task"
+	"github.com/containerd/containerd/v2/core/mount"
 	containerdRuntime "github.com/containerd/containerd/v2/core/runtime"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
@@ -86,15 +89,24 @@ func (s *remoteprocTaskService) RegisterTTRPC(server *ttrpc.Server) error {
 // Create a new container
 func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTaskRequest) (*taskAPI.CreateTaskResponse, error) {
 	s.logPayload("-> service.Create", r)
-	err := CreateContainer(r)
+	const shimRootFS = "rootfs" // Assumption copied from containerd runc.NewContainer
+	rootFS := filepath.Join(r.Bundle, shimRootFS)
+	toMount := listMounts(r)
+	if err := mount.All(toMount, rootFS); err != nil {
+		return nil, fmt.Errorf("failed to mount rootfs: %w", err)
+	}
+	err := runtime.Create(r.ID, r.Bundle)
 	if err != nil {
+		if err := mount.UnmountMounts(toMount, rootFS, 0); err != nil {
+			log.G(ctx).WithError(err).Warn("failed to cleanup rootfs mount")
+		}
 		return nil, err
 	}
 
 	s.send(&eventstypes.TaskCreate{
 		ContainerID: r.ID,
 		Bundle:      r.Bundle,
-		Rootfs:      r.Rootfs,
+		// Rootfs:      r.Rootfs,
 		// IO:          &eventstypes.TaskIO{},
 		// Checkpoint:  "",
 		// Pid:         0,
@@ -103,6 +115,19 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 	response := &taskAPI.CreateTaskResponse{}
 	s.logPayload("<- service.Create", response)
 	return response, nil
+}
+
+func listMounts(req *taskAPI.CreateTaskRequest) []mount.Mount {
+	mounts := make([]mount.Mount, len(req.Rootfs))
+	for i, pm := range req.Rootfs {
+		mounts[i] = mount.Mount{
+			Type:    pm.Type,
+			Source:  pm.Source,
+			Target:  pm.Target,
+			Options: pm.Options,
+		}
+	}
+	return mounts
 }
 
 // Start the primary user process inside the container
