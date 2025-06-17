@@ -155,7 +155,7 @@ func createContainer(params containerParams) error {
 		}
 	}()
 
-	state := oci.NewState(params.ID, int(pid), params.BundlePath)
+	state := oci.NewState(params.ID, params.BundlePath)
 	annotations := oci.RemoteprocAnnotations{
 		MCU:          params.MCU,
 		DevicePath:   devicePath,

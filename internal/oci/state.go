@@ -15,7 +15,7 @@ const (
 	stateFileName = "state.json"
 )
 
-func NewState(containerID string, pid int, bundlePath string) *specs.State {
+func NewState(containerID string, bundlePath string) *specs.State {
 	return &specs.State{
 		Version:     "1.2.0", // TODO: validate if this is the case
 		ID:          containerID,
