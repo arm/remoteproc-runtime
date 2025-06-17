@@ -94,37 +94,20 @@ func extractFirmwareName(spec *specs.Spec) (string, error) {
 }
 
 func extractTarget(spec *specs.Spec) (target, error) {
-	env := parseEnvVars(spec.Process.Env)
-	mcu, ok := env["MCU"]
+	mcu, ok := spec.Annotations[oci.SpecMCU]
 	if !ok {
-		return target{}, fmt.Errorf("MCU env variable not set")
+		return target{}, fmt.Errorf("%s not set in bundle annotations", oci.SpecMCU)
 	}
 
-	board, ok := env["BOARD"]
+	board, ok := spec.Annotations[oci.SpecBoard]
 	if !ok {
-		return target{}, fmt.Errorf("BOARD env variable not set")
+		return target{}, fmt.Errorf("%s not set in bundle annotations", oci.SpecBoard)
 	}
 
 	return target{
 		MCU:   mcu,
 		Board: board,
 	}, nil
-}
-
-func parseEnvVars(envVars []string) map[string]string {
-	result := map[string]string{}
-	for _, envVar := range envVars {
-		chunks := strings.SplitN(envVar, "=", 2)
-		if len(chunks) != 2 {
-			continue
-		}
-		key := chunks[0]
-		value := chunks[1]
-		if key != "" {
-			result[key] = value
-		}
-	}
-	return result
 }
 
 const pid uint32 = 1
