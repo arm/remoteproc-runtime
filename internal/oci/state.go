@@ -32,9 +32,9 @@ type RemoteprocAnnotations struct {
 	FirmwareName string
 }
 
-const mcuRequestedKey = "remoteproc.mcuRequested"
-const mcuResolvedPathKey = "remoteproc.mcuResolvedPath"
-const firmwareNameKey = "remoteproc.firmwareName"
+const mcuRequestedKey = "remoteproc.mcu-requested"
+const mcuResolvedPathKey = "remoteproc.mcu-resolved-path"
+const firmwareNameKey = "remoteproc.firmware-name"
 
 func (a RemoteprocAnnotations) Apply(state *specs.State) {
 	if state.Annotations == nil {
