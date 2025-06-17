@@ -14,62 +14,84 @@ GOOS=linux GOARCH=arm64 go build ./cmd/containerd-shim-remoteproc-v1/
 
 ### 1. Prepare a container image
 
-In order to start a container, first we need an image. To build an image that's compatible with the remoteproc shim, we need a couple of things:
-
-1. Values found by interrogating `sysfs` **on remoteproc enabled target**.
-
-    1. Board model, which will become `ENV BOARD=<value>` in your `Dockerfile`:
-        ```sh
-        cat /sys/firmware/devicetree/base/model
-        ```
-
-    2. Target MCU, which will become `ENV MCU=<value>` in your `Dockerfile`:
-
-        ```sh
-        # One of /sys/class/remoteproc/.../name, for example:
-        cat /sys/class/remoteproc/remoteproc0/name
-        ```
-
-1. A binary file we can load using remoteproc framework. This is what you'd normally flash by any other means to your remote processor.
+In order to start a container, we need an image. The image needs to contain a binary file we can load using remoteproc framework. This binary file is what you'd normally flash by any other means to your remote processor.
 
 #### Example
 
-Assuming a `hello.elf` binary we built for our MCU, and the following info we gathered from interrogating sysfs:
-
-```sh
-cat /sys/firmware/devicetree/base/model # NXP i.MX93 11X11 FRDM board
-cat /sys/class/remoteproc/remoteproc0/name # imx-rproc
-```
-
-The `Dockerfile` could look like this:
+Assuming a `hello.elf` binary we built for our MCU, `Dockerfile` could look like this:
 
 
 ```Dockerfile
 FROM scratch
-ENV BOARD="NXP i.MX93 11X11 FRDM board" 
-ENV MCU="imx-rproc"
 ADD hello.elf /
 ENTRYPOINT ["hello.elf"]
 ```
 
-### 2. Install the shim
+### 2. Determine the target MCU and board
+
+In addition to the image, shim requires two pieces of information passed via annotations. You can find required values by interrogating `sysfs` **on a remoteproc enabled target**:
+
+1. Board model, which will become the value of `remoteproc.board` annotation:
+    ```sh
+    cat /sys/firmware/devicetree/base/model
+    ```
+
+2. Target MCU, which will become the value of `remoteproc.mcu` annotation:
+    ```sh
+    # One of /sys/class/remoteproc/.../name, for example:
+    cat /sys/class/remoteproc/remoteproc0/name
+    ```
+
+### 3. Install the shim
 
 Copy the `containerd-shim-remoteproc-v1` binary to `/usr/local/bin`.
 
 
-### 3. Use the shim
+### 4. Run the image
 
-#### With Docker
-
-```sh
-docker run --runtime io.containerd.remoteproc.v1 <image-name>
-```
-
-#### With ctr
+<details open>
+<summary><strong>Using Docker</strong></summary>
 
 ```sh
-ctr run --runtime io.containerd.remoteproc.v1 <image-name> <container-name>
+docker run \
+    --runtime io.containerd.remoteproc.v1 \
+    --annotation remoteproc.mcu="<target-mcu>" \
+    --annotation remoteproc.board="<board-model>" \
+    <image-name>
 ```
+</details>
+
+<details>
+<summary><strong>Using Docker Compose</strong></summary>
+
+```yaml
+services:
+  hello:
+    image: <image-name>
+    runtime: io.containerd.remoteproc.v1
+    annotations:
+        remoteproc.mcu: <target-mcu>
+        remoteproc.board: <board-model>
+```
+
+And then
+
+```sh
+docker compose up
+```
+</details>
+
+<details>
+<summary><strong>Using ctr</strong></summary>
+
+```sh
+ctr run \
+    --runtime io.containerd.remoteproc.v1 \
+    --annotation remoteproc.mcu="<target-mcu>" \
+    --annotation remoteproc.board="<board-model>" \
+    <image-name> <container-name>
+```
+</details>
 
 ## Debugging
 
