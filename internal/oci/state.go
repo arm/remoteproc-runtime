@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	// TODO: is this safe, or should we have `/run/remoteproc-containers`?
 	stateDir      = "/run/remoteproc"
 	stateFileName = "state.json"
 )
