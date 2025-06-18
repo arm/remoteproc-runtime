@@ -97,11 +97,11 @@ ctr run \
 
 Enabling `debug` log level in containerd [configuration file](https://github.com/containerd/containerd/blob/main/docs/man/containerd-config.toml.5.md) might provide useful information.
 
-Put the following in `/etc/containerd/config.yaml`:
+Put the following in `/etc/containerd/config.toml`:
 
-```yaml
+```toml
 [debug]
-level = 'debug'
+  level = "debug"
 ```
 
 Then, restart `containerd` and tail its logs. For example, assuming you're using `systemd` and `systemd-journald`:
