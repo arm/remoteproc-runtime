@@ -13,8 +13,12 @@ func Kill(containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
-	if err := remoteproc.Stop(state.Annotations[oci.StateMCUResolvedPath]); err != nil {
-		return fmt.Errorf("failed to stop firmware: %w", err)
+	isContainerCurrentlyRunningOnMCU := state.Status == specs.StateRunning
+	if isContainerCurrentlyRunningOnMCU {
+		// Don't want to kill somebody else's remote proc execution
+		if err := remoteproc.Stop(state.Annotations[oci.StateMCUResolvedPath]); err != nil {
+			return fmt.Errorf("failed to stop firmware: %w", err)
+		}
 	}
 	state.Status = specs.StateStopped
 	if err := oci.WriteState(state); err != nil {
