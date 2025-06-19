@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
-	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/devicetree"
 	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -17,16 +16,11 @@ func Create(containerID string, bundlePath string) error {
 		return fmt.Errorf("can't read spec: %w", err)
 	}
 
-	target, err := extractTarget(spec)
-	if err != nil {
-		return fmt.Errorf("can't extract target data: %w", err)
+	mcu, ok := spec.Annotations[oci.SpecMCU]
+	if !ok {
+		return fmt.Errorf("%s not set in bundle annotations", oci.SpecMCU)
 	}
-
-	if err := validateBoardMatchesModel(target.Board); err != nil {
-		return err
-	}
-
-	devicePath, err := remoteproc.FindDevicePath(target.MCU)
+	devicePath, err := remoteproc.FindDevicePath(mcu)
 	if err != nil {
 		return fmt.Errorf("can't determine remoteproc mcu path: %w", err)
 	}
@@ -65,46 +59,11 @@ func Create(containerID string, bundlePath string) error {
 	return nil
 }
 
-func extractTarget(spec *specs.Spec) (target, error) {
-	mcu, ok := spec.Annotations[oci.SpecMCU]
-	if !ok {
-		return target{}, fmt.Errorf("%s not set in bundle annotations", oci.SpecMCU)
-	}
-
-	board, ok := spec.Annotations[oci.SpecBoard]
-	if !ok {
-		return target{}, fmt.Errorf("%s not set in bundle annotations", oci.SpecBoard)
-	}
-
-	return target{
-		MCU:   mcu,
-		Board: board,
-	}, nil
-}
-
-func validateBoardMatchesModel(wantBoard string) error {
-	sysModel, err := devicetree.GetModel()
-	if err != nil {
-		return fmt.Errorf("failed to get model: %w", err)
-	}
-	if sysModel != wantBoard {
-		return fmt.Errorf(
-			"target board %q does not match system model %q", wantBoard, sysModel,
-		)
-	}
-	return nil
-}
-
 func extractFirmwareName(spec *specs.Spec) (string, error) {
 	if len(spec.Process.Args) != 1 {
 		return "", fmt.Errorf("expected exactly one process argument")
 	}
 	return spec.Process.Args[0], nil
-}
-
-type target struct {
-	Board string
-	MCU   string
 }
 
 func validateFirmwareExists(firmwareFilePath string) error {
