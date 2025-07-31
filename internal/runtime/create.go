@@ -31,7 +31,7 @@ func Create(containerID string, bundlePath string) error {
 	}
 	absRootFS := spec.Root.Path
 	if !filepath.IsAbs(absRootFS) {
-		absRootFS = filepath.Join(bundlePath, absRootFS, "foo")
+		absRootFS = filepath.Join(bundlePath, absRootFS)
 	}
 	firmwarePath := filepath.Join(absRootFS, firmwareName)
 	if err := validateFirmwareExists(firmwarePath); err != nil {
