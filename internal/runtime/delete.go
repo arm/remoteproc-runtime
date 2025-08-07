@@ -3,8 +3,8 @@ package runtime
 import (
 	"fmt"
 
-	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
-	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/sysfs/remoteproc"
 )
 
 func Delete(containerID string) error {

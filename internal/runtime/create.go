@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
-	"github.com/Arm-Debug/remoteproc-shim/internal/sysfs/remoteproc"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/sysfs/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 

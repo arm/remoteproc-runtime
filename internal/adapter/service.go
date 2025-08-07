@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Arm-Debug/remoteproc-shim/internal/runtime"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/runtime"
 	eventstypes "github.com/containerd/containerd/api/events"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	ttypes "github.com/containerd/containerd/api/types/task"

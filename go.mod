@@ -1,4 +1,4 @@
-module github.com/Arm-Debug/remoteproc-shim
+module github.com/Arm-Debug/remoteproc-runtime
 
 go 1.23.5
 

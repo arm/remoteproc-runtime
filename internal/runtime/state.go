@@ -3,7 +3,7 @@ package runtime
 import (
 	"fmt"
 
-	"github.com/Arm-Debug/remoteproc-shim/internal/oci"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
