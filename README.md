@@ -98,7 +98,7 @@ Put the following in `/etc/containerd/config.toml`:
 Then, restart `containerd` and tail its logs. For example, assuming you're using `systemd` and `systemd-journald`:
 
 ```sh
-sysctl restart containerd
+sysctemctl restart containerd
 journalctl -u containerd -f
 ```
 
