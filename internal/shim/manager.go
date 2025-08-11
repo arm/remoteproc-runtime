@@ -1,4 +1,4 @@
-package adapter
+package shim
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 	"time"
 
 	apitypes "github.com/containerd/containerd/api/types"
-	"github.com/containerd/containerd/v2/pkg/shim"
+	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
 
-func NewManager(name string) shim.Manager {
+func NewManager(name string) containerdshim.Manager {
 	return manager{name: name}
 }
 
@@ -24,8 +24,8 @@ func (m manager) Name() string {
 	return m.name
 }
 
-func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shim.BootstrapParams, error) {
-	var params shim.BootstrapParams
+func (m manager) Start(ctx context.Context, id string, opts containerdshim.StartOpts) (containerdshim.BootstrapParams, error) {
+	var params containerdshim.BootstrapParams
 	params.Version = 2
 	params.Protocol = "ttrpc"
 
@@ -62,8 +62,8 @@ func (m manager) Start(ctx context.Context, id string, opts shim.StartOpts) (shi
 	return params, nil
 }
 
-func (m manager) Stop(ctx context.Context, id string) (shim.StopStatus, error) {
-	return shim.StopStatus{
+func (m manager) Stop(ctx context.Context, id string) (containerdshim.StopStatus, error) {
+	return containerdshim.StopStatus{
 		ExitedAt: time.Now(),
 		Pid:      os.Getpid(),
 	}, nil

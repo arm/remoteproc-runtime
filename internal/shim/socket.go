@@ -1,4 +1,4 @@
-package adapter
+package shim
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/containerd/containerd/v2/pkg/shim"
+	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
 
 type shimSocket struct {
@@ -23,28 +23,28 @@ func (s *shimSocket) Close() {
 	if s.file != nil {
 		s.file.Close()
 	}
-	_ = shim.RemoveSocket(s.addr)
+	_ = containerdshim.RemoveSocket(s.addr)
 }
 
 var errSocketAlreadyExists = errors.New("socket aready exists")
 
 func newShimSocket(ctx context.Context, path, id string) (*shimSocket, error) {
-	address, err := shim.SocketAddress(ctx, path, id, false)
+	address, err := containerdshim.SocketAddress(ctx, path, id, false)
 	if err != nil {
 		return nil, err
 	}
-	socket, err := shim.NewSocket(address)
+	socket, err := containerdshim.NewSocket(address)
 	if err != nil {
-		if !shim.SocketEaddrinuse(err) {
+		if !containerdshim.SocketEaddrinuse(err) {
 			return nil, fmt.Errorf("create new shim socket: %w", err)
 		}
-		if shim.CanConnect(address) {
+		if containerdshim.CanConnect(address) {
 			return &shimSocket{addr: address}, errSocketAlreadyExists
 		}
-		if err := shim.RemoveSocket(address); err != nil {
+		if err := containerdshim.RemoveSocket(address); err != nil {
 			return nil, fmt.Errorf("can't remove pre-existing socket: %w", err)
 		}
-		if socket, err = shim.NewSocket(address); err != nil {
+		if socket, err = containerdshim.NewSocket(address); err != nil {
 			return nil, fmt.Errorf("failed to create new shim socket after purging pre-existing: %w", err)
 		}
 	}

@@ -1,0 +1,17 @@
+{
+	"ociVersion": "1.2.1",
+	"process": {
+		"user": {
+			"uid": 0,
+			"gid": 0
+		},
+		"args": ["hello_world_cm33.elf"],
+		"cwd": "/"
+	},
+	"root": {
+		"path": "rootfs"
+	},
+	"annotations": {
+		"remoteproc.mcu": "imx-rproc"
+	}
+}

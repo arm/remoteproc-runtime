@@ -1,2 +1,5 @@
-# Added by goreleaser init:
+# goreleaser
 dist/
+
+# make artifacts
+out/

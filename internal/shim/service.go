@@ -1,4 +1,4 @@
-package adapter
+package shim
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	"github.com/containerd/log"
 	"github.com/sirupsen/logrus"
 
-	"github.com/containerd/containerd/v2/pkg/shim"
+	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
 	"github.com/containerd/errdefs"
@@ -46,13 +46,13 @@ func init() {
 			if err != nil {
 				return nil, err
 			}
-			return newTaskService(ic.Context, pp.(shim.Publisher), ss.(shutdown.Service))
+			return newTaskService(ic.Context, pp.(containerdshim.Publisher), ss.(shutdown.Service))
 		},
 	})
 }
 
-func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
-	// The shim.Publisher and shutdown.Service are usually useful for your task service,
+func newTaskService(ctx context.Context, publisher containerdshim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
+	// The containerdshim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
 	service := &remoteprocTaskService{
 		events:   make(chan any, 128),
@@ -71,7 +71,7 @@ func newTaskService(ctx context.Context, publisher shim.Publisher, sd shutdown.S
 }
 
 var (
-	_ = shim.TTRPCService(&remoteprocTaskService{})
+	_ = containerdshim.TTRPCService(&remoteprocTaskService{})
 )
 
 type remoteprocTaskService struct {
@@ -319,7 +319,7 @@ func (s *remoteprocTaskService) send(event any) {
 	s.events <- event
 }
 
-func (s *remoteprocTaskService) forward(ctx context.Context, publisher shim.Publisher) {
+func (s *remoteprocTaskService) forward(ctx context.Context, publisher containerdshim.Publisher) {
 	ns, _ := namespaces.Namespace(ctx)
 	ctx = namespaces.WithNamespace(context.Background(), ns)
 	for e := range s.events {

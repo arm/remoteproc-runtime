@@ -1,4 +1,4 @@
-package adapter
+package shim
 
 import (
 	"context"
