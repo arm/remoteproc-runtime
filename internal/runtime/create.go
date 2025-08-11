@@ -11,7 +11,7 @@ import (
 )
 
 func Create(containerID string, bundlePath string) error {
-	spec, err := oci.ReadSpec(filepath.Join(bundlePath, "config.json"))
+	spec, err := oci.ReadSpec(bundlePath)
 	if err != nil {
 		return fmt.Errorf("can't read spec: %w", err)
 	}

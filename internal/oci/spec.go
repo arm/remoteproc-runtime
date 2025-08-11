@@ -3,12 +3,14 @@ package oci
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func ReadSpec(path string) (*specs.Spec, error) {
-	f, err := os.Open(path)
+func ReadSpec(bundlePath string) (*specs.Spec, error) {
+	specPath := filepath.Join(bundlePath, "config.json")
+	f, err := os.Open(specPath)
 	if err != nil {
 		return nil, err
 	}
