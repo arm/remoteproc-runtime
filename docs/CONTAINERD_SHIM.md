@@ -5,8 +5,14 @@ A [shim for containerd](https://github.com/containerd/containerd/blob/main/core/
 
 ## Build
 
-```sh
-GOOS=linux GOARCH=arm64 make shim
+```shell
+go build ./cmd/containerd-shim-remoteproc-v1
+```
+
+For Linux on Arm:
+
+```shell
+GOOS=linux GOARCH=arm64 go build ./cmd/containerd-shim-remoteproc-v1
 ```
 
 ## Usage

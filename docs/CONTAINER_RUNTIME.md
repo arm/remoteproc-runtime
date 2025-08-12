@@ -4,8 +4,14 @@
 
 ## Build
 
-```sh
-GOOS=linux GOARCH=arm64 make runtime
+```shell
+go build ./cmd/remoteproc-runtime
+```
+
+For Linux on Arm:
+
+```shell
+GOOS=linux GOARCH=arm64 go build ./cmd/remoteproc-runtime
 ```
 
 ## Usage
