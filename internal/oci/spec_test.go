@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/assert"
 	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadSpec(t *testing.T) {
