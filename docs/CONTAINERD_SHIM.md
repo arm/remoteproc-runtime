@@ -113,3 +113,46 @@ If everything works correctly, next attempt to start a container using the shim,
 Jun 16 12:50:50 imx93frdm containerd[1029]: time="2025-06-16T12:50:50.992034270Z" level=debug msg="-> service.Create" payload="{...}" runtime=io.containerd.remoteproc.v1
 Jun 16 12:50:50 imx93frdm containerd[1029]: time="2025-06-16T12:50:50.998694154Z" level=debug msg="<- service.Create" payload="{...}" runtime=io.containerd.remoteproc.v1
 ```
+
+## Testing on a host without remoteproc
+
+You can leverage [Remoteproc Simulator](https://github.com/Arm-Debug/remoteproc-simulator) to test the runtime on any host.
+
+### 1. Build a test docker image
+
+```bash
+docker build ./testdata -t my-test-image
+```
+
+### 2. Create a root directory
+
+```bash
+mkdir -p /tmp/my-root/
+```
+
+### 3. Build shim rooted in the root directory you've created
+
+```bash
+go build -ldflags "\
+    -X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/my-root \
+    " ./cmd/containerd-shim-remoteproc-v1
+```
+
+### 4. Run remoteproc simulator rooted in the same root directory
+
+```bash
+remoteproc-simulator --root /tmp/my-root --device-name fancy-mcu
+```
+
+ℹ️ Note that we're also setting `--device-name` which we'll need to match with the `remoteproc.mcu` annotation.
+
+### 5. Invoke the shim
+
+```bash
+docker run \
+    --runtime io.containerd.remoteproc.v1 \
+    --annotation remoteproc.mcu="fancy-mcu" \
+    my-test-image
+```
+
+⚠️ Recent versions of Docker have an issue, where `Error response from daemon: bind-mount...` is returned when invoking the runtime. This is being investigated, for now you can use `--network=host` as an argument to `docker` command. Similar, but checkpoint related problem is described [on containerd GitHub](https://github.com/containerd/containerd/issues/12141).
