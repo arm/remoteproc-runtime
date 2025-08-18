@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Arm-Debug/remoteproc-runtime/internal/rootpath"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const (
-	stateDir      = "/run/remoteproc"
 	stateFileName = "state.json"
+)
+
+var (
+	stateDir = rootpath.Join("run", "remoteproc")
 )
 
 func NewState(containerID string, bundlePath string) *specs.State {

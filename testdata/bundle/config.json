@@ -12,6 +12,6 @@
 		"path": "rootfs"
 	},
 	"annotations": {
-		"remoteproc.mcu": "imx-rproc"
+		"remoteproc.mcu": "fancy-mcu"
 	}
 }
