@@ -103,7 +103,7 @@ Put the following in `/etc/containerd/config.toml`:
 Then, restart `containerd` and tail its logs. For example, assuming you're using `systemd` and `systemd-journald`:
 
 ```sh
-sysctemctl restart containerd
+systemctl restart containerd
 journalctl -u containerd -f
 ```
 
