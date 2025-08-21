@@ -22,26 +22,26 @@ var (
 	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
 )
 
-func FindDevicePath(mcu string) (string, error) {
+func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read remoteproc directory %s: %w", rprocClassPath, err)
 	}
 
-	availableMCUs := []string{}
+	availableNames := []string{}
 	for _, file := range files {
 		instancePath := filepath.Join(rprocClassPath, file.Name())
 		instanceName, err := readFile(filepath.Join(instancePath, rprocInstanceNameFileName))
 		if err != nil {
 			continue
 		}
-		if instanceName == mcu {
+		if instanceName == name {
 			return instancePath, nil
 		}
-		availableMCUs = append(availableMCUs, instanceName)
+		availableNames = append(availableNames, instanceName)
 	}
 
-	return "", fmt.Errorf("%s is not in the list of available mcus %v", mcu, availableMCUs)
+	return "", fmt.Errorf("%s is not in the list of available remote processors %v", name, availableNames)
 }
 
 type State string

@@ -12,6 +12,6 @@
 		"path": "rootfs"
 	},
 	"annotations": {
-		"remoteproc.mcu": "fancy-mcu"
+		"remoteproc.name": "fancy-mcu"
 	}
 }

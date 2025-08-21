@@ -16,13 +16,13 @@ func TestReadSpec(t *testing.T) {
 		bundlePath := generateBundle(t, &specs.Spec{})
 		_, err := oci.ReadSpec(bundlePath)
 
-		assert.ErrorContains(t, err, "missing remoteproc.mcu in annotations")
+		assert.ErrorContains(t, err, "missing remoteproc.name in annotations")
 	})
 
 	t.Run("it returns container configuration read from given bundle path", func(t *testing.T) {
 		bundlePath := generateBundle(t, &specs.Spec{
 			Annotations: map[string]string{
-				"remoteproc.mcu": "some-path",
+				"remoteproc.name": "some-path",
 			},
 		})
 		_, err := oci.ReadSpec(bundlePath)

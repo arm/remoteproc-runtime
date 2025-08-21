@@ -16,9 +16,9 @@ GOOS=linux GOARCH=arm64 go build ./cmd/remoteproc-runtime
 
 ## Usage
 
-### 1. Determine the target MCU
+### 1. Determine the target processor name
 
-Runtime requires the target mcu passed via `remoteproc.mcu` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
+Runtime requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
 
 ```sh
 # One of /sys/class/remoteproc/.../name, for example:
@@ -27,7 +27,7 @@ cat /sys/class/remoteproc/remoteproc0/name
 
 ### 2. Prepare an OCI bundle
 
-In order to start a container, we need an OCI bundle. An example bundle can be found in `testdata/` directory. It uses `imx-rproc` as the target mcu.
+In order to start a container, we need an OCI bundle. An example bundle can be found in `testdata/` directory. It uses `imx-rproc` as the target processor name.
 
 
 ### 3. Use the runtime
@@ -64,7 +64,7 @@ go build -ldflags "\
 remoteproc-simulator --root /tmp/my-root --device-name fancy-mcu
 ```
 
-ℹ️ Note that we're also setting `--device-name` to match the `remoteproc.mcu` annotation from the test bundle we're going to use.
+ℹ️ Note that we're also setting `--device-name` to match the `remoteproc.name` annotation from the test bundle we're going to use.
 
 ### 4. Invoke the runtime
 

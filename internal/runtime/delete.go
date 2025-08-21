@@ -13,7 +13,7 @@ func Delete(containerID string) error {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
 
-	_ = remoteproc.RemoveFirmware(state.Annotations[oci.StateFirmwareName])
+	_ = remoteproc.RemoveFirmware(state.Annotations[oci.StateFirmware])
 
 	if err := oci.RemoveState(containerID); err != nil {
 		return fmt.Errorf("failed to remove state: %w", err)

@@ -14,8 +14,8 @@ func Start(containerID string) error {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
 	if err := remoteproc.SetFirmwareAndStart(
-		state.Annotations[oci.StateMCUResolvedPath],
-		state.Annotations[oci.StateFirmwareName],
+		state.Annotations[oci.StateResolvedPath],
+		state.Annotations[oci.StateFirmware],
 	); err != nil {
 		return fmt.Errorf("failed to run firmware: %w", err)
 	}

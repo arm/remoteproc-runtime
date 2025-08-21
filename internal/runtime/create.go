@@ -16,13 +16,13 @@ func Create(containerID string, bundlePath string) error {
 		return fmt.Errorf("can't read spec: %w", err)
 	}
 
-	mcu, ok := spec.Annotations[oci.SpecMCU]
+	name, ok := spec.Annotations[oci.SpecName]
 	if !ok {
-		return fmt.Errorf("%s not set in bundle annotations", oci.SpecMCU)
+		return fmt.Errorf("%s not set in bundle annotations", oci.SpecName)
 	}
-	devicePath, err := remoteproc.FindDevicePath(mcu)
+	devicePath, err := remoteproc.FindDevicePath(name)
 	if err != nil {
-		return fmt.Errorf("can't determine remoteproc mcu path: %w", err)
+		return fmt.Errorf("can't determine remoteproc path: %w", err)
 	}
 
 	firmwareName, err := extractFirmwareName(spec)
@@ -49,8 +49,8 @@ func Create(containerID string, bundlePath string) error {
 	}()
 
 	state := oci.NewState(containerID, bundlePath)
-	state.Annotations[oci.StateMCUResolvedPath] = devicePath
-	state.Annotations[oci.StateFirmwareName] = storedFirmwareName
+	state.Annotations[oci.StateResolvedPath] = devicePath
+	state.Annotations[oci.StateFirmware] = storedFirmwareName
 	if err := oci.WriteState(state); err != nil {
 		return err
 	}

@@ -7,18 +7,18 @@ import (
 )
 
 const (
-	SpecMCU = "remoteproc.mcu"
+	SpecName = "remoteproc.name"
 
-	StateMCUResolvedPath = "remoteproc.mcu-resolved-path"
-	StateFirmwareName    = "remoteproc.firmware-name"
+	StateResolvedPath = "remoteproc.resolved-path"
+	StateFirmware     = "remoteproc.firmware"
 )
 
 func validateSpecAnnotations(spec *specs.Spec) error {
-	return validateAnnotationsExist(spec.Annotations, SpecMCU)
+	return validateAnnotationsExist(spec.Annotations, SpecName)
 }
 
 func validateStateAnnotations(state *specs.State) error {
-	return validateAnnotationsExist(state.Annotations, StateMCUResolvedPath, StateFirmwareName)
+	return validateAnnotationsExist(state.Annotations, StateResolvedPath, StateFirmware)
 }
 
 func validateAnnotationsExist(annotations map[string]string, keys ...string) error {

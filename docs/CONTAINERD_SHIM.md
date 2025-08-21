@@ -23,7 +23,7 @@ In order to start a container, we need an image. The image needs to contain a bi
 
 ##### Example
 
-Assuming a `hello.elf` binary we built for our MCU, `Dockerfile` could look like this:
+Assuming a `hello.elf` binary we built for our processor, `Dockerfile` could look like this:
 
 
 ```Dockerfile
@@ -32,9 +32,9 @@ ADD hello.elf /
 ENTRYPOINT ["hello.elf"]
 ```
 
-### 2. Determine the target MCU
+### 2. Determine the target processor name
 
-In addition to the image, shim requires the target mcu passed via `remoteproc.mcu` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
+In addition to the image, shim requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
 
 ```sh
 # One of /sys/class/remoteproc/.../name, for example:
@@ -54,7 +54,7 @@ Copy the `containerd-shim-remoteproc-v1` binary to `/usr/local/bin`.
 ```sh
 docker run \
     --runtime io.containerd.remoteproc.v1 \
-    --annotation remoteproc.mcu="<target-mcu>" \
+    --annotation remoteproc.name="<target-processor-name>" \
     <image-name>
 ```
 </details>
@@ -68,7 +68,7 @@ services:
     image: <image-name>
     runtime: io.containerd.remoteproc.v1
     annotations:
-        remoteproc.mcu: <target-mcu>
+        remoteproc.name: <target-processor-name>
 ```
 
 And then
@@ -84,7 +84,7 @@ docker compose up
 ```sh
 ctr run \
     --runtime io.containerd.remoteproc.v1 \
-    --annotation remoteproc.mcu="<target-mcu>" \
+    --annotation remoteproc.name="<target-processor-name>" \
     <image-name> <container-name>
 ```
 </details>
@@ -144,14 +144,14 @@ go build -ldflags "\
 remoteproc-simulator --root /tmp/my-root --device-name fancy-mcu
 ```
 
-ℹ️ Note that we're also setting `--device-name` which we'll need to match with the `remoteproc.mcu` annotation.
+ℹ️ Note that we're also setting `--device-name` which we'll need to match with the `remoteproc.name` annotation.
 
 ### 5. Invoke the shim
 
 ```bash
 docker run \
     --runtime io.containerd.remoteproc.v1 \
-    --annotation remoteproc.mcu="fancy-mcu" \
+    --annotation remoteproc.name="fancy-mcu" \
     my-test-image
 ```
 
