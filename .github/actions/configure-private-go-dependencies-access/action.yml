@@ -1,0 +1,28 @@
+name: "Configure access to private Go dependencies"
+inputs:
+  app_id:
+    description: "GitHub App's APP_ID"
+    required: true
+  private_key:
+    description: "GitHub App's PRIVATE_KEY"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - uses: getsentry/action-github-app-token@a0061014b82a6a5d6aeeb3b824aced47e3c3a7ef
+      id: get_app_token
+      with:
+        app_id: ${{ inputs.app_id }}
+        private_key: ${{ inputs.private_key }}
+
+    - name: Configure git to use GitHub token
+      env:
+        GITHUB_TOKEN: ${{ steps.get_app_token.outputs.token }}
+      run: |
+        git config --global --add url."https://oauth2:$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
+      shell: bash
+
+    - name: Skip go proxy
+      run: |
+        echo "GOPRIVATE=github.com/Arm-Debug/*" >> $GITHUB_ENV
+      shell: bash

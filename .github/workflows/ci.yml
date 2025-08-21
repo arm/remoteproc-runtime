@@ -16,20 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-    
+
+    - uses: ./.github/actions/configure-private-go-dependencies-access
+      with:
+        app_id: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_APP_ID }}
+        private_key: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_PRIVATE_KEY }}
+
     - name: Download dependencies
       run: go mod download
-    
+
     - name: Run tests
       run: go test -v -race ./...
-    
+
     - name: Run vet
       run: go vet ./...
-    
+
     - name: Check formatting
       run: |
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
