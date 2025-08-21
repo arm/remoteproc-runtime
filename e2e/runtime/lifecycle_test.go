@@ -13,7 +13,7 @@ import (
 func TestContainerLifecycle(t *testing.T) {
 	rootDir := t.TempDir()
 
-	simConfig := simulator.Config{RootDir: rootDir, DeviceIndex: 1, DeviceName: "fancy-mcu"}
+	simConfig := simulator.Config{RootDir: rootDir, Index: 1, Name: "fancy-mcu"}
 	sim, err := simulator.NewRemoteproc(simConfig)
 	if err != nil {
 		t.Fatalf("failed to run simulator: %s", err)

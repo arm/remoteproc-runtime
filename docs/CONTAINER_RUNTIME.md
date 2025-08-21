@@ -61,10 +61,10 @@ go build -ldflags "\
 ### 3. Run remoteproc simulator rooted in the same root directory
 
 ```bash
-remoteproc-simulator --root /tmp/my-root --device-name fancy-mcu
+remoteproc-simulator --root-dir /tmp/my-root --name fancy-mcu
 ```
 
-ℹ️ Note that we're also setting `--device-name` to match the `remoteproc.name` annotation from the test bundle we're going to use.
+ℹ️ Note that we're also setting `--name` to match the `remoteproc.name` annotation from the test bundle we're going to use.
 
 ### 4. Invoke the runtime
 

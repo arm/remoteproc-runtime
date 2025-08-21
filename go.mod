@@ -3,7 +3,7 @@ module github.com/Arm-Debug/remoteproc-runtime
 go 1.25.0
 
 require (
-	github.com/Arm-Debug/remoteproc-simulator v0.0.3
+	github.com/Arm-Debug/remoteproc-simulator v0.0.4
 	github.com/containerd/containerd/api v1.9.0
 	github.com/containerd/containerd/v2 v2.1.1
 	github.com/containerd/errdefs v1.0.0

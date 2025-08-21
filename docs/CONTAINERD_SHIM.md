@@ -141,10 +141,10 @@ go build -ldflags "\
 ### 4. Run remoteproc simulator rooted in the same root directory
 
 ```bash
-remoteproc-simulator --root /tmp/my-root --device-name fancy-mcu
+remoteproc-simulator --root-dir /tmp/my-root --name fancy-mcu
 ```
 
-ℹ️ Note that we're also setting `--device-name` which we'll need to match with the `remoteproc.name` annotation.
+ℹ️ Note that we're also setting `--name` which we'll need to match with the `remoteproc.name` annotation.
 
 ### 5. Invoke the shim
 
