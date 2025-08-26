@@ -24,12 +24,3 @@ func findRepoRootDir() (string, error) {
 		dir = parent
 	}
 }
-
-func mustRepoRootJoin(segments ...string) string {
-	repoRoot, err := findRepoRootDir()
-	if err != nil {
-		panic("can't determine repo root")
-	}
-	allSegments := append([]string{repoRoot}, segments...)
-	return filepath.Join(allSegments...)
-}

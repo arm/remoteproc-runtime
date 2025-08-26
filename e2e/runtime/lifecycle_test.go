@@ -12,8 +12,9 @@ import (
 
 func TestContainerLifecycle(t *testing.T) {
 	rootDir := t.TempDir()
+	deviceName := "fancy-mcu"
 
-	simConfig := simulator.Config{RootDir: rootDir, Index: 1, Name: "fancy-mcu"}
+	simConfig := simulator.Config{RootDir: rootDir, Index: 1, Name: deviceName}
 	sim, err := simulator.NewRemoteproc(simConfig)
 	if err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
@@ -24,7 +25,10 @@ func TestContainerLifecycle(t *testing.T) {
 	require.NoError(t, err)
 
 	containerName := "test-container"
-	_, err = invokeRuntime(bin, "create", "--bundle", shared.TestBundlePath, containerName)
+
+	bundlePath := t.TempDir()
+	require.NoError(t, shared.GenerateBundle(bundlePath, deviceName))
+	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
 	require.NoError(t, err)
 	assertContainerStatus(t, bin, containerName, specs.StateCreated)
 	shared.AssertRemoteprocState(t, deviceDir, "offline")
