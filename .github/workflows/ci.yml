@@ -29,8 +29,11 @@ jobs:
     - name: Download dependencies
       run: go mod download
 
-    - name: Run tests
-      run: go test -v -race ./...
+    - name: Run fast tests
+      run: go test -v -race ./internal/...
+
+    - name: Run e2e tests
+      run: go test -v ./e2e/...
 
     - name: Run vet
       run: go vet ./...
