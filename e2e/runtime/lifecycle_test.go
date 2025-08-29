@@ -27,7 +27,7 @@ func TestContainerLifecycle(t *testing.T) {
 	containerName := "test-container"
 
 	bundlePath := t.TempDir()
-	require.NoError(t, shared.GenerateBundle(bundlePath, deviceName))
+	require.NoError(t, generateBundle(bundlePath, deviceName))
 	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
 	require.NoError(t, err)
 	assertContainerStatus(t, bin, containerName, specs.StateCreated)

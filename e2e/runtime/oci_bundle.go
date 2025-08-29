@@ -1,4 +1,4 @@
-package shared
+package runtime
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func GenerateBundle(targetDir string, deviceName string) error {
+func generateBundle(targetDir string, deviceName string) error {
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
