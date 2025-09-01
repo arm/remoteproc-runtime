@@ -9,7 +9,7 @@ import (
 )
 
 func buildRuntimeBinary(binOutDir string, rootPathPrefix string) (string, error) {
-	return shared.BuildBinary("remoteproc-runtime", binOutDir, rootPathPrefix)
+	return shared.BuildBinary("remoteproc-runtime", binOutDir, rootPathPrefix, nil)
 }
 
 func invokeRuntime(bin string, args ...string) ([]byte, error) {

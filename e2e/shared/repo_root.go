@@ -24,3 +24,11 @@ func findRepoRootDir() (string, error) {
 		dir = parent
 	}
 }
+
+func MustFindRepoRoot() string {
+	repoRoot, err := findRepoRootDir()
+	if err != nil {
+		panic(err)
+	}
+	return repoRoot
+}

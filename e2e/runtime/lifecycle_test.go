@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -11,23 +12,20 @@ import (
 )
 
 func TestContainerLifecycle(t *testing.T) {
-	rootDir := t.TempDir()
-	deviceName := "fancy-mcu"
-
-	simConfig := simulator.Config{RootDir: rootDir, Index: 1, Name: deviceName}
+	simConfig := simulator.Config{RootDir: t.TempDir(), Index: 1, Name: "fancy-mcu"}
 	sim, err := simulator.NewRemoteproc(simConfig)
 	if err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
 	defer sim.Close()
-	deviceDir := filepath.Join(rootDir, "sys", "class", "remoteproc", "remoteproc1")
-	bin, err := buildRuntimeBinary(t.TempDir(), rootDir)
+	deviceDir := filepath.Join(simConfig.RootDir, "sys", "class", "remoteproc", fmt.Sprintf("remoteproc%d", simConfig.Index))
+	bin, err := buildRuntimeBinary(t.TempDir(), simConfig.RootDir)
 	require.NoError(t, err)
 
 	containerName := "test-container"
 
 	bundlePath := t.TempDir()
-	require.NoError(t, generateBundle(bundlePath, deviceName))
+	require.NoError(t, generateBundle(bundlePath, simConfig.Name))
 	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
 	require.NoError(t, err)
 	assertContainerStatus(t, bin, containerName, specs.StateCreated)

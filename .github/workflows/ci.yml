@@ -32,6 +32,16 @@ jobs:
     - name: Run fast tests
       run: go test -v -race ./internal/...
 
+    - name: Set up Lima
+      uses: lima-vm/lima-actions/setup@03b96d61959e83b2c737e44162c3088e81de0886 # v1.0.1
+      id: lima-actions-setup
+
+    - name: Cache ~/.cache/lima
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/lima
+        key: lima-${{ steps.lima-actions-setup.outputs.version }}
+
     - name: Run e2e tests
       run: go test -v ./e2e/...
 
