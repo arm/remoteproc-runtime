@@ -8,7 +8,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func generateBundle(targetDir string, deviceName string) error {
+func generateBundle(targetDir string, remoteprocName string) error {
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
@@ -29,7 +29,7 @@ func generateBundle(targetDir string, deviceName string) error {
 		},
 		Root: &specs.Root{Path: bundleRoot},
 		Annotations: map[string]string{
-			"remoteproc.name": deviceName,
+			"remoteproc.name": remoteprocName,
 		},
 	}
 

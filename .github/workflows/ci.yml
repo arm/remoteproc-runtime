@@ -21,16 +21,30 @@ jobs:
       with:
         go-version-file: 'go.mod'
 
-    - uses: ./.github/actions/configure-private-go-dependencies-access
-      with:
-        app_id: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_APP_ID }}
-        private_key: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_PRIVATE_KEY }}
-
     - name: Download dependencies
       run: go mod download
 
     - name: Run fast tests
       run: go test -v -race ./internal/...
+
+    - uses: getsentry/action-github-app-token@a0061014b82a6a5d6aeeb3b824aced47e3c3a7ef
+      id: get_app_token
+      with:
+        app_id: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_APP_ID }}
+        private_key: ${{ secrets.REMOTEPROC_RUNTIME_REPO_ACCESS_PRIVATE_KEY }}
+
+    - name: Download Remoteproc Simulator
+      uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
+      with:
+        repository: Arm-Debug/remoteproc-simulator
+        latest: true
+        fileName: remoteproc-simulator_*_linux_amd64.tar.gz
+        out-file-path: remoteproc-simulator
+        extract: true
+        token: ${{ steps.get_app_token.outputs.token }}
+
+    - name: Install Remoteproc Simulator
+      run: echo "$PWD/remoteproc-simulator" >> $GITHUB_PATH
 
     - name: Set up Lima
       uses: lima-vm/lima-actions/setup@03b96d61959e83b2c737e44162c3088e81de0886 # v1.0.1

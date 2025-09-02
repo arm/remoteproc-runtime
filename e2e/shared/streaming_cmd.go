@@ -1,4 +1,4 @@
-package shim
+package shared
 
 import (
 	"bufio"

@@ -4,34 +4,29 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Arm-Debug/remoteproc-simulator/pkg/simulator"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRemoteprocNameMismatch(t *testing.T) {
-	simConfig := simulator.Config{
-		RootDir: t.TempDir(),
-		Index:   1,
-		Name:    "some-processor",
-	}
-
-	shimBin, err := buildShimBinary(t.TempDir(), simConfig.RootDir)
+	rootDir := t.TempDir()
+	shimBin, err := buildShimBinary(t.TempDir(), rootDir)
 	require.NoError(t, err)
 
-	sim, err := simulator.NewRemoteproc(simConfig)
-	if err != nil {
-		t.Fatalf("failed to run simulator: %s", err)
-	}
-
 	vm, err := NewLimaVM(
-		simConfig.RootDir,
+		rootDir,
 		shimBin,
 		"../../testdata/test-image.tar",
 	)
 	require.NoError(t, err)
 	defer vm.Cleanup()
-	defer sim.Close()
+
+	sim := shared.NewRemoteprocSimulator(rootDir).WithName("a-processor")
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer sim.Stop()
 
 	_, stderr, err := vm.RunCommand(
 		"docker", "run", "-d",

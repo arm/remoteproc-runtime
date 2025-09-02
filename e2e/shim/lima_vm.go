@@ -19,7 +19,7 @@ type LimaVM struct {
 
 func NewLimaVM(mountDir, absShimBin, absImageTar string) (LimaVM, error) {
 	cmd := exec.Command(prepareLimaVMScript, mountDir, absShimBin, absImageTar)
-	streamer := NewStreamingCmd(cmd).WithPrefix("prepare-vm")
+	streamer := shared.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 
 	if err := streamer.Start(); err != nil {
 		return LimaVM{}, fmt.Errorf("failed to start prepare script: %w", err)

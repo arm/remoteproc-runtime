@@ -2,47 +2,45 @@ package shim
 
 import (
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/shared"
-	"github.com/Arm-Debug/remoteproc-simulator/pkg/simulator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestContainerLifecycle(t *testing.T) {
-	simConfig := simulator.Config{RootDir: t.TempDir(), Index: 1, Name: "yolo-device"}
-	shimBin, err := buildShimBinary(t.TempDir(), simConfig.RootDir)
+func TestDockerContainerLifecycle(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "yolo-device"
+	shimBin, err := buildShimBinary(t.TempDir(), rootDir)
 	require.NoError(t, err)
 
 	vm, err := NewLimaVM(
-		simConfig.RootDir,
+		rootDir,
 		shimBin,
 		"../../testdata/test-image.tar",
 	)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
-	sim, err := simulator.NewRemoteproc(simConfig)
-	if err != nil {
+	sim := shared.NewRemoteprocSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Close()
+	defer sim.Stop()
 
-	deviceDir := filepath.Join(simConfig.RootDir, "sys", "class", "remoteproc", fmt.Sprintf("remoteproc%d", simConfig.Index))
-	shared.AssertRemoteprocState(t, deviceDir, "offline")
+	shared.AssertRemoteprocState(t, sim.DeviceDir(), "offline")
 
 	containerID, stderr, err := vm.RunCommand(
 		"docker", "run", "-d",
 		"--network=host",
 		"--runtime", "io.containerd.remoteproc.v1",
-		"--annotation", fmt.Sprintf("remoteproc.name=%s", simConfig.Name),
+		"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 		"test-image")
 	require.NoError(t, err, "stderr: %s", stderr)
-	shared.AssertRemoteprocState(t, deviceDir, "running")
+	shared.AssertRemoteprocState(t, sim.DeviceDir(), "running")
 
 	_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
-	shared.AssertRemoteprocState(t, deviceDir, "offline")
+	shared.AssertRemoteprocState(t, sim.DeviceDir(), "offline")
 }

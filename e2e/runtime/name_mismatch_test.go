@@ -3,23 +3,19 @@ package runtime
 import (
 	"testing"
 
-	"github.com/Arm-Debug/remoteproc-simulator/pkg/simulator"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRemoteprocNameMismatch(t *testing.T) {
-	simConfig := simulator.Config{
-		RootDir: t.TempDir(),
-		Index:   1,
-		Name:    "some-processor",
-	}
-	sim, err := simulator.NewRemoteproc(simConfig)
-	if err != nil {
+func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
+	rootDir := t.TempDir()
+	sim := shared.NewRemoteprocSimulator(rootDir).WithName("some-processor")
+	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Close()
-	bin, err := buildRuntimeBinary(t.TempDir(), simConfig.RootDir)
+	defer sim.Stop()
+	bin, err := buildRuntimeBinary(t.TempDir(), rootDir)
 	require.NoError(t, err)
 
 	bundlePath := t.TempDir()

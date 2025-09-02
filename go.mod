@@ -3,7 +3,6 @@ module github.com/Arm-Debug/remoteproc-runtime
 go 1.25.0
 
 require (
-	github.com/Arm-Debug/remoteproc-simulator v0.0.4
 	github.com/containerd/containerd/api v1.9.0
 	github.com/containerd/containerd/v2 v2.1.1
 	github.com/containerd/errdefs v1.0.0
@@ -27,7 +26,6 @@ require (
 	github.com/containerd/go-runc v1.1.0 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
