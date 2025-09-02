@@ -5,8 +5,12 @@ Under the hood, it leverages [remoteproc sysfs](https://www.kernel.org/doc/Docum
 
 It consists of two components:
 
-1. <strong>[Containerd shim](./docs/CONTAINERD_SHIM.md)</strong>
+1. <strong>Containerd shim</strong>
    To be used with runtime managers leveraging containerd (Docker, K3S, etc).
-2. <strong>[Container runtime](./docs/CONTAINER_RUNTIME.md)</strong> (⚠️ WIP)
+2. <strong>Container runtime</strong> (⚠️ WIP)
    To be used with runtime managers integrating with OCI runtime directly (Podman).
 
+## Documentation
+
+- [Usage Guide](USAGE.md) - How to use the runtime and shim
+- [Development Guide](DEVELOPMENT.md) - Building and testing instructions
