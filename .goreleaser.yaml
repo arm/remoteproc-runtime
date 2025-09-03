@@ -20,6 +20,10 @@ builds:
 archives:
   - formats: [tar.gz]
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - USAGE.md
+      - DEVELOPMENT.md
 
 checksum:
   name_template: "checksums.txt"
