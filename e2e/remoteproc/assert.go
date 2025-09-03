@@ -1,4 +1,4 @@
-package shared
+package remoteproc
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func AssertRemoteprocState(t testing.TB, deviceDir string, wantState string) {
+func AssertState(t testing.TB, deviceDir string, wantState string) {
 	t.Helper()
 	const waitFor = 500 * time.Millisecond
 	const tickEvery = 100 * time.Millisecond

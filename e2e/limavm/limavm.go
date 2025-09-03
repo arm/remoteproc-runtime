@@ -1,4 +1,4 @@
-package shim
+package limavm
 
 import (
 	"bytes"
@@ -7,19 +7,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/shared"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/repo"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/runner"
 )
 
-var prepareLimaVMScript = filepath.Join(shared.MustFindRepoRoot(), "e2e", "shim", "prepare-lima-vm.sh")
-var teardownLimaVMScript = filepath.Join(shared.MustFindRepoRoot(), "e2e", "shim", "teardown-lima-vm.sh")
+var prepareLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "prepare-lima-vm.sh")
+var teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "teardown-lima-vm.sh")
 
 type LimaVM struct {
 	name string
 }
 
-func NewLimaVM(mountDir, absShimBin, absImageTar string) (LimaVM, error) {
+func New(mountDir, absShimBin, absImageTar string) (LimaVM, error) {
 	cmd := exec.Command(prepareLimaVMScript, mountDir, absShimBin, absImageTar)
-	streamer := shared.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
+	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 
 	if err := streamer.Start(); err != nil {
 		return LimaVM{}, fmt.Errorf("failed to start prepare script: %w", err)

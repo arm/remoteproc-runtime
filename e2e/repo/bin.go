@@ -1,4 +1,4 @@
-package shared
+package repo
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 func BuildBinary(binToBuild string, binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
 	bin := filepath.Join(binOutDir, binToBuild)
 	rootPathLDFlag := fmt.Sprintf("-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=%s", rootPathPrefix)
-	repoRootDir, err := findRepoRootDir()
+	repoRootDir, err := findRootDir()
 	if err != nil {
 		return "", err
 	}

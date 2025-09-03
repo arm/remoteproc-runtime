@@ -1,4 +1,4 @@
-package shared
+package runner
 
 import (
 	"bufio"

@@ -1,4 +1,4 @@
-package shared
+package repo
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func findRepoRootDir() (string, error) {
+func findRootDir() (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current directory: %w", err)
@@ -25,8 +25,8 @@ func findRepoRootDir() (string, error) {
 	}
 }
 
-func MustFindRepoRoot() string {
-	repoRoot, err := findRepoRootDir()
+func MustFindRootDir() string {
+	repoRoot, err := findRootDir()
 	if err != nil {
 		panic(err)
 	}
