@@ -18,8 +18,18 @@ type LimaVM struct {
 	name string
 }
 
-func New(mountDir, absShimBin, absImageTar string) (LimaVM, error) {
-	cmd := exec.Command(prepareLimaVMScript, mountDir, absShimBin, absImageTar)
+var BinBuildEnv = map[string]string{
+	"GOOS": "linux",
+}
+
+func New(mountDir string, bins repo.Bins, absImageTar string) (LimaVM, error) {
+	cmd := exec.Command(
+		prepareLimaVMScript,
+		mountDir,
+		string(bins.Runtime),
+		string(bins.Shim),
+		absImageTar,
+	)
 	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 
 	if err := streamer.Start(); err != nil {

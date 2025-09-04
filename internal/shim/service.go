@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/runtime"
 	eventstypes "github.com/containerd/containerd/api/events"
 	taskAPI "github.com/containerd/containerd/api/runtime/task/v2"
 	ttypes "github.com/containerd/containerd/api/types/task"
@@ -95,7 +94,7 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 	if err := mount.All(toMount, rootFS); err != nil {
 		return nil, fmt.Errorf("failed to mount rootfs: %w", err)
 	}
-	err := runtime.Create(r.ID, r.Bundle)
+	err := executeCreate(r.ID, r.Bundle)
 	if err != nil {
 		if err := mount.UnmountMounts(toMount, rootFS, 0); err != nil {
 			log.G(ctx).WithError(err).Warn("failed to cleanup rootfs mount")
@@ -133,7 +132,7 @@ func listMounts(req *taskAPI.CreateTaskRequest) []mount.Mount {
 // Start the primary user process inside the container
 func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartRequest) (*taskAPI.StartResponse, error) {
 	s.logPayload("-> service.Start", r)
-	err := runtime.Start(r.ID)
+	err := executeStart(r.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +150,7 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 // Delete a process or container
 func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
 	s.logPayload("-> service.Delete", r)
-	if err := runtime.Delete(r.ID); err != nil {
+	if err := executeDelete(r.ID); err != nil {
 		return nil, err
 	}
 	s.send(&eventstypes.TaskDelete{
@@ -182,7 +181,7 @@ func (s *remoteprocTaskService) ResizePty(ctx context.Context, r *taskAPI.Resize
 // State returns runtime state of a process
 func (s *remoteprocTaskService) State(ctx context.Context, r *taskAPI.StateRequest) (*taskAPI.StateResponse, error) {
 	s.logPayload("-> service.State", r)
-	state, err := runtime.State(r.ID)
+	state, err := executeState(r.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +224,7 @@ func (s *remoteprocTaskService) Resume(ctx context.Context, r *taskAPI.ResumeReq
 // Kill a process
 func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
 	s.logPayload("-> service.Kill", r)
-	err := runtime.Kill(r.ID)
+	err := executeKill(r.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +301,7 @@ func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-ticker.C:
-			state, err := runtime.State(r.ID)
+			state, err := executeState(r.ID)
 			if err != nil {
 				return nil, err
 			}

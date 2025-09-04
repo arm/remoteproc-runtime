@@ -14,14 +14,10 @@ import (
 func TestDockerContainerLifecycle(t *testing.T) {
 	rootDir := t.TempDir()
 	remoteprocName := "yolo-device"
-	shimBin, err := buildShimBinary(t.TempDir(), rootDir)
+	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.New(
-		rootDir,
-		shimBin,
-		"../testdata/test-image.tar",
-	)
+	vm, err := limavm.New(rootDir, bins, "../testdata/test-image.tar")
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -49,14 +45,10 @@ func TestDockerContainerLifecycle(t *testing.T) {
 
 func TestRemoteprocNameMismatch(t *testing.T) {
 	rootDir := t.TempDir()
-	shimBin, err := buildShimBinary(t.TempDir(), rootDir)
+	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.New(
-		rootDir,
-		shimBin,
-		"../testdata/test-image.tar",
-	)
+	vm, err := limavm.New(rootDir, bins, "../testdata/test-image.tar")
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -74,11 +66,4 @@ func TestRemoteprocNameMismatch(t *testing.T) {
 		"test-image")
 	assert.Error(t, err)
 	assert.Contains(t, stderr, "other-processor is not in the list of available remote processors")
-}
-
-func buildShimBinary(binOutDir string, rootPathPrefix string) (string, error) {
-	env := map[string]string{
-		"GOOS": "linux",
-	}
-	return repo.BuildBinary("containerd-shim-remoteproc-v1", binOutDir, rootPathPrefix, env)
 }

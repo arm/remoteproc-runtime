@@ -24,7 +24,7 @@ func TestRuntimeContainerLifecycle(t *testing.T) {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
 	defer sim.Stop()
-	bin, err := buildRuntimeBinary(t.TempDir(), rootDir)
+	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
 	containerName := "test-container"
@@ -57,7 +57,7 @@ func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
 	defer sim.Stop()
-	bin, err := buildRuntimeBinary(t.TempDir(), rootDir)
+	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
 	bundlePath := t.TempDir()
@@ -66,7 +66,7 @@ func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
 	assert.ErrorContains(t, err, "other-processor is not in the list of available remote processors")
 }
 
-func assertContainerStatus(t testing.TB, bin string, containerName string, wantStatus specs.ContainerState) {
+func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	out, err := invokeRuntime(bin, "state", containerName)
 	require.NoError(t, err)
@@ -111,12 +111,8 @@ func generateBundle(targetDir string, remoteprocName string) error {
 	return nil
 }
 
-func buildRuntimeBinary(binOutDir string, rootPathPrefix string) (string, error) {
-	return repo.BuildBinary("remoteproc-runtime", binOutDir, rootPathPrefix, nil)
-}
-
-func invokeRuntime(bin string, args ...string) ([]byte, error) {
-	cmd := exec.Command(bin, args...)
+func invokeRuntime(bin repo.RuntimeBin, args ...string) ([]byte, error) {
+	cmd := exec.Command(string(bin), args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

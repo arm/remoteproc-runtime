@@ -10,12 +10,18 @@ IMAGE_TAR=""
 usage() {
     echo "Usage: $0 <mount-dir> <shim-binary> <image-tar>" >&2
     echo "  mount-dir:        Directory attached in the vm" >&2
+    echo "  runtime-binary:   Path to remoteproc-runtime binary" >&2
     echo "  shim-binary:      Path to containerd-shim-remoteproc-v1 binary" >&2
     echo "  image-tar:        Path to Docker image tar file to load" >&2
     exit 1
 }
 
 validate_inputs() {
+    if [ ! -f "$RUNTIME_BINARY" ]; then
+        echo "Error: Runtime binary not found: $RUNTIME_BINARY" >&2
+        exit 1
+    fi
+
     if [ ! -f "$SHIM_BINARY" ]; then
         echo "Error: Shim binary not found: $SHIM_BINARY" >&2
         exit 1
@@ -96,13 +102,14 @@ load_docker_image() {
 }
 
 main() {
-    if [ $# -ne 3 ]; then
+    if [ $# -ne 4 ]; then
         usage
     fi
 
     MOUNT_DIR="$1"
-    SHIM_BINARY="$2"
-    IMAGE_TAR="$3"
+    RUNTIME_BINARY="$2"
+    SHIM_BINARY="$3"
+    IMAGE_TAR="$4"
 
     validate_inputs
 
@@ -113,6 +120,7 @@ main() {
     start_vm
 
     install_binary "$SHIM_BINARY" "containerd-shim-remoteproc-v1"
+    install_binary "$RUNTIME_BINARY" "remoteproc-runtime"
 
     load_docker_image
 

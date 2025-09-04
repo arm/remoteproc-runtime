@@ -66,12 +66,15 @@ Useful for development without access to hardware with Remoteproc support.
 
 ⚠️ Recent versions of Docker have an issue, where `Error response from daemon: bind-mount...` is returned when invoking the runtime. This is being investigated, for now you can use `--network=host` as an argument to `docker` command. Similar, but checkpoint related problem is described [on containerd GitHub](https://github.com/containerd/containerd/issues/12141).
 
-1. **Build and install the shim with custom root**
+1. **Build and install the shim and runtime with custom root**
+
     ```bash
+    go build ./cmd/containerd-shim-remoteproc-v1
     go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
-        ./cmd/containerd-shim-remoteproc-v1
+        ./cmd/remoteproc-runtime
     ```
-    See "Install the shim" in [Usage Guide](USAGE.md).
+
+    See "Install the shim and runtime" in [Usage Guide](USAGE.md).
 
 1. **Build the test image** 
 

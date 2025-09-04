@@ -10,11 +10,11 @@ To try our Remoteproc runtime, you need one of the following devices:
 
 ## Containerd Shim
 
-1. **Install the shim**
+1. **Install the shim and runtime**
 
-    The simples way is to copy the `containerd-shim-remoteproc-v1` binary to `/usr/local/bin`.
+    The simplest way is to make the `containerd-shim-remoteproc-v1` and `remoteproc-runtime` available in your `$PATH`.
 
-    ℹ️ Install the shim on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `docker`, `k3s`, or other container runtimes, install the shim on the remote machine where containerd is actually executing the containers.
+    ℹ️ Install both binaries on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `docker`, `k3s`, or other container runtimes, install the binaries on the remote machine where containerd is actually executing the containers.
 
 1. **Prepare a container image**
 
