@@ -22,8 +22,7 @@ archives:
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
-      - USAGE.md
-      - DEVELOPMENT.md
+      - docs/*
 
 checksum:
   name_template: "checksums.txt"

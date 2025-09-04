@@ -1,5 +1,13 @@
 # Usage
 
+## Prerequisites
+
+To try our Remoteproc runtime, you need one of the following devices:
+1. Physical hardware with remoteproc support, for example:
+    - [NXP's i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
+    - [ST's STM32MP257F-DK](https://www.st.com/en/evaluation-tools/stm32mp257f-dk.html)
+2. Corellium Virtual Device [pre-configured with our kernel](./CORELLIUM_USAGE.md)
+
 ## Containerd Shim
 
 1. **Install the shim**

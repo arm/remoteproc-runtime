@@ -12,5 +12,5 @@ It consists of two components:
 
 ## Documentation
 
-- [Usage Guide](USAGE.md) - How to use the runtime and shim
-- [Development Guide](DEVELOPMENT.md) - Building and testing instructions
+- [Usage Guide](docs/USAGE.md) - How to use the runtime and shim
+- [Development Guide](docs/DEVELOPMENT.md) - Building and testing instructions
