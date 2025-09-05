@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
+	"github.com/Arm-Debug/remoteproc-runtime/internal/proxy"
 	"github.com/Arm-Debug/remoteproc-runtime/internal/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -13,11 +14,21 @@ func Start(containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
-	if err := remoteproc.SetFirmwareAndStart(
+
+	if err := remoteproc.SetFirmware(
 		state.Annotations[oci.StateResolvedPath],
 		state.Annotations[oci.StateFirmware],
 	); err != nil {
-		return fmt.Errorf("failed to run firmware: %w", err)
+		return fmt.Errorf("failed to set firmware: %w", err)
+	}
+
+	proxyProcess, err := proxy.FindProcess(state.Pid)
+	if err != nil {
+		return fmt.Errorf("failed to get proxy process: %w", err)
+	}
+
+	if err := proxyProcess.StartFirmware(); err != nil {
+		return fmt.Errorf("failed to signal proxy process: %w", err)
 	}
 
 	state.Status = specs.StateRunning

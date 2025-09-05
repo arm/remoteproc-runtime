@@ -23,7 +23,7 @@ func NewState(containerID string, bundlePath string) *specs.State {
 		Version:     specs.Version,
 		ID:          containerID,
 		Status:      specs.StateCreated,
-		Pid:         1, // TODO: gpt tells me it's ok, is it?
+		Pid:         0,
 		Bundle:      bundlePath,
 		Annotations: map[string]string{},
 	}

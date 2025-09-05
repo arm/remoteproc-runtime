@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/remoteproc"
@@ -66,13 +67,61 @@ func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
 	assert.ErrorContains(t, err, "other-processor is not in the list of available remote processors")
 }
 
+func TestRuntimeKillProcessByPid(t *testing.T) {
+	rootDir := t.TempDir()
+	sim := remoteproc.NewSimulator(rootDir).WithName("nice-processor")
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer sim.Stop()
+	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
+	require.NoError(t, err)
+
+	const containerName = "test-container"
+
+	bundlePath := t.TempDir()
+	require.NoError(t, generateBundle(bundlePath, "nice-processor"))
+	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
+	require.NoError(t, err)
+
+	pid, err := getContainerPid(bin, containerName)
+	require.NoError(t, err)
+	require.Greater(t, pid, 0)
+
+	_, err = invokeRuntime(bin, "start", containerName)
+	require.NoError(t, err)
+	remoteproc.RequireState(t, sim.DeviceDir(), "running")
+
+	require.NoError(t, sendSignal(pid, syscall.SIGTERM))
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+}
+
 func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
-	out, err := invokeRuntime(bin, "state", containerName)
+	state, err := getContainerState(bin, containerName)
 	require.NoError(t, err)
-	var state specs.State
-	require.NoError(t, json.Unmarshal(out, &state))
 	assert.Equal(t, wantStatus, state.Status)
+}
+
+func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
+	state, err := getContainerState(bin, containerName)
+	if err != nil {
+		return 0, err
+	}
+	return state.Pid, err
+}
+
+func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
+	var state specs.State
+	out, err := invokeRuntime(bin, "state", containerName)
+	if err != nil {
+		return state, fmt.Errorf("can't get container state: %w", err)
+	}
+	err = json.Unmarshal(out, &state)
+	if err != nil {
+		return state, fmt.Errorf("failed to unmarshal state: %w", err)
+	}
+	return state, nil
 }
 
 func generateBundle(targetDir string, remoteprocName string) error {
@@ -124,4 +173,16 @@ func invokeRuntime(bin repo.RuntimeBin, args ...string) ([]byte, error) {
 	}
 
 	return stdout.Bytes(), nil
+}
+
+func sendSignal(pid int, signal syscall.Signal) error {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return fmt.Errorf("failed to find process %d: %w", pid, err)
+	}
+	err = process.Signal(signal)
+	if err != nil {
+		return fmt.Errorf("failed to send signal %s to process %d: %w", signal, pid, err)
+	}
+	return nil
 }

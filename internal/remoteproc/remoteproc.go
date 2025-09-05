@@ -114,7 +114,7 @@ func RemoveFirmware(firmwareFileName string) error {
 	return os.Remove(filepath.Join(rprocFirmwareStorePath, firmwareFileName))
 }
 
-func SetFirmwareAndStart(devicePath string, firmwareFileName string) error {
+func SetFirmware(devicePath string, firmwareFileName string) error {
 	state, err := GetState(devicePath)
 	if err != nil {
 		return fmt.Errorf("pre-flight state check failed: %w", err)
@@ -124,6 +124,17 @@ func SetFirmwareAndStart(devicePath string, firmwareFileName string) error {
 	}
 	if err := os.WriteFile(buildFirmwareFilePath(devicePath), []byte(firmwareFileName), 0644); err != nil {
 		return fmt.Errorf("failed to set firmware %s: %w", firmwareFileName, err)
+	}
+	return nil
+}
+
+func Start(devicePath string) error {
+	state, err := GetState(devicePath)
+	if err != nil {
+		return fmt.Errorf("pre-flight state check failed: %w", err)
+	}
+	if state == StateRunning {
+		return fmt.Errorf("remote processor is already running")
 	}
 	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("start"), 0644); err != nil {
 		return fmt.Errorf("failed to start remote processor: %w", err)
