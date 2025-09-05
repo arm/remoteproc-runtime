@@ -21,6 +21,9 @@ The project consists of two main components:
 
 ```bash
 go build ./cmd/containerd-shim-remoteproc-v1
+```
+
+```bash
 go build ./cmd/remoteproc-runtime
 ```
 
@@ -28,6 +31,9 @@ go build ./cmd/remoteproc-runtime
 
 ```bash
 GOOS=linux GOARCH=arm64 go build ./cmd/containerd-shim-remoteproc-v1
+```
+
+```bash
 GOOS=linux GOARCH=arm64 go build ./cmd/remoteproc-runtime
 ```
 
@@ -70,6 +76,9 @@ Useful for development without access to hardware with Remoteproc support.
 
     ```bash
     go build ./cmd/containerd-shim-remoteproc-v1
+    ```
+
+    ```bash
     go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
         ./cmd/remoteproc-runtime
     ```
