@@ -43,7 +43,7 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 }
 
-func TestRemoteprocNameMismatch(t *testing.T) {
+func TestDockerRemoteprocNameMismatch(t *testing.T) {
 	rootDir := t.TempDir()
 	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
