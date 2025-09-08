@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/limavm"
@@ -66,4 +68,38 @@ func TestDockerRemoteprocNameMismatch(t *testing.T) {
 		"test-image")
 	assert.Error(t, err)
 	assert.Contains(t, stderr, "other-processor is not in the list of available remote processors")
+}
+
+func TestDockerKillProcessByPid(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "yolo-device"
+	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.New(rootDir, bins, "../testdata/test-image.tar")
+	require.NoError(t, err)
+	defer vm.Cleanup()
+
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer sim.Stop()
+
+	containerID, stderr, err := vm.RunCommand(
+		"docker", "run", "-d",
+		"--network=host",
+		"--runtime", "io.containerd.remoteproc.v1",
+		"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
+		"test-image")
+	require.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+	stdout, stderr, err := vm.RunCommand("docker", "inspect", "--format={{.State.Pid}}", containerID)
+	require.NoError(t, err, "stderr: %s", stderr)
+	pid, err := strconv.Atoi(strings.TrimSpace(stdout))
+
+	_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
+	require.NoError(t, err)
+	remoteproc.RequireState(t, sim.DeviceDir(), "offline")
 }

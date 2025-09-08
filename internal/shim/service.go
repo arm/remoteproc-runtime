@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	eventstypes "github.com/containerd/containerd/api/events"
@@ -54,9 +55,10 @@ func newTaskService(ctx context.Context, publisher containerdshim.Publisher, sd 
 	// The containerdshim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
 	service := &remoteprocTaskService{
-		events:   make(chan any, 128),
-		shutdown: sd,
-		logger:   log.G(ctx),
+		events:         make(chan any, 128),
+		shutdown:       sd,
+		logger:         log.G(ctx),
+		processWatcher: nil,
 	}
 
 	sd.RegisterCallback(func(context.Context) error {
@@ -77,6 +79,9 @@ type remoteprocTaskService struct {
 	events   chan any
 	shutdown shutdown.Service
 	logger   logrus.FieldLogger
+
+	processWatcherMu sync.Mutex
+	processWatcher   *ProcessWatcher
 }
 
 // RegisterTTRPC allows TTRPC services to be registered with the underlying server
@@ -97,9 +102,15 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 	err := executeCreate(r.ID, r.Bundle)
 	if err != nil {
 		if err := mount.UnmountMounts(toMount, rootFS, 0); err != nil {
-			log.G(ctx).WithError(err).Warn("failed to cleanup rootfs mount")
+			s.logger.WithError(err).Warn("failed to cleanup rootfs mount")
 		}
 		return nil, err
+	}
+
+	pid, err := getPid(r.ID)
+	if err != nil {
+		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
+		pid = 0
 	}
 
 	s.send(&eventstypes.TaskCreate{
@@ -108,7 +119,7 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 		// Rootfs:      r.Rootfs,
 		// IO:          &eventstypes.TaskIO{},
 		// Checkpoint:  "",
-		// Pid:         0,
+		Pid: uint32(pid),
 	})
 
 	response := &taskAPI.CreateTaskResponse{}
@@ -137,12 +148,22 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 		return nil, err
 	}
 
+	pid, err := getPid(r.ID)
+	if err != nil {
+		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
+		pid = 0
+	}
+
+	if pid > 0 {
+		s.startProcessWatcher(r.ID, pid)
+	}
+
 	s.send(&eventstypes.TaskStart{
 		ContainerID: r.ID,
-		// Pid:         0,
+		Pid:         uint32(pid),
 	})
 
-	response := &taskAPI.StartResponse{}
+	response := &taskAPI.StartResponse{Pid: uint32(pid)}
 	s.logPayload("<- service.Start", response)
 	return response, nil
 }
@@ -150,12 +171,20 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 // Delete a process or container
 func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteRequest) (*taskAPI.DeleteResponse, error) {
 	s.logPayload("-> service.Delete", r)
+
+	pid, err := getPid(r.ID)
+	if err != nil {
+		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
+		pid = 0
+	}
+
 	if err := executeDelete(r.ID); err != nil {
 		return nil, err
 	}
+
 	s.send(&eventstypes.TaskDelete{
 		ContainerID: r.ID,
-		// Pid:        0,
+		Pid:         uint32(pid),
 		// ExitStatus: 0,
 		// ExitedAt:   &timestamppb.Timestamp{},
 		// ID:         "",
@@ -224,14 +253,24 @@ func (s *remoteprocTaskService) Resume(ctx context.Context, r *taskAPI.ResumeReq
 // Kill a process
 func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest) (*ptypes.Empty, error) {
 	s.logPayload("-> service.Kill", r)
-	err := executeKill(r.ID)
+
+	s.stopProcessWatcher()
+
+	pid, err := getPid(r.ID)
+	if err != nil {
+		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
+		pid = 0
+	}
+
+	err = executeKill(r.ID)
 	if err != nil {
 		return nil, err
 	}
+
 	s.send(&eventstypes.TaskExit{
 		ContainerID: r.ID,
 		ID:          r.ID,
-		// Pid:         uint32(e.Pid),
+		Pid:         uint32(pid),
 		// ExitStatus:  uint32(e.Status),
 		// ExitedAt:    protobuf.ToTimestamp(p.ExitedAt()),
 	})
@@ -336,4 +375,39 @@ func (s *remoteprocTaskService) logPayload(name string, payload any) {
 		s.logger.WithField("err", err).Debug(name)
 	}
 	s.logger.WithField("payload", string(payloadJSON)).Debug(name)
+}
+
+func (s *remoteprocTaskService) startProcessWatcher(containerID string, pid int) {
+	watcher, err := NewProcessWatcher(pid)
+	if err != nil {
+		s.logger.WithError(err).Errorf("failed to create process watcher for container %s, pid %d", containerID, pid)
+		return
+	}
+	s.processWatcherMu.Lock()
+	s.processWatcher = watcher
+	s.processWatcherMu.Unlock()
+
+	go func() {
+		reason := watcher.WaitForExit()
+
+		if reason == ProcessExited {
+			s.send(&eventstypes.TaskExit{
+				ContainerID: containerID,
+				ID:          containerID,
+				Pid:         uint32(pid),
+			})
+
+			s.shutdown.Shutdown()
+			<-s.shutdown.Done()
+		}
+	}()
+}
+
+func (s *remoteprocTaskService) stopProcessWatcher() {
+	s.processWatcherMu.Lock()
+	defer s.processWatcherMu.Unlock()
+	if s.processWatcher != nil {
+		s.processWatcher.StopWatching()
+		s.processWatcher = nil
+	}
 }

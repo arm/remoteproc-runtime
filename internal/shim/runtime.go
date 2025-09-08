@@ -81,3 +81,11 @@ func executeState(containerID string) (*specs.State, error) {
 
 	return &state, nil
 }
+
+func getPid(containerID string) (int, error) {
+	state, err := executeState(containerID)
+	if err != nil {
+		return 0, err
+	}
+	return state.Pid, nil
+}
