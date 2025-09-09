@@ -96,6 +96,38 @@ func TestRuntimeKillProcessByPid(t *testing.T) {
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 }
 
+func TestRuntimeWriteProcessPid(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "oh-what-a-device"
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer sim.Stop()
+	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
+	require.NoError(t, err)
+
+	const containerName = "test-container"
+
+	bundlePath := t.TempDir()
+	pidFilePath := filepath.Join(t.TempDir(), "pidfile.txt")
+	require.NoError(t, generateBundle(bundlePath, remoteprocName))
+	_, err = invokeRuntime(
+		bin, "create",
+		"--bundle", bundlePath,
+		"--pid-file", pidFilePath,
+		containerName,
+	)
+	require.NoError(t, err)
+
+	pid, err := getContainerPid(bin, containerName)
+	require.NoError(t, err)
+	require.Greater(t, pid, 0)
+
+	require.FileExists(t, pidFilePath)
+	assertFileContent(t, pidFilePath, fmt.Sprintf("%d", pid))
+}
+
 func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(bin, containerName)
@@ -185,4 +217,12 @@ func sendSignal(pid int, signal syscall.Signal) error {
 		return fmt.Errorf("failed to send signal %s to process %d: %w", signal, pid, err)
 	}
 	return nil
+}
+
+func assertFileContent(t *testing.T, path string, wantContent string) {
+	t.Helper()
+	gotContent, err := os.ReadFile(path)
+	if assert.NoError(t, err) {
+		assert.Equal(t, wantContent, string(gotContent))
+	}
 }

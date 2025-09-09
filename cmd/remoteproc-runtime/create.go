@@ -7,6 +7,7 @@ import (
 
 var (
 	bundlePath string
+	pidFile    string
 )
 
 var createCmd = &cobra.Command{
@@ -18,11 +19,12 @@ var createCmd = &cobra.Command{
 		if bundlePath == "" {
 			bundlePath = "."
 		}
-		return runtime.Create(containerID, bundlePath)
+		return runtime.Create(containerID, bundlePath, pidFile)
 	},
 }
 
 func init() {
 	createCmd.Flags().StringVar(&bundlePath, "bundle", "", "Override the path to the bundle directory (defaults to the current working directory).")
+	createCmd.Flags().StringVar(&pidFile, "pid-file", "", "File to write the proxy process PID to.")
 	rootCmd.AddCommand(createCmd)
 }

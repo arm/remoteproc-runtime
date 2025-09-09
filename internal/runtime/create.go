@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func Create(containerID string, bundlePath string) error {
+func Create(containerID string, bundlePath string, pidFile string) error {
 	spec, err := oci.ReadSpec(bundlePath)
 	if err != nil {
 		return fmt.Errorf("can't read spec: %w", err)
@@ -67,6 +67,12 @@ func Create(containerID string, bundlePath string) error {
 		return err
 	}
 
+	if pidFile != "" {
+		if err := writePidFile(pidFile, proxyProcess.Pid); err != nil {
+			return fmt.Errorf("failed to write PID file: %w", err)
+		}
+	}
+
 	needCleanup = false
 	return nil
 }
@@ -83,4 +89,9 @@ func validateFirmwareExists(firmwareFilePath string) error {
 		return fmt.Errorf("firmware does not exist: %w", err)
 	}
 	return nil
+}
+
+func writePidFile(pidFile string, pid int) error {
+	content := fmt.Sprintf("%d", pid)
+	return os.WriteFile(pidFile, []byte(content), 0644)
 }
