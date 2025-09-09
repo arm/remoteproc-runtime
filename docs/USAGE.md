@@ -83,6 +83,52 @@ To try our Remoteproc runtime, you need one of the following devices:
     ```
     </details>
 
+    <details>
+    <summary><ins>Using k3s</ins></summary>
+
+    Adjust [`k3s` configuration](https://rancher.com/docs/k3s/latest/en/advanced/#configuring-containerd) to add the new runtime:
+
+    ```toml
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.remoteproc]
+      runtime_type = "io.containerd.remoteproc.v1"
+
+      # `pod_annotations` is a list of annotatins that will be passed to both the pod sandbox, and container OCI annotations.
+      # Details: https://raw.githubusercontent.com/containerd/containerd/main/docs/cri/config.md
+      pod_annotations = ["remoteproc.name"]
+    ```
+
+    And register the runtime with `kubernetes`:
+    ```bash
+    sudo kubectl apply -f - <<'YAML'
+    apiVersion: node.k8s.io/v1
+    kind: RuntimeClass
+    metadata:
+        name: remoteproc
+    handler: remoteproc
+    YAML
+    ```
+
+    Finally, you can run a pod with the necessary annotation:
+
+    ```sh
+    kubectl apply -f - <<EOF
+    kind: Pod
+    apiVersion: v1
+    metadata:
+      annotations:
+        remoteproc.name: <target-processor-name>
+    spec:
+      runtimeClassName: remoteproc
+      containers:
+        - name: demo-app
+          image: <image-name>
+          imagePullPolicy: IfNotPresent
+    EOF
+    ```
+
+
+    </details>
+
 ## Container Runtime (⚠️ WIP)
 
 1. **Determine the target processor name**
