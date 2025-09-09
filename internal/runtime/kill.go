@@ -2,13 +2,14 @@ package runtime
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
 	"github.com/Arm-Debug/remoteproc-runtime/internal/proxy"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func Kill(containerID string) error {
+func Kill(containerID string, signal syscall.Signal) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
@@ -17,8 +18,8 @@ func Kill(containerID string) error {
 	if state.Pid > 0 {
 		proxyProcess, err := proxy.FindProcess(state.Pid)
 		if err == nil {
-			if err := proxyProcess.StopFirmware(); err != nil {
-				return fmt.Errorf("failed to stop firmware: %w", err)
+			if err := proxyProcess.SendSignal(signal); err != nil {
+				return fmt.Errorf("failed to send signal: %w", err)
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -50,8 +51,9 @@ func executeDelete(containerID string) error {
 	return nil
 }
 
-func executeKill(containerID string) error {
-	cmd := exec.Command(runtimeBinName, "kill", containerID)
+func executeKill(containerID string, signal syscall.Signal) error {
+	args := []string{"kill", containerID, fmt.Sprintf("%d", signal)}
+	cmd := exec.Command(runtimeBinName, args...)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

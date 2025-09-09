@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	eventstypes "github.com/containerd/containerd/api/events"
@@ -262,7 +263,17 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 		pid = 0
 	}
 
-	err = executeKill(r.ID)
+	var signal syscall.Signal
+	switch r.Signal {
+	case 9:
+		signal = syscall.SIGKILL
+	case 15:
+		signal = syscall.SIGTERM
+	default:
+		signal = syscall.SIGTERM
+	}
+
+	err = executeKill(r.ID, signal)
 	if err != nil {
 		return nil, err
 	}
