@@ -22,13 +22,14 @@ var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func New(mountDir string, bins repo.Bins, absImageTar string) (LimaVM, error) {
+func NewWithDocker(mountDir string, absImageTar string, bins repo.Bins) (LimaVM, error) {
+	return New("docker", mountDir, absImageTar, string(bins.Runtime), string(bins.Shim))
+}
+
+func New(template string, mountDir string, absImageTar string, binsToInstall ...string) (LimaVM, error) {
 	cmd := exec.Command(
 		prepareLimaVMScript,
-		mountDir,
-		string(bins.Runtime),
-		string(bins.Shim),
-		absImageTar,
+		append([]string{template, mountDir, absImageTar}, binsToInstall...)...,
 	)
 	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 

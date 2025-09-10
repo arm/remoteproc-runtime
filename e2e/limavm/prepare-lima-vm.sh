@@ -2,35 +2,34 @@
 
 set -e
 
-MOUNT_DIR=""
 VM_NAME=""
-SHIM_BINARY=""
+
+TEMPLATE=""
+MOUNT_DIR=""
 IMAGE_TAR=""
+BINARIES=()
 
 usage() {
-    echo "Usage: $0 <mount-dir> <shim-binary> <image-tar>" >&2
+    echo "Usage: $0 <template> <mount-dir> <image-tar> <binary1> [binary2] ..." >&2
+    echo "  template:         Lima template to use (docker or podman)" >&2
     echo "  mount-dir:        Directory attached in the vm" >&2
-    echo "  runtime-binary:   Path to remoteproc-runtime binary" >&2
-    echo "  shim-binary:      Path to containerd-shim-remoteproc-v1 binary" >&2
-    echo "  image-tar:        Path to Docker image tar file to load" >&2
+    echo "  image-tar:        Path to container image tar file to load" >&2
+    echo "  binary1...N:      Path to binaries to install in /usr/local/bin" >&2
     exit 1
 }
 
 validate_inputs() {
-    if [ ! -f "$RUNTIME_BINARY" ]; then
-        echo "Error: Runtime binary not found: $RUNTIME_BINARY" >&2
-        exit 1
-    fi
-
-    if [ ! -f "$SHIM_BINARY" ]; then
-        echo "Error: Shim binary not found: $SHIM_BINARY" >&2
-        exit 1
-    fi
-
     if [ ! -f "$IMAGE_TAR" ]; then
         echo "Error: Image tar file not found: $IMAGE_TAR" >&2
         exit 1
     fi
+
+    for binary in "${BINARIES[@]}"; do
+        if [ ! -f "$binary" ]; then
+            echo "Error: Binary not found: $binary" >&2
+            exit 1
+        fi
+    done
 }
 
 cleanup_on_failure() {
@@ -41,7 +40,7 @@ cleanup_on_failure() {
 
 create_vm() {
     echo "Creating Lima VM..." >&2
-    if ! limactl create --tty=false --name "$VM_NAME" --set ".mounts += [{\"location\":\"$MOUNT_DIR\",\"writable\":true}]" template://docker; then
+    if ! limactl create --tty=false --name "$VM_NAME" --set ".mounts += [{\"location\":\"$MOUNT_DIR\",\"writable\":true}]" "template://$TEMPLATE"; then
         echo "Error: Failed to create VM" >&2
         exit 1
     fi
@@ -82,34 +81,51 @@ install_binary() {
     fi
 }
 
-load_docker_image() {
-    echo "Loading Docker image..." >&2
+load_image() {
+    echo "Loading image..." >&2
     local image_filename=$(basename "$IMAGE_TAR")
 
     if ! limactl copy "$IMAGE_TAR" "$VM_NAME:/tmp/$image_filename"; then
-        echo "Error: Failed to copy Docker image" >&2
+        echo "Error: Failed to copy image" >&2
         cleanup_on_failure
         exit 1
     fi
 
-    if ! limactl shell "$VM_NAME" docker load -i "/tmp/$image_filename" >&2; then
-        echo "Error: Failed to load Docker image" >&2
-        cleanup_on_failure
-        exit 1
-    fi
+    case "$TEMPLATE" in
+        docker)
+            if ! limactl shell "$VM_NAME" docker load -i "/tmp/$image_filename" >&2; then
+                echo "Error: Failed to load Docker image" >&2
+                cleanup_on_failure
+                exit 1
+            fi
+            ;;
+        podman)
+            if ! limactl shell "$VM_NAME" podman load -i "/tmp/$image_filename" >&2; then
+                echo "Error: Failed to load Podman image" >&2
+                cleanup_on_failure
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Error: Unsupported template '$TEMPLATE'. Only 'docker' and 'podman' are supported." >&2
+            cleanup_on_failure
+            exit 1
+            ;;
+    esac
 
     limactl shell "$VM_NAME" rm "/tmp/$image_filename" 2>/dev/null || true
 }
 
 main() {
-    if [ $# -ne 4 ]; then
+    if [ $# -lt 4 ]; then
         usage
     fi
 
-    MOUNT_DIR="$1"
-    RUNTIME_BINARY="$2"
-    SHIM_BINARY="$3"
-    IMAGE_TAR="$4"
+    TEMPLATE="$1"
+    MOUNT_DIR="$2"
+    IMAGE_TAR="$3"
+    shift 3
+    BINARIES=("$@")
 
     validate_inputs
 
@@ -119,10 +135,12 @@ main() {
     create_vm
     start_vm
 
-    install_binary "$SHIM_BINARY" "containerd-shim-remoteproc-v1"
-    install_binary "$RUNTIME_BINARY" "remoteproc-runtime"
+    for binary_path in "${BINARIES[@]}"; do
+        binary_name=$(basename "$binary_path")
+        install_binary "$binary_path" "$binary_name"
+    done
 
-    load_docker_image
+    load_image
 
     echo "VM setup completed successfully" >&2
 
