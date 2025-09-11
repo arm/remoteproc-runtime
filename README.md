@@ -7,7 +7,7 @@ It consists of two components:
 
 1. <strong>Containerd shim</strong>
    To be used with runtime managers leveraging containerd (Docker, K3S, etc).
-2. <strong>Container runtime</strong> (⚠️ WIP)
+2. <strong>Container runtime</strong>
    To be used with runtime managers integrating with OCI runtime directly (Podman).
 
 ## Documentation

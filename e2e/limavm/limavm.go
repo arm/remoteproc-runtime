@@ -26,6 +26,10 @@ func NewWithDocker(mountDir string, absImageTar string, bins repo.Bins) (LimaVM,
 	return New("docker", mountDir, absImageTar, string(bins.Runtime), string(bins.Shim))
 }
 
+func NewWithPodman(mountDir string, absImageTar string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
+	return New("podman", mountDir, absImageTar, string(runtimeBin))
+}
+
 func New(template string, mountDir string, absImageTar string, binsToInstall ...string) (LimaVM, error) {
 	cmd := exec.Command(
 		prepareLimaVMScript,

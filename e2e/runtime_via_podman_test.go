@@ -1,0 +1,47 @@
+package e2e
+
+import (
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/limavm"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/remoteproc"
+	"github.com/Arm-Debug/remoteproc-runtime/e2e/repo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestPodmanContainerLifecycle(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "yolo-device"
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata/test-image.tar", runtimeBin)
+	require.NoError(t, err)
+	defer vm.Cleanup()
+
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer sim.Stop()
+
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+	stdout, stderr, err := vm.RunCommand(
+		"podman",
+		"--cgroup-manager=cgroupfs",
+		"--runtime=/usr/local/bin/remoteproc-runtime", // <- hardcoding ain't great
+		"run", "-d",
+		"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
+		"test-image")
+	require.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+	containerID := strings.TrimSpace(stdout)
+	_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+	assert.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+}

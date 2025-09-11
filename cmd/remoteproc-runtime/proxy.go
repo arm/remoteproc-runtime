@@ -27,10 +27,10 @@ var proxyCmd = &cobra.Command{
 
 		// Phase 1: Wait for SIGUSR1 start signal
 		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGUSR1, syscall.SIGTERM)
+		signal.Notify(sigCh, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
 
 		sig := <-sigCh
-		if sig == syscall.SIGTERM {
+		if sig == syscall.SIGTERM || sig == syscall.SIGINT {
 			os.Exit(0)
 		}
 
@@ -45,7 +45,7 @@ var proxyCmd = &cobra.Command{
 		for {
 			select {
 			case sig := <-sigCh:
-				if sig == syscall.SIGTERM {
+				if sig == syscall.SIGTERM || sig == syscall.SIGINT {
 					if err := remoteproc.Stop(devicePath); err != nil {
 						fmt.Fprintf(os.Stderr, "failed to stop remoteproc: %v\n", err)
 					}

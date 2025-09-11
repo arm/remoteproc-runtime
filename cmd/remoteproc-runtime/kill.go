@@ -12,7 +12,7 @@ import (
 var killCmd = &cobra.Command{
 	Use:   "kill <ID> [SIGNAL]",
 	Short: "Send a signal to the container process",
-	Long:  "Send a signal to the container process. Supported signals: TERM (15) and KILL (9). Default is TERM.",
+	Long:  "Send a signal to the container process. Supported signals: TERM (15), KILL (9), INT (2). Default is TERM.",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		containerID := args[0]
@@ -41,7 +41,9 @@ func parseSignal(input string) (syscall.Signal, error) {
 		return syscall.SIGKILL, nil
 	case "TERM", "SIGTERM", "15":
 		return syscall.SIGTERM, nil
+	case "INT", "SIGINT", "2":
+		return syscall.SIGINT, nil
 	default:
-		return 0, fmt.Errorf("unsupported signal: %s (supported: TERM (15) and KILL (9))", input)
+		return 0, fmt.Errorf("unsupported signal: %s (supported: TERM (15), KILL (9), INT (2))", input)
 	}
 }

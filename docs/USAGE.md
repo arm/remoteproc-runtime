@@ -3,13 +3,14 @@
 ## Prerequisites
 
 To try our Remoteproc runtime, you need one of the following devices:
+
 1. Physical hardware with remoteproc support, for example:
     - [NXP's i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
-      - When using Remoteproc runtime with i.MX93, you may encounter specific hardware limitations that require additional configuration steps. See our [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for detailed solutions and best practices.
+        - When using Remoteproc runtime with i.MX93, you may encounter specific hardware limitations that require additional configuration steps. See our [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for detailed solutions and best practices.
     - [ST's STM32MP257F-DK](https://www.st.com/en/evaluation-tools/stm32mp257f-dk.html)
 2. Corellium Virtual Device [pre-configured with our kernel](./CORELLIUM_USAGE.md)
 
-## Containerd Shim
+## Containerd Shim (Docker, K3S, etc)
 
 1. **Install the shim and runtime**
 
@@ -32,7 +33,7 @@ To try our Remoteproc runtime, you need one of the following devices:
 
 1. **Determine the target processor name**
 
-    In addition to the image, shim requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
+    Shim requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
 
     ```sh
     # One of /sys/class/remoteproc/.../name, for example:
@@ -129,7 +130,48 @@ To try our Remoteproc runtime, you need one of the following devices:
 
     </details>
 
-## Container Runtime (⚠️ WIP)
+## Container Runtime (Podman)
+
+1. **Install the runtime**
+
+    Make `remoteproc-runtime` binary available on the target machine.
+
+    ℹ️ Install the binary on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `podman`, install the binary on the remote machine where podman is actually executing the containers.
+
+1. **Prepare a container image**
+
+    In order to start a container, we need an image. The image needs to contain a binary file we can load using remoteproc framework. This binary file is what you'd normally flash by any other means to your remote processor.
+
+    Assuming a `hello.elf` binary we built for our processor, `Dockerfile` could look like this:
+
+    ```Dockerfile
+    FROM scratch
+    ADD hello.elf /
+    ENTRYPOINT ["hello.elf"]
+    ```
+
+1. **Determine the target processor name**
+
+    Runtime requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
+
+    ```sh
+    # One of /sys/class/remoteproc/.../name, for example:
+    cat /sys/class/remoteproc/remoteproc0/name
+    ```
+
+1. **Run the image**
+
+    ```sh
+    podman \
+        --cgroup-manager=cgroupfs \
+        --runtime=<path-to-remoteproc-runtime> \
+        run \
+            \ --annotation remoteproc.name="<target-processor-name>" \
+            <image-name>
+    ```
+
+
+## Container Runtime (standalone)
 
 1. **Determine the target processor name**
 
