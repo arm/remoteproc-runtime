@@ -49,18 +49,18 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 		}
 	}()
 
-	proxyProcess, err := proxy.NewProcess(devicePath)
+	pid, err := proxy.NewProcess(devicePath)
 	if err != nil {
 		return fmt.Errorf("failed to start proxy process: %w", err)
 	}
 	defer func() {
 		if needCleanup {
-			_ = proxyProcess.StopFirmware()
+			_ = proxy.StopFirmware(pid)
 		}
 	}()
 
 	state := oci.NewState(containerID, bundlePath)
-	state.Pid = proxyProcess.Pid
+	state.Pid = pid
 	state.Annotations[oci.StateResolvedPath] = devicePath
 	state.Annotations[oci.StateFirmware] = storedFirmwareName
 	if err := oci.WriteState(state); err != nil {
@@ -68,7 +68,7 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 	}
 
 	if pidFile != "" {
-		if err := writePidFile(pidFile, proxyProcess.Pid); err != nil {
+		if err := writePidFile(pidFile, pid); err != nil {
 			return fmt.Errorf("failed to write PID file: %w", err)
 		}
 	}

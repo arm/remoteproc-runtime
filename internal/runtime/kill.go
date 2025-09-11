@@ -16,11 +16,8 @@ func Kill(containerID string, signal syscall.Signal) error {
 	}
 
 	if state.Pid > 0 {
-		proxyProcess, err := proxy.FindProcess(state.Pid)
-		if err == nil {
-			if err := proxyProcess.SendSignal(signal); err != nil {
-				return fmt.Errorf("failed to send signal: %w", err)
-			}
+		if err := proxy.SendSignal(state.Pid, signal); err != nil {
+			return fmt.Errorf("failed to send signal: %w", err)
 		}
 	}
 

@@ -22,13 +22,8 @@ func Start(containerID string) error {
 		return fmt.Errorf("failed to set firmware: %w", err)
 	}
 
-	proxyProcess, err := proxy.FindProcess(state.Pid)
-	if err != nil {
-		return fmt.Errorf("failed to get proxy process: %w", err)
-	}
-
-	if err := proxyProcess.StartFirmware(); err != nil {
-		return fmt.Errorf("failed to signal proxy process: %w", err)
+	if err := proxy.StartFirmware(state.Pid); err != nil {
+		return fmt.Errorf("failed to start firmware: %w", err)
 	}
 
 	state.Status = specs.StateRunning
