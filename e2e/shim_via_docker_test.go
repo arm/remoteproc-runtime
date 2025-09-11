@@ -43,6 +43,14 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+	_, stderr, err = vm.RunCommand("docker", "start", containerID)
+	assert.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+	_, stderr, err = vm.RunCommand("docker", "stop", containerID)
+	assert.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 }
 
 func TestDockerRemoteprocNameMismatch(t *testing.T) {
