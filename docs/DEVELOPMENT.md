@@ -64,9 +64,8 @@ Useful for development without access to hardware with Remoteproc support.
 
 ℹ️ Remoteproc Simulator's arguments aren't arbitrary:
 
-  - Custom root directory, set via `--root-dir` needs to match custom root set via `-ldflags`
-  - Remoteproc name set via `--name` needs to match the `remoteproc.name` annotation
-
+- Custom root directory, set via `--root-dir` needs to match custom root set via `-ldflags`
+- Remoteproc name set via `--name` needs to match the `remoteproc.name` annotation
 
 #### Testing with Docker
 
@@ -74,76 +73,79 @@ Useful for development without access to hardware with Remoteproc support.
 
 1. **Build and install the shim and runtime with custom root**
 
-    ```bash
-    go build ./cmd/containerd-shim-remoteproc-v1
-    ```
+   ```bash
+   go build ./cmd/containerd-shim-remoteproc-v1
+   ```
 
-    ```bash
-    go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
-        ./cmd/remoteproc-runtime
-    ```
+   ```bash
+   go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
+       ./cmd/remoteproc-runtime
+   ```
 
-    See "Install the shim and runtime" in [Usage Guide](USAGE.md).
+   See "Install the shim and runtime" in [Usage Guide](USAGE.md).
 
-1. **Build the test image** 
+1. **Build the test image**
 
-    The repository includes a `Dockerfile` in `testdata/` for testing.
+   The repository includes a `Dockerfile` in `testdata/` for testing.
 
-    ```bash
-    docker build ./testdata -t test-remoteproc-image
-    ```
+   ```bash
+   docker build ./testdata -t test-remoteproc-image
+   ```
 
 1. **Setup Remoteproc Simulator**
-    ```bash
-    # Create test root directory
-    mkdir -p /tmp/test-root
 
-    # Run simulator
-    remoteproc-simulator --root-dir /tmp/test-root --name test-processor
-    ```
+   ```bash
+   # Create test root directory
+   mkdir -p /tmp/test-root
+
+   # Run simulator
+   remoteproc-simulator --root-dir /tmp/test-root --name test-processor
+   ```
 
 1. **Run the container**
-    ```bash
-    docker run \
-        --runtime io.containerd.remoteproc.v1 \
-        --annotation remoteproc.name="test-processor" \
-        test-remoteproc-image
-    ```
+   ```bash
+   docker run \
+       --runtime io.containerd.remoteproc.v1 \
+       --annotation remoteproc.name="test-processor" \
+       test-remoteproc-image
+   ```
 
 #### Testing with standalone runtime
 
 1. **Build the runtime with custom root**
-    ```bash
-    go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
-        ./cmd/remoteproc-runtime
-    ```
+
+   ```bash
+   go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
+       ./cmd/remoteproc-runtime
+   ```
 
 1. **Setup Remoteproc Simulator**
-    ```bash
-    # Create test root directory
-    mkdir -p /tmp/test-root
 
-    # Run simulator
-    remoteproc-simulator --root-dir /tmp/test-root --name fancy-mcu
-    ```
+   ```bash
+   # Create test root directory
+   mkdir -p /tmp/test-root
 
-2. **Use the test bundle**
-    The repository includes a test OCI bundle in `e2e/testdata/bundle/`.
+   # Run simulator
+   remoteproc-simulator --root-dir /tmp/test-root --name fancy-mcu
+   ```
 
-    ```bash
-    # Create container
-    ./remoteproc-runtime create --bundle testdata/bundle my-container
+1. **Use the test bundle**
+   The repository includes a test OCI bundle in `e2e/testdata/bundle/`.
 
-    # Start container
-    ./remoteproc-runtime start my-container
+   ```bash
+   # Create container
+   ./remoteproc-runtime create --bundle testdata/bundle my-container
 
-    # Check state
-    ./remoteproc-runtime state my-container
+   # Start container
+   ./remoteproc-runtime start my-container
 
-    # Cleanup
-    ./remoteproc-runtime kill my-container
-    ./remoteproc-runtime delete my-container
-    ```
+   # Check state
+   ./remoteproc-runtime state my-container
+
+   # Cleanup
+   ./remoteproc-runtime kill my-container
+   ./remoteproc-runtime delete my-container
+   ```
 
 ## CI/CD
 

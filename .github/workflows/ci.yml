@@ -12,7 +12,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-lint:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Run vet
+      run: go vet ./...
+
+    - name: Check Go formatting
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Please run 'gofmt -s -w .' to format your code"
+          gofmt -s -l .
+          exit 1
+        fi
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install prettier
+      run: npm install --no-save prettier
+
+    - name: Check markdown formatting
+      run: |
+        npx prettier --check "**/*.md" || (echo "Please run 'npx prettier --write \"**/*.md\"' to format your markdown files" && exit 1)
+
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -58,14 +89,3 @@ jobs:
 
     - name: Run e2e tests
       run: go test -v ./e2e/...
-
-    - name: Run vet
-      run: go vet ./...
-
-    - name: Check formatting
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "Please run 'gofmt -s -w .' to format your code"
-          gofmt -s -l .
-          exit 1
-        fi
