@@ -27,15 +27,7 @@ go build ./cmd/containerd-shim-remoteproc-v1
 go build ./cmd/remoteproc-runtime
 ```
 
-#### Alternatively, cross-compile for Linux ARM64
-
-```bash
-GOOS=linux GOARCH=arm64 go build ./cmd/containerd-shim-remoteproc-v1
-```
-
-```bash
-GOOS=linux GOARCH=arm64 go build ./cmd/remoteproc-runtime
-```
+⚠️ This runtime specifically targets Linux; building on other platforms requires setting `GOOS=linux`. If cross-compiling, specify the target architecture with `GOARCH=arm64`.
 
 ## Testing
 
