@@ -44,4 +44,12 @@ func TestPodmanContainerLifecycle(t *testing.T) {
 	_, stderr, err = vm.RunCommand("podman", "stop", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+	_, stderr, err = vm.RunCommand("podman", "start", containerID)
+	assert.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+	_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+	assert.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 }
