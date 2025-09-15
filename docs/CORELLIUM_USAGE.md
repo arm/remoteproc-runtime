@@ -1,6 +1,6 @@
 # Setting up Corellium Virtual device
 
-1. You need to make an account at Corellium. If you are new to Corellium, you can use its free trial to try out remoteproc runtime.
+1. You need to make an account at [Corellium](https://app.avh.corellium.com/login). If you are new to Corellium, you can sign up with Arm Account to activate a free trial to try out remoteproc runtime.
 2. Create new device
    ![setup corellium step 1](./images/setup_corellium1.png)
 3. Select Default Project
