@@ -50,6 +50,7 @@ To try our Remoteproc runtime, you need one of the following devices:
    docker run \
        --runtime io.containerd.remoteproc.v1 \
        --annotation remoteproc.name="<target-processor-name>" \
+       --network=host \
        <image-name>
    ```
 

@@ -61,7 +61,7 @@ Useful for development without access to hardware with Remoteproc support.
 
 #### Testing with Docker
 
-⚠️ Recent versions of Docker have an issue, where `Error response from daemon: bind-mount...` is returned when invoking the runtime. This is being investigated, for now you can use `--network=host` as an argument to `docker` command. Similar, but checkpoint related problem is described [on containerd GitHub](https://github.com/containerd/containerd/issues/12141).
+⚠️ Docker network must be set to 'Host' (`--network=host`), as the proxy runs in the host's network namespace.
 
 1. **Build and install the shim and runtime with custom root**
 
@@ -99,6 +99,7 @@ Useful for development without access to hardware with Remoteproc support.
    docker run \
        --runtime io.containerd.remoteproc.v1 \
        --annotation remoteproc.name="test-processor" \
+       --network=host \
        test-remoteproc-image
    ```
 

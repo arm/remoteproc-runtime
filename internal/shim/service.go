@@ -110,8 +110,7 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 
 	pid, err := getPid(r.ID)
 	if err != nil {
-		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
-		pid = 0
+		s.logger.WithError(err).Warnf("failed to get PID, defaulting to %d", pid)
 	}
 
 	s.send(&eventstypes.TaskCreate{
@@ -123,7 +122,7 @@ func (s *remoteprocTaskService) Create(ctx context.Context, r *taskAPI.CreateTas
 		Pid: uint32(pid),
 	})
 
-	response := &taskAPI.CreateTaskResponse{}
+	response := &taskAPI.CreateTaskResponse{Pid: uint32(pid)}
 	s.logPayload("<- service.Create", response)
 	return response, nil
 }
@@ -151,8 +150,7 @@ func (s *remoteprocTaskService) Start(ctx context.Context, r *taskAPI.StartReque
 
 	pid, err := getPid(r.ID)
 	if err != nil {
-		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
-		pid = 0
+		s.logger.WithError(err).Warnf("failed to get PID, defaulting to %d", pid)
 	}
 
 	if pid > 0 {
@@ -175,8 +173,7 @@ func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteReq
 
 	pid, err := getPid(r.ID)
 	if err != nil {
-		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
-		pid = 0
+		s.logger.WithError(err).Warnf("failed to get PID, defaulting to %d", pid)
 	}
 
 	if err := executeDelete(r.ID); err != nil {
@@ -259,8 +256,7 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 
 	pid, err := getPid(r.ID)
 	if err != nil {
-		s.logger.WithError(err).Warn("failed to get PID, defaulting to 0")
-		pid = 0
+		s.logger.WithError(err).Warnf("failed to get PID, defaulting to %d", pid)
 	}
 
 	var signal syscall.Signal
@@ -312,8 +308,13 @@ func (s *remoteprocTaskService) Checkpoint(ctx context.Context, r *taskAPI.Check
 // Connect returns shim information of the underlying service
 func (s *remoteprocTaskService) Connect(ctx context.Context, r *taskAPI.ConnectRequest) (*taskAPI.ConnectResponse, error) {
 	s.logPayload("-> service.Connect", r)
+	pid, err := getPid(r.ID)
+	if err != nil {
+		s.logger.WithError(err).Warnf("failed to get PID, defaulting to %d", pid)
+	}
 	response := &taskAPI.ConnectResponse{
 		ShimPid: uint32(os.Getpid()),
+		TaskPid: uint32(pid),
 	}
 	s.logPayload("<- service.Connect", response)
 	return response, nil
