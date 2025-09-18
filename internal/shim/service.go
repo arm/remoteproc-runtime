@@ -20,6 +20,7 @@ import (
 	"github.com/containerd/log"
 	"github.com/sirupsen/logrus"
 
+	"github.com/containerd/containerd/v2/pkg/protobuf"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 	"github.com/containerd/containerd/v2/pkg/shutdown"
 	"github.com/containerd/containerd/v2/plugins"
@@ -184,7 +185,7 @@ func (s *remoteprocTaskService) Delete(ctx context.Context, r *taskAPI.DeleteReq
 		ContainerID: r.ID,
 		Pid:         uint32(pid),
 		// ExitStatus: 0,
-		// ExitedAt:   &timestamppb.Timestamp{},
+		ExitedAt: protobuf.ToTimestamp(time.Now().UTC()),
 		// ID:         "",
 	})
 
@@ -278,8 +279,8 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 		ContainerID: r.ID,
 		ID:          r.ID,
 		Pid:         uint32(pid),
-		// ExitStatus:  uint32(e.Status),
-		// ExitedAt:    protobuf.ToTimestamp(p.ExitedAt()),
+		//ExitStatus:  uint32(e.Status),
+		ExitedAt: protobuf.ToTimestamp(time.Now().UTC()),
 	})
 
 	response := &ptypes.Empty{}

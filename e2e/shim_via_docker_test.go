@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/limavm"
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/remoteproc"
@@ -43,6 +44,7 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	requireRecentFinishOfDockerContainer(t, vm, containerID)
 
 	_, stderr, err = vm.RunCommand("docker", "start", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
@@ -51,6 +53,7 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 	assert.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	requireRecentFinishOfDockerContainer(t, vm, containerID)
 }
 
 func TestDockerRemoteprocNameMismatch(t *testing.T) {
@@ -110,4 +113,50 @@ func TestDockerKillProcessByPid(t *testing.T) {
 	_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 	require.NoError(t, err)
 	remoteproc.RequireState(t, sim.DeviceDir(), "offline")
+	requireRecentFinishOfDockerContainer(t, vm, containerID)
+}
+
+func requireDockerContainerFinished(t *testing.T, vm limavm.LimaVM, containerID string) {
+	t.Helper()
+
+	const retryWindow = 15 * time.Second
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		exitCodeStr, stderr, err := vm.RunCommand(
+			"docker", "inspect", "--format={{.State.ExitCode}}", containerID,
+		)
+		require.NoErrorf(c, err, "docker inspect error:\nstderr:\n%s", stderr)
+
+		exitCodeStr = strings.TrimSpace(exitCodeStr)
+		exitCode, err := strconv.Atoi(exitCodeStr)
+		require.NoErrorf(c, err, "failed to parse ExitCode %q", exitCodeStr)
+
+		require.Equal(c, 0, exitCode)
+	}, retryWindow, time.Second)
+}
+
+func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.LimaVM, containerID string) {
+	t.Helper()
+
+	requireDockerContainerFinished(t, vm, containerID)
+
+	const acceptableTimeDelta = 3 * time.Second
+
+	finishedAt, stderr, err := vm.RunCommand(
+		"docker", "inspect", "--format={{.State.FinishedAt}}", containerID,
+	)
+	require.NoError(t, err, "docker inspect error:\nstderr:\n%s", stderr)
+
+	raw := strings.TrimSpace(finishedAt)
+
+	parsed, err := time.Parse(time.RFC3339Nano, raw)
+	require.NoError(t, err, "failed to parse FinishedAt %q", raw)
+
+	now := time.Now().UTC()
+	delta := now.Sub(parsed)
+	if delta < 0 {
+		delta = -delta
+	}
+
+	require.LessOrEqual(t, delta, acceptableTimeDelta, "FinishedAt delta exceeds acceptable range: expected ≤%v, actual %v", acceptableTimeDelta, delta)
 }
