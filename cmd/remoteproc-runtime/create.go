@@ -15,6 +15,7 @@ var createCmd = &cobra.Command{
 	Short: "Create a new container from an OCI bundle",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true
 		containerID := args[0]
 		if bundlePath == "" {
 			bundlePath = "."

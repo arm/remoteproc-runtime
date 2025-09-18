@@ -15,6 +15,7 @@ var deleteCmd = &cobra.Command{
 	Long:  "Delete a container. Use --force to delete a running container.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true
 		containerID := args[0]
 		return runtime.Delete(logger, containerID, forceDelete)
 	},

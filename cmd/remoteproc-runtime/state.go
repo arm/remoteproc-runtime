@@ -13,6 +13,7 @@ var stateCmd = &cobra.Command{
 	Short: "Get the state of a container",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true
 		containerID := args[0]
 
 		state, err := runtime.State(containerID)

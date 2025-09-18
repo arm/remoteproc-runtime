@@ -10,6 +10,7 @@ var startCmd = &cobra.Command{
 	Short: "Start an existing container",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true
 		containerID := args[0]
 		return runtime.Start(containerID)
 	},
