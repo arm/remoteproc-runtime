@@ -16,7 +16,7 @@ var deleteCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		containerID := args[0]
-		return runtime.Delete(containerID, forceDelete)
+		return runtime.Delete(logger, containerID, forceDelete)
 	},
 }
 
