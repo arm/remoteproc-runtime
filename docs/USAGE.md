@@ -121,6 +121,7 @@ To try our Remoteproc runtime, you need one of the following devices:
    kind: Pod
    apiVersion: v1
    metadata:
+     name: demo-pod
      annotations:
        remoteproc.name: <target-processor-name>
    spec:
