@@ -46,6 +46,8 @@ To try our Remoteproc runtime, you need one of the following devices:
     <details open>
     <summary id="using-docker"><ins>Using Docker</ins></summary>
 
+   ⚠️ Docker network must be set to 'Host' (--network=host), as the remoteproc proxy process runs in the host's network namespace.
+
    ```sh
    docker run \
        --runtime io.containerd.remoteproc.v1 \
@@ -165,6 +167,8 @@ To try our Remoteproc runtime, you need one of the following devices:
    ```
 
 1. **Run the image**
+
+   ⚠️ Podman cgroup manager must be set to `--cgroup-manager=cgroupfs` to avoid using the unsupported `systemd` cgroup manager.
 
    ```sh
    podman \
