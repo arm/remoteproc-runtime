@@ -99,7 +99,7 @@ To try our Remoteproc runtime, you need one of the following devices:
    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.remoteproc]
      runtime_type = "io.containerd.remoteproc.v1"
 
-     # `pod_annotations` is a list of annotatins that will be passed to both the pod sandbox, and container OCI annotations.
+     # `pod_annotations` is a list of annotations that will be passed to both the pod sandbox, and container OCI annotations.
      # Details: https://raw.githubusercontent.com/containerd/containerd/main/docs/cri/config.md
      pod_annotations = ["remoteproc.name"]
    ```
