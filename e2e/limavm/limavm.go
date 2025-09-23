@@ -22,18 +22,18 @@ var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func NewWithDocker(mountDir string, absImageTar string, bins repo.Bins) (LimaVM, error) {
-	return New("docker", mountDir, absImageTar, string(bins.Runtime), string(bins.Shim))
+func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
+	return New("docker", mountDir, buildContext, string(bins.Runtime), string(bins.Shim))
 }
 
-func NewWithPodman(mountDir string, absImageTar string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
-	return New("podman", mountDir, absImageTar, string(runtimeBin))
+func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
+	return New("podman", mountDir, buildContext, string(runtimeBin))
 }
 
-func New(template string, mountDir string, absImageTar string, binsToInstall ...string) (LimaVM, error) {
+func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {
 	cmd := exec.Command(
 		prepareLimaVMScript,
-		append([]string{template, mountDir, absImageTar}, binsToInstall...)...,
+		append([]string{template, mountDir, buildContext}, binsToInstall...)...,
 	)
 	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 

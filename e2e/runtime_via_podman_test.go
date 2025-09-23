@@ -18,7 +18,7 @@ func TestPodmanContainerLifecycle(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithPodman(rootDir, "../testdata/test-image.tar", runtimeBin)
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 

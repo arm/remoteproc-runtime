@@ -20,7 +20,7 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithDocker(rootDir, "../testdata/test-image.tar", bins)
+	vm, err := limavm.NewWithDocker(rootDir, "../testdata", bins)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -61,7 +61,7 @@ func TestDockerRemoteprocNameMismatch(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithDocker(rootDir, "../testdata/test-image.tar", bins)
+	vm, err := limavm.NewWithDocker(rootDir, "../testdata", bins)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -87,7 +87,7 @@ func TestDockerKillProcessByPid(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithDocker(rootDir, "../testdata/test-image.tar", bins)
+	vm, err := limavm.NewWithDocker(rootDir, "../testdata", bins)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 

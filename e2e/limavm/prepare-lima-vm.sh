@@ -6,21 +6,21 @@ VM_NAME=""
 
 TEMPLATE=""
 MOUNT_DIR=""
-IMAGE_TAR=""
+BUILD_CONTEXT=""
 BINARIES=()
 
 usage() {
-    echo "Usage: $0 <template> <mount-dir> <image-tar> <binary1> [binary2] ..." >&2
+    echo "Usage: $0 <template> <mount-dir> <build-context> <binary1> [binary2] ..." >&2
     echo "  template:         Lima template to use (docker or podman)" >&2
     echo "  mount-dir:        Directory attached in the vm" >&2
-    echo "  image-tar:        Path to container image tar file to load" >&2
+    echo "  build-context:    Build context directory for test-image build" >&2
     echo "  binary1...N:      Path to binaries to install in /usr/local/bin" >&2
     exit 1
 }
 
 validate_inputs() {
-    if [ ! -f "$IMAGE_TAR" ]; then
-        echo "Error: Image tar file not found: $IMAGE_TAR" >&2
+    if [ ! -d "$BUILD_CONTEXT" ]; then
+        echo "Error: Build context directory not found: $BUILD_CONTEXT" >&2
         exit 1
     fi
 
@@ -81,27 +81,36 @@ install_binary() {
     fi
 }
 
-load_image() {
-    echo "Loading image..." >&2
-    local image_filename=$(basename "$IMAGE_TAR")
+build_image() {
+    echo "Building image..." >&2
+    local tmp_context="/tmp/docker-build-$$"
 
-    if ! limactl copy "$IMAGE_TAR" "$VM_NAME:/tmp/$image_filename"; then
-        echo "Error: Failed to copy image" >&2
+    echo "Copying build context to VM..." >&2
+    if ! limactl shell "$VM_NAME" mkdir -p "$tmp_context"; then
+        echo "Error: Failed to create temp directory in VM" >&2
+        cleanup_on_failure
+        exit 1
+    fi
+
+    if ! limactl copy -r "$BUILD_CONTEXT/." "$VM_NAME:$tmp_context/"; then
+        echo "Error: Failed to copy build context" >&2
         cleanup_on_failure
         exit 1
     fi
 
     case "$TEMPLATE" in
         docker)
-            if ! limactl shell "$VM_NAME" docker load -i "/tmp/$image_filename" >&2; then
-                echo "Error: Failed to load Docker image" >&2
+            echo "Building Docker image..." >&2
+            if ! limactl shell "$VM_NAME" docker build -t test-image "$tmp_context" >&2; then
+                echo "Error: Failed to build Docker image" >&2
                 cleanup_on_failure
                 exit 1
             fi
             ;;
         podman)
-            if ! limactl shell "$VM_NAME" podman load -i "/tmp/$image_filename" >&2; then
-                echo "Error: Failed to load Podman image" >&2
+            echo "Building Podman image..." >&2
+            if ! limactl shell "$VM_NAME" podman build -t test-image "$tmp_context" >&2; then
+                echo "Error: Failed to build Podman image" >&2
                 cleanup_on_failure
                 exit 1
             fi
@@ -113,7 +122,7 @@ load_image() {
             ;;
     esac
 
-    limactl shell "$VM_NAME" rm "/tmp/$image_filename" 2>/dev/null || true
+    limactl shell "$VM_NAME" rm -rf "$tmp_context" 2>/dev/null || true
 }
 
 main() {
@@ -123,7 +132,7 @@ main() {
 
     TEMPLATE="$1"
     MOUNT_DIR="$2"
-    IMAGE_TAR="$3"
+    BUILD_CONTEXT="$3"
     shift 3
     BINARIES=("$@")
 
@@ -140,7 +149,7 @@ main() {
         install_binary "$binary_path" "$binary_name"
     done
 
-    load_image
+    build_image
 
     echo "VM setup completed successfully" >&2
 
