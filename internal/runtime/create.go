@@ -17,10 +17,7 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 		return fmt.Errorf("can't read spec: %w", err)
 	}
 
-	name, ok := spec.Annotations[oci.SpecName]
-	if !ok {
-		return fmt.Errorf("%s not set in bundle annotations", oci.SpecName)
-	}
+	name := spec.Annotations[oci.SpecName]
 	devicePath, err := remoteproc.FindDevicePath(name)
 	if err != nil {
 		return fmt.Errorf("can't determine remoteproc path: %w", err)
