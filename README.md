@@ -26,7 +26,6 @@ Instead of manually flashing firmware or writing custom deployment scripts, you:
 The runtime consists of two components that integrate with your existing container infrastructure:
 
 1. **Containerd shim** (`containerd-shim-remoteproc-v1`)
-1. **Containerd shim** (`containerd-shim-remoteproc-v1`)
    - Enables Docker, K3S, and other containerd-based systems
 
 1. **OCI runtime** (`remoteproc-runtime`)
