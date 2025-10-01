@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-To try our Remoteproc runtime, you need one of the following devices:
+To try our Remoteproc Runtime, you need one of the following devices:
 
 1. Physical hardware with remoteproc support, for example:
    - [NXP's i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
-     - When using Remoteproc runtime with i.MX93, you may encounter specific hardware limitations that require additional configuration steps. See our [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for detailed solutions and best practices.
+     - When using Remoteproc Runtime with i.MX93, you may encounter specific hardware limitations that require additional configuration steps. See our [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for detailed solutions and best practices.
    - [ST's STM32MP257F-DK](https://www.st.com/en/evaluation-tools/stm32mp257f-dk.html)
 2. Virtual i.MX93 on Corellium [pre-configured with our image](./CORELLIUM_USAGE.md)
    - Our Virtual i.MX93 kernel only supports Docker, via [the Docker workflow](#using-docker) natively.
