@@ -7,6 +7,8 @@
    ![setup corellium step 2](./images/setup_corellium2.png)
 4. Select i.MX93 board
    ![setup corellium step 3](./images/setup_corellium3.png)
-5. Use the image provided [here](https://github.com/Arm-Debug/remoteproc-runtime/releases/download/assets/image.zip) and upload it to the custom image section
+5. Use [an image with necessary modules (such as docker-compose) installed](./YOCTO_BUILD_INST.md). Refer to [the Corellium documentation](https://www.corellium.com/blog/building-firmware-package-corellium-atlas) to make a compatible kernel.
+   ℹ️ We recommend using the device tree provided by Corellium and not replacing it.
+6. Upload your own kernel package to the custom image section
    ![setup corellium step 4](./images/setup_corellium4.png)
-6. You will have a functioning Virtual i.MX93 to try out Remoteproc Runtime. You can go back to [USAGE.md's Containered Shim section](./USAGE.md#containerd-shim) or [Container Runtime section](./USAGE.md#container-runtime-️-wip) and try out the Remoteproc Runtime.
+7. The Virtual i.MX93 will now be ready for testing. Return to [USAGE.md's Containered Shim section](./USAGE.md#containerd-shim) or [Container Runtime section](./USAGE.md#container-runtime-️-wip)

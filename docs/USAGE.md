@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-To try our Remoteproc Runtime, you need one of the following devices:
+To test the Remoteproc Runtime, one of the following devices with the [necessary modules installed in its kernel](./YOCTO_BUILD_INST.md) is required.
 
 1. Physical hardware with remoteproc support, for example:
    - [NXP's i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
