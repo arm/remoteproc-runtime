@@ -41,7 +41,7 @@ func FindDevicePath(name string) (string, error) {
 		availableNames = append(availableNames, instanceName)
 	}
 
-	return "", fmt.Errorf("%s is not in the list of available remote processors %v", name, availableNames)
+	return "", fmt.Errorf("remote processor %s does not exist, available remote processors: %s", name, strings.Join(availableNames, ", "))
 }
 
 type State string

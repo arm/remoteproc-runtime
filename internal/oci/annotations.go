@@ -14,7 +14,11 @@ const (
 )
 
 func validateSpecAnnotations(spec *specs.Spec) error {
-	return validateAnnotationsExist(spec.Annotations, SpecName)
+	err := validateAnnotationsExist(spec.Annotations, SpecName)
+	if err != nil {
+		return fmt.Errorf("invalid container specification: %w", err)
+	}
+	return nil
 }
 
 func validateStateAnnotations(state *specs.State) error {

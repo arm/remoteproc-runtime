@@ -64,7 +64,7 @@ func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
 	bundlePath := t.TempDir()
 	require.NoError(t, generateBundle(bundlePath, "other-processor"))
 	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, "test-container")
-	assert.ErrorContains(t, err, "other-processor is not in the list of available remote processors")
+	assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor")
 }
 
 func TestRuntimeKillProcessByPid(t *testing.T) {

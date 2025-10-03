@@ -14,7 +14,7 @@ import (
 func Create(containerID string, bundlePath string, pidFile string) error {
 	spec, err := oci.ReadSpec(bundlePath)
 	if err != nil {
-		return fmt.Errorf("can't read spec: %w", err)
+		return fmt.Errorf("failed to read container specification: %w", err)
 	}
 
 	name := spec.Annotations[oci.SpecName]
@@ -83,7 +83,7 @@ func extractFirmwareName(spec *specs.Spec) (string, error) {
 
 func validateFirmwareExists(firmwareFilePath string) error {
 	if _, err := os.Stat(firmwareFilePath); err != nil {
-		return fmt.Errorf("firmware does not exist: %w", err)
+		return fmt.Errorf("requested firmware does not exist: %w", err)
 	}
 	return nil
 }

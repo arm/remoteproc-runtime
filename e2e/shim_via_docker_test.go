@@ -78,7 +78,7 @@ func TestDockerRemoteprocNameMismatch(t *testing.T) {
 		"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
 		"test-image")
 	assert.Error(t, err)
-	assert.Contains(t, stderr, "other-processor is not in the list of available remote processors")
+	assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: a-processor")
 }
 
 func TestDockerKillProcessByPid(t *testing.T) {
