@@ -18,10 +18,10 @@ type shimSocket struct {
 
 func (s *shimSocket) Close() {
 	if s.socket != nil {
-		s.socket.Close()
+		_ = s.socket.Close()
 	}
 	if s.file != nil {
-		s.file.Close()
+		_ = s.file.Close()
 	}
 	_ = containerdshim.RemoveSocket(s.addr)
 }

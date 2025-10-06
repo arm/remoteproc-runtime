@@ -29,6 +29,21 @@ go build ./cmd/remoteproc-runtime
 
 ⚠️ This runtime specifically targets Linux; building on other platforms requires setting `GOOS=linux`. If cross-compiling, specify the target architecture with `GOARCH=arm64`.
 
+## Linting
+
+The project uses [golangci-lint](https://golangci-lint.run/) for Go code quality checks.
+
+```bash
+# Install golangci-lint
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Run linter
+golangci-lint run
+
+# Run linter with auto-fix
+golangci-lint run --fix
+```
+
 ## Testing
 
 ### Fast tests

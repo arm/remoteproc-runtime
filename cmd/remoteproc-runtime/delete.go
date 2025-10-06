@@ -5,9 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	forceDelete bool
-)
+var forceDelete bool
 
 var deleteCmd = &cobra.Command{
 	Use:   "delete <ID>",

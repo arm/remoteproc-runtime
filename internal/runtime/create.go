@@ -90,5 +90,5 @@ func validateFirmwareExists(firmwareFilePath string) error {
 
 func writePidFile(pidFile string, pid int) error {
 	content := fmt.Sprintf("%d", pid)
-	return os.WriteFile(pidFile, []byte(content), 0644)
+	return os.WriteFile(pidFile, []byte(content), 0o644)
 }

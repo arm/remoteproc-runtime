@@ -14,7 +14,7 @@ func ReadSpec(bundlePath string) (*specs.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	var s specs.Spec
 	if err := json.NewDecoder(f).Decode(&s); err != nil {
 		return nil, err

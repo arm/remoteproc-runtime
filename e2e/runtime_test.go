@@ -24,7 +24,7 @@ func TestRuntimeContainerLifecycle(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
@@ -57,7 +57,7 @@ func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
@@ -73,7 +73,7 @@ func TestRuntimeKillProcessByPid(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestRuntimeWriteProcessPid(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
 	require.NoError(t, err)
 
@@ -160,11 +160,11 @@ func generateBundle(targetDir string, remoteprocName string) error {
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
-	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0o755); err != nil {
 		return err
 	}
 	firmwarePath := filepath.Join(targetDir, bundleRoot, firmwareName)
-	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0644); err != nil {
+	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0o644); err != nil {
 		return err
 	}
 
@@ -186,7 +186,7 @@ func generateBundle(targetDir string, remoteprocName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(specPath, specData, 0644); err != nil {
+	if err := os.WriteFile(specPath, specData, 0o644); err != nil {
 		return err
 	}
 	return nil

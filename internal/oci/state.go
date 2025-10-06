@@ -14,9 +14,7 @@ const (
 	stateFileName = "state.json"
 )
 
-var (
-	stateDir = rootpath.Join("run", "remoteproc")
-)
+var stateDir = rootpath.Join("run", "remoteproc")
 
 func NewState(containerID string, bundlePath string) *specs.State {
 	return &specs.State{
@@ -31,7 +29,7 @@ func NewState(containerID string, bundlePath string) *specs.State {
 
 func WriteState(state *specs.State) error {
 	containerStateDir := filepath.Join(stateDir, state.ID)
-	if err := os.MkdirAll(containerStateDir, 0755); err != nil {
+	if err := os.MkdirAll(containerStateDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create state directory: %w", err)
 	}
 
@@ -49,11 +47,11 @@ func WriteState(state *specs.State) error {
 
 func atomicWrite(filePath string, content []byte) error {
 	tmpFilePath := filePath + ".tmp"
-	if err := os.WriteFile(tmpFilePath, content, 0644); err != nil {
+	if err := os.WriteFile(tmpFilePath, content, 0o644); err != nil {
 		return fmt.Errorf("failed to write temporary file %s: %w", tmpFilePath, err)
 	}
 	if err := os.Rename(tmpFilePath, filePath); err != nil {
-		os.Remove(tmpFilePath)
+		_ = os.Remove(tmpFilePath)
 		return fmt.Errorf("failed to rename temp file %s to %s", tmpFilePath, filePath)
 	}
 	return nil
@@ -65,7 +63,7 @@ func ReadState(containerID string) (*specs.State, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %w", stateFilePath, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	var s specs.State
 	if err := json.NewDecoder(f).Decode(&s); err != nil {
 		return nil, err

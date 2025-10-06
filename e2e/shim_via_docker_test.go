@@ -28,7 +28,7 @@ func TestDockerContainerLifecycle(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
@@ -69,7 +69,7 @@ func TestDockerRemoteprocNameMismatch(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 
 	_, stderr, err := vm.RunCommand(
 		"docker", "run", "-d",
@@ -95,7 +95,7 @@ func TestDockerKillProcessByPid(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 
 	containerID, stderr, err := vm.RunCommand(
 		"docker", "run", "-d",
@@ -108,7 +108,8 @@ func TestDockerKillProcessByPid(t *testing.T) {
 
 	stdout, stderr, err := vm.RunCommand("docker", "inspect", "--format={{.State.Pid}}", containerID)
 	require.NoError(t, err, "stderr: %s", stderr)
-	pid, err := strconv.Atoi(strings.TrimSpace(stdout))
+	pid, parseErr := strconv.Atoi(strings.TrimSpace(stdout))
+	require.NoError(t, parseErr)
 
 	_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 	require.NoError(t, err)

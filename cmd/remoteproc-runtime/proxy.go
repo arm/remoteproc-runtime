@@ -11,9 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	devicePath string
-)
+var devicePath string
 
 var proxyCmd = &cobra.Command{
 	Use:    "proxy",
@@ -68,6 +66,6 @@ var proxyCmd = &cobra.Command{
 
 func init() {
 	proxyCmd.Flags().StringVar(&devicePath, "device-path", "", "Remoteproc device path (required)")
-	proxyCmd.MarkFlagRequired("device-path")
+	_ = proxyCmd.MarkFlagRequired("device-path")
 	rootCmd.AddCommand(proxyCmd)
 }

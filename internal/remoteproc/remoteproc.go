@@ -104,7 +104,7 @@ func StoreFirmware(sourcePath string) (string, error) {
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
 
 	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
-	if err := os.WriteFile(destPath, data, 0644); err != nil {
+	if err := os.WriteFile(destPath, data, 0o644); err != nil {
 		return "", fmt.Errorf("failed to write firmware file %s: %w", destPath, err)
 	}
 	return targetFileName, nil
@@ -122,7 +122,7 @@ func SetFirmware(devicePath string, firmwareFileName string) error {
 	if state == StateRunning {
 		return fmt.Errorf("remote processor is already running")
 	}
-	if err := os.WriteFile(buildFirmwareFilePath(devicePath), []byte(firmwareFileName), 0644); err != nil {
+	if err := os.WriteFile(buildFirmwareFilePath(devicePath), []byte(firmwareFileName), 0o644); err != nil {
 		return fmt.Errorf("failed to set firmware %s: %w", firmwareFileName, err)
 	}
 	return nil
@@ -136,14 +136,14 @@ func Start(devicePath string) error {
 	if state == StateRunning {
 		return fmt.Errorf("remote processor is already running")
 	}
-	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("start"), 0644); err != nil {
+	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("start"), 0o644); err != nil {
 		return fmt.Errorf("failed to start remote processor: %w", err)
 	}
 	return nil
 }
 
 func Stop(devicePath string) error {
-	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("stop"), 0644); err != nil {
+	if err := os.WriteFile(buildStateFilePath(devicePath), []byte("stop"), 0o644); err != nil {
 		return fmt.Errorf("failed to stop remote processor: %w", err)
 	}
 	return nil

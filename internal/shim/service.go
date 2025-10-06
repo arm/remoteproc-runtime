@@ -73,9 +73,7 @@ func newTaskService(ctx context.Context, publisher containerdshim.Publisher, sd 
 	return service, nil
 }
 
-var (
-	_ = containerdshim.TTRPCService(&remoteprocTaskService{})
-)
+var _ = containerdshim.TTRPCService(&remoteprocTaskService{})
 
 type remoteprocTaskService struct {
 	events   chan any
@@ -279,7 +277,7 @@ func (s *remoteprocTaskService) Kill(ctx context.Context, r *taskAPI.KillRequest
 		ContainerID: r.ID,
 		ID:          r.ID,
 		Pid:         uint32(pid),
-		//ExitStatus:  uint32(e.Status),
+		// ExitStatus:  uint32(e.Status),
 		ExitedAt: protobuf.ToTimestamp(time.Now().UTC()),
 	})
 
@@ -379,7 +377,7 @@ func (s *remoteprocTaskService) forward(ctx context.Context, publisher container
 			s.logger.WithError(err).Error("post event")
 		}
 	}
-	publisher.Close()
+	_ = publisher.Close()
 }
 
 func (s *remoteprocTaskService) logPayload(name string, payload any) {

@@ -26,7 +26,7 @@ func TestPodmanContainerLifecycle(t *testing.T) {
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
-	defer sim.Stop()
+	defer func() { _ = sim.Stop() }()
 
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 

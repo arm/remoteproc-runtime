@@ -11,8 +11,10 @@ import (
 	"github.com/Arm-Debug/remoteproc-runtime/e2e/runner"
 )
 
-var prepareLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "prepare-lima-vm.sh")
-var teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "teardown-lima-vm.sh")
+var (
+	prepareLimaVMScript  = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "prepare-lima-vm.sh")
+	teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "teardown-lima-vm.sh")
+)
 
 type LimaVM struct {
 	name string
