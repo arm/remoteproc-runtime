@@ -11,7 +11,7 @@ var (
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create <ID>",
+	Use:   "create <container-id>",
 	Short: "Create a new container from an OCI bundle",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
