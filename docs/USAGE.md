@@ -2,51 +2,64 @@
 
 ## Prerequisites
 
-To test the Remoteproc Runtime, one of the following devices with the [necessary modules installed in its kernel](./YOCTO_BUILD_INST.md) is required.
+Remoteproc Runtime requires a Linux host with remoteproc driver support, and a container engine such as Docker or Podman.
 
-1. Physical hardware with remoteproc support, for example:
-   - [NXP's i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
-     - When using Remoteproc Runtime with i.MX93, you may encounter specific hardware limitations that require additional configuration steps. See our [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for detailed solutions and best practices.
-   - [ST's STM32MP257F-DK](https://www.st.com/en/evaluation-tools/stm32mp257f-dk.html)
-2. Virtual i.MX93 on Corellium [pre-configured with our image](./CORELLIUM_USAGE.md)
-   - Our Virtual i.MX93 kernel only supports Docker, via [the Docker workflow](#using-docker) natively.
-   - [Standalone runtime](#container-runtime-standalone) flow has no external dependencies and will also work
+If you're targeting an Open Embedded based Linux, see the [Yocto module guide](./YOCTO_BUILD_INST.md) for the required layers.
 
-## Containerd Shim (Docker, K3S, etc)
+**Tested hardware:**
+
+The following boards have been verified to work and were used during development of the runtime:
+
+- [ST STM32MP257F-DK](https://www.st.com/en/evaluation-tools/stm32mp257f-dk.html)
+- [NXP i.MX93](https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-93-applications-processor-family-arm-cortex-a55-ml-acceleration-power-efficient-mpu:i.MX93)
+  - **Known issues**: See [i.MX93 workaround notes](IMX93_WORKAROUNDS.md) for driver limitations and solutions
+  - **Virtual testing**: This board is available on [Corellium](./CORELLIUM_USAGE.md) for testing without physical hardware
+    - Our Virtual i.MX93 kernel only supports Docker, via [the Docker workflow](#using-docker) natively.
+    - [Standalone runtime](#container-runtime-standalone) flow has no external dependencies and will also work
+
+## Container Image Preparation
+
+Remoteproc Runtime cannot run standard Linux container images. Images must contain a firmware binary compatible with the target processor and specify it as the entrypoint. This is the same binary you'd normally flash to your remote processor.
+
+Assuming a `hello.elf` firmware binary built for your processor, a `Dockerfile` would look like this:
+
+```Dockerfile
+FROM scratch
+ADD hello.elf /
+ENTRYPOINT ["hello.elf"]
+```
+
+## Target Processor Identification
+
+All deployment methods require that the target processor name is passed via the `remoteproc.name` annotation. Find this value by interrogating `sysfs` **on the remoteproc-enabled target**:
+
+```sh
+# One of /sys/class/remoteproc/.../name, for example:
+cat /sys/class/remoteproc/remoteproc0/name
+```
+
+Make note of this value - you'll need it in the deployment steps below.
+
+## Running Your Container
+
+Remoteproc Runtime supports several container engines, but the specifics of integration vary slightly:
+
+- **[Containerd Shim](#containerd-shim-docker-k3s-etc)** - For Docker, K3S, and other containerd-based runtimes
+- **[Container Runtime (Podman)](#container-runtime-podman)** - For Podman deployments
+- **[Container Runtime (standalone)](#container-runtime-standalone)** - For direct OCI runtime usage
+
+### Containerd Shim (Docker, K3s, etc)
 
 1. **Install the shim and runtime**
 
-   The simplest way is to make the `containerd-shim-remoteproc-v1` and `remoteproc-runtime` available in your `$PATH`.
-
-   ℹ️ Install both binaries on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `docker`, `k3s`, or other container runtimes, install the binaries on the remote machine where containerd is actually executing the containers.
-
-1. **Prepare a container image**
-
-   In order to start a container, we need an image. The image needs to contain a binary file we can load using remoteproc framework. This binary file is what you'd normally flash by any other means to your remote processor.
-
-   Assuming a `hello.elf` binary we built for our processor, `Dockerfile` could look like this:
-
-   ```Dockerfile
-   FROM scratch
-   ADD hello.elf /
-   ENTRYPOINT ["hello.elf"]
-   ```
-
-1. **Determine the target processor name**
-
-   Shim requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
-
-   ```sh
-   # One of /sys/class/remoteproc/.../name, for example:
-   cat /sys/class/remoteproc/remoteproc0/name
-   ```
+   Daemon-based engines like Docker and K3S require both a containerd shim and the remoteproc runtime. Make the `containerd-shim-remoteproc-v1` and `remoteproc-runtime` binaries available in the `$PATH` of your target Linux host (i.e. the remoteproc-enabled device).
 
 1. **Run the image**
 
-    <details open>
-    <summary id="using-docker"><ins>Using Docker</ins></summary>
+   <details open>
+   <summary id="using-docker"><ins>Using Docker</ins></summary>
 
-   ⚠️ Docker network must be set to 'Host' (--network=host), as the remoteproc proxy process runs in the host's network namespace.
+   ⚠️ Docker network must be set to 'Host' (`--network=host`), as the remoteproc proxy process runs in the host's network namespace.
 
    ```sh
    docker run \
@@ -106,7 +119,7 @@ To test the Remoteproc Runtime, one of the following devices with the [necessary
 
    And register the runtime with `kubernetes`:
 
-   ```bash
+   ```sh
    sudo kubectl apply -f - <<'YAML'
    apiVersion: node.k8s.io/v1
    kind: RuntimeClass
@@ -137,34 +150,13 @@ To test the Remoteproc Runtime, one of the following devices with the [necessary
 
    </details>
 
-## Container Runtime (Podman)
+### Container Runtime (Podman)
 
 1. **Install the runtime**
 
    Make `remoteproc-runtime` binary available on the target machine.
 
    ℹ️ Install the binary on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `podman`, install the binary on the remote machine where podman is actually executing the containers.
-
-1. **Prepare a container image**
-
-   In order to start a container, we need an image. The image needs to contain a binary file we can load using remoteproc framework. This binary file is what you'd normally flash by any other means to your remote processor.
-
-   Assuming a `hello.elf` binary we built for our processor, `Dockerfile` could look like this:
-
-   ```Dockerfile
-   FROM scratch
-   ADD hello.elf /
-   ENTRYPOINT ["hello.elf"]
-   ```
-
-1. **Determine the target processor name**
-
-   Runtime requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
-
-   ```sh
-   # One of /sys/class/remoteproc/.../name, for example:
-   cat /sys/class/remoteproc/remoteproc0/name
-   ```
 
 1. **Run the image**
 
@@ -175,26 +167,17 @@ To test the Remoteproc Runtime, one of the following devices with the [necessary
        --cgroup-manager=cgroupfs \
        --runtime=<path-to-remoteproc-runtime> \
        run \
-           \ --annotation remoteproc.name="<target-processor-name>" \
+           --annotation remoteproc.name="<target-processor-name>" \
            <image-name>
    ```
 
-## Container Runtime (standalone)
-
-1. **Determine the target processor name**
-
-   Runtime requires the target processor name passed via `remoteproc.name` annotation. You can find the required value by interrogating `sysfs` **on a remoteproc enabled target**:
-
-   ```sh
-   # One of /sys/class/remoteproc/.../name, for example:
-   cat /sys/class/remoteproc/remoteproc0/name
-   ```
+### Container Runtime (standalone)
 
 1. **Prepare an OCI bundle**
 
    In order to start a container, we need an OCI bundle. Create the following directory structure:
 
-   ```bash
+   ```sh
    # Create bundle directory structure
    mkdir -p my-bundle/rootfs
 
@@ -223,11 +206,11 @@ To test the Remoteproc Runtime, one of the following devices with the [necessary
    EOF
    ```
 
-   Replace `your-binary.elf` with the name of your binary file and `<target-processor-name>` with the processor name from step 1.
+   Replace `your-binary.elf` with the name of your binary file and `<target-processor-name>` with the processor name from the Target Processor Identification section.
 
 1. **Use the runtime**
 
-   ```bash
+   ```sh
    remoteproc-runtime --bundle my-bundle create my-container
    remoteproc-runtime start my-container
    remoteproc-runtime state my-container
