@@ -24,7 +24,7 @@ jobs:
       DETECT_PROJECT_NAME: DEML-remoteproc-runtime
       PUSH_REPORT_TO_DB: ${{ github.event_name != 'pull_request' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Set repository reference
         run: |
@@ -39,7 +39,7 @@ jobs:
           echo "::notice title=Black Duck target::${{ env.DETECT_PROJECT_NAME }} / $ver_to_reference"
 
       - name: Black Duck Security Scan
-        uses: blackduck-inc/black-duck-security-scan@v2.3.0
+        uses: blackduck-inc/black-duck-security-scan@b6f87e0cec75fc586a22ce6e076e3b9d691b685a # v2.5.0
         with:
           blackducksca_url: ${{ vars.BLACKDUCKSCA_URL }}
           blackducksca_token: ${{ secrets.BLACKDUCKSCA_TOKEN }}

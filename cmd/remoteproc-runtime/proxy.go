@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/remoteproc"
+	"github.com/arm/remoteproc-runtime/internal/remoteproc"
 	"github.com/spf13/cobra"
 )
 

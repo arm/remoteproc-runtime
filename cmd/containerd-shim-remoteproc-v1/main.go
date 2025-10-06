@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/shim"
+	"github.com/arm/remoteproc-runtime/internal/shim"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
 

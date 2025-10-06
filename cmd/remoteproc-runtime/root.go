@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/log"
+	"github.com/arm/remoteproc-runtime/internal/log"
 	"github.com/spf13/cobra"
 )
 

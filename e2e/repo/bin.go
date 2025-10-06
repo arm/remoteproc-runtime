@@ -17,7 +17,7 @@ func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]str
 	}
 	binOut := filepath.Join(binOutDir, binToBuild)
 	toBuild := filepath.Join(repoRootDir, "cmd", binToBuild)
-	rootPathLDFlag := fmt.Sprintf("-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=%s", rootPathPrefix)
+	rootPathLDFlag := fmt.Sprintf("-X github.com/arm/remoteproc-runtime/internal/rootpath.prefix=%s", rootPathPrefix)
 
 	build := exec.Command(
 		"go", "build",

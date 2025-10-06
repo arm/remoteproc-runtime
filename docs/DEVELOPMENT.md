@@ -6,7 +6,7 @@ This guide covers how to build, test, and contribute to this project.
 
 - Go 1.25 or higher
 - [LimaVM](https://lima-vm.io) (for e2e testing)
-- [Remoteproc Simulator](https://github.com/Arm-Debug/remoteproc-simulator) (for e2e testing and manual testing without hardware)
+- [Remoteproc Simulator](https://github.com/arm/remoteproc-simulator) (for e2e testing and manual testing without hardware)
 
 ## Project Structure
 
@@ -85,7 +85,7 @@ Useful for development without access to hardware with Remoteproc support.
    ```
 
    ```bash
-   go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
+   go build -ldflags "-X github.com/arm/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
        ./cmd/remoteproc-runtime
    ```
 
@@ -123,7 +123,7 @@ Useful for development without access to hardware with Remoteproc support.
 1. **Build the runtime with custom root**
 
    ```bash
-   go build -ldflags "-X github.com/Arm-Debug/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
+   go build -ldflags "-X github.com/arm/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
        ./cmd/remoteproc-runtime
    ```
 
@@ -182,7 +182,3 @@ The release workflow will:
 1. Build binaries for multiple platforms
 
 1. Create a GitHub release with artifacts
-
-## Dependencies
-
-Private dependencies from `Arm-Debug` organisation require GitHub App authentication configured in CI. For local development with private repos, ensure your Git credentials have access to the required repositories.

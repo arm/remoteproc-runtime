@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
-	"github.com/Arm-Debug/remoteproc-runtime/internal/proxy"
+	"github.com/arm/remoteproc-runtime/internal/oci"
+	"github.com/arm/remoteproc-runtime/internal/proxy"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 

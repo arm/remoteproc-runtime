@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"syscall"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/oci"
-	"github.com/Arm-Debug/remoteproc-runtime/internal/remoteproc"
+	"github.com/arm/remoteproc-runtime/internal/oci"
+	"github.com/arm/remoteproc-runtime/internal/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 

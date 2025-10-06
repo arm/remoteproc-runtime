@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/runtime"
+	"github.com/arm/remoteproc-runtime/internal/runtime"
 	"github.com/spf13/cobra"
 )
 

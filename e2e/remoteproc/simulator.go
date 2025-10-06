@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/runner"
+	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
 type Simulator struct {

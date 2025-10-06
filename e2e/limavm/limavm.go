@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/repo"
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/runner"
+	"github.com/arm/remoteproc-runtime/e2e/repo"
+	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
 var (

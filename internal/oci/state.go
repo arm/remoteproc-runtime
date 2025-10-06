@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/rootpath"
+	"github.com/arm/remoteproc-runtime/internal/rootpath"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 

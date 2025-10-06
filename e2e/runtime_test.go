@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/remoteproc"
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/repo"
+	"github.com/arm/remoteproc-runtime/e2e/remoteproc"
+	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

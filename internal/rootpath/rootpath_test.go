@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Arm-Debug/remoteproc-runtime/internal/rootpath"
+	"github.com/arm/remoteproc-runtime/internal/rootpath"
 	"github.com/stretchr/testify/assert"
 )
 

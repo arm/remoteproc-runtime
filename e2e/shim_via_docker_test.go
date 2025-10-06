@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/limavm"
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/remoteproc"
-	"github.com/Arm-Debug/remoteproc-runtime/e2e/repo"
+	"github.com/arm/remoteproc-runtime/e2e/limavm"
+	"github.com/arm/remoteproc-runtime/e2e/remoteproc"
+	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

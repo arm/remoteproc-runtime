@@ -9,6 +9,9 @@ concurrency:
   group: release-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
@@ -18,16 +21,16 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps: 
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: actions/setup-go@v5
-      with:
-        go-version-file: 'go.mod'
-    - uses: goreleaser/goreleaser-action@v6
-      with:
-        distribution: goreleaser
-        version: '~> v2'
-        args: release --clean
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
+        with:
+          go-version-file: 'go.mod'
+      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
