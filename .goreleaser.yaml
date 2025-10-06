@@ -8,8 +8,18 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/containerd-shim-remoteproc-v1
+  - id: containerd-shim-remoteproc-v1
+    main: ./cmd/containerd-shim-remoteproc-v1
     binary: containerd-shim-remoteproc-v1
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: remoteproc-runtime
+    main: ./cmd/remoteproc-runtime
+    binary: remoteproc-runtime
     env:
       - CGO_ENABLED=0
     goos:
@@ -19,7 +29,7 @@ builds:
 
 archives:
   - formats: [tar.gz]
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "remoteproc-runtime_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
       - docs/*
