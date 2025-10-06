@@ -16,6 +16,7 @@ jobs:
   scan:
     name: Black Duck Scan
     runs-on: ubuntu-latest
+    environment: blackduck
     permissions:
       contents: read
       pull-requests: write
