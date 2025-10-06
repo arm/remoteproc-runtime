@@ -31,8 +31,8 @@ func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
 		if ns.Path != "" {
 			continue
 		}
-		flag, err := namespaceFlags[ns.Type]
-		if err {
+		flag, ok := namespaceFlags[ns.Type]
+		if !ok {
 			return 0, fmt.Errorf("Unknown namespace type %q", ns.Type)
 		}
 		flags |= flag
