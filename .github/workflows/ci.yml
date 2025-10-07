@@ -78,3 +78,6 @@ jobs:
 
       - name: Run e2e tests
         run: go test -v ./e2e/...
+
+      - name: Run root namespace E2E test
+        run: sudo -E env "PATH=$PATH" go test -v -run '^TestRuntimeProxyInheritsCorrectNamespace$' ./e2e

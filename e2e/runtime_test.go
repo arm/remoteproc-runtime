@@ -129,6 +129,10 @@ func TestRuntimeWriteProcessPid(t *testing.T) {
 }
 
 func TestRuntimeProxyInheritsCorrectNamespace(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("requires root privileges to create new namespaces")
+	}
+
 	rootDir := t.TempDir()
 	remoteprocName := "a-lovely-blue-device"
 	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
@@ -167,6 +171,48 @@ func TestRuntimeProxyInheritsCorrectNamespace(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("this test must be run as non-root")
+	}
+	rootDir := t.TempDir()
+	remoteprocName := "a-lovely-blue-device"
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	defer func() { _ = sim.Stop() }()
+
+	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
+	require.NoError(t, err)
+
+	const containerName = "good-looking-container"
+	bundlePath := t.TempDir()
+
+	require.NoError(t, generateBundle(
+		bundlePath,
+		remoteprocName,
+		specs.LinuxNamespace{Type: specs.MountNamespace},
+	))
+
+	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
+	require.NoError(t, err)
+	defer func() {
+		_, _ = invokeRuntime(bin, "delete", containerName)
+	}()
+
+	state, err := getContainerState(bin, containerName)
+	require.NoError(t, err)
+	require.Greater(t, state.Pid, 0)
+
+	hostMountNS, err := os.Readlink("/proc/self/ns/mnt")
+	require.NoError(t, err)
+	proxyMountNS, err := os.Readlink(fmt.Sprintf("/proc/%d/ns/mnt", state.Pid))
+	require.NoError(t, err)
+
+	assert.Equal(t, hostMountNS, proxyMountNS)
+}
+
 func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(bin, containerName)
@@ -183,6 +229,10 @@ func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
 }
 
 func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
+	return getContainerStateWithEnv(bin, containerName, nil)
+}
+
+func getContainerStateWithEnv(bin repo.RuntimeBin, containerName string, extraEnv []string) (specs.State, error) {
 	var state specs.State
 	out, err := invokeRuntime(bin, "state", containerName)
 	if err != nil {
