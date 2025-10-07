@@ -48,6 +48,8 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
 - **[Container Runtime (Podman)](#container-runtime-podman)** - For Podman deployments
 - **[Container Runtime (standalone)](#container-runtime-standalone)** - For direct OCI runtime usage
 
+Accessing and controlling remoteproc devices typically requires root permissions, as the driver interfaces are located in the /sys/class directory. To ensure Remoteproc Runtime has the necessary privileges, run your container engine (e.g., Docker daemon, K3S, or Podman) with root privileges (typically via `sudo`), so that it can spawn containers with Remoteproc Runtime running as root.
+
 ### Containerd Shim (Docker, K3s, etc)
 
 1. **Install the shim and runtime**
