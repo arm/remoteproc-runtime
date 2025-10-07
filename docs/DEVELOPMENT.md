@@ -20,11 +20,9 @@ The project consists of two main components:
 ### Build all components
 
 ```bash
-go build ./cmd/containerd-shim-remoteproc-v1
-```
-
-```bash
-go build ./cmd/remoteproc-runtime
+mkdir -p dist
+go build -o dist/containerd-shim-remoteproc-v1 ./cmd/containerd-shim-remoteproc-v1
+go build -o dist/remoteproc-runtime ./cmd/remoteproc-runtime
 ```
 
 ⚠️ This runtime specifically targets Linux; building on other platforms requires setting `GOOS=linux`. If cross-compiling, specify the target architecture with `GOARCH=arm64`.
@@ -81,12 +79,11 @@ Useful for development without access to hardware with Remoteproc support.
 1. **Build and install the shim and runtime with custom root**
 
    ```bash
-   go build ./cmd/containerd-shim-remoteproc-v1
-   ```
+   mkdir -p dist
+   go build -o dist/containerd-shim-remoteproc-v1 ./cmd/containerd-shim-remoteproc-v1
 
-   ```bash
    go build -ldflags "-X github.com/arm/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
-       ./cmd/remoteproc-runtime
+       -o dist/remoteproc-runtime ./cmd/remoteproc-runtime
    ```
 
    See "Install the shim and runtime" in [Usage Guide](USAGE.md).
@@ -123,8 +120,9 @@ Useful for development without access to hardware with Remoteproc support.
 1. **Build the runtime with custom root**
 
    ```bash
+   mkdir -p dist
    go build -ldflags "-X github.com/arm/remoteproc-runtime/internal/rootpath.prefix=/tmp/test-root" \
-       ./cmd/remoteproc-runtime
+       -o dist/remoteproc-runtime ./cmd/remoteproc-runtime
    ```
 
 1. **Setup Remoteproc Simulator**
@@ -142,17 +140,17 @@ Useful for development without access to hardware with Remoteproc support.
 
    ```bash
    # Create container
-   ./remoteproc-runtime create --bundle testdata/bundle my-container
+   ./dist/remoteproc-runtime create --bundle testdata/bundle my-container
 
    # Start container
-   ./remoteproc-runtime start my-container
+   ./dist/remoteproc-runtime start my-container
 
    # Check state
-   ./remoteproc-runtime state my-container
+   ./dist/remoteproc-runtime state my-container
 
    # Cleanup
-   ./remoteproc-runtime kill my-container
-   ./remoteproc-runtime delete my-container
+   ./dist/remoteproc-runtime kill my-container
+   ./dist/remoteproc-runtime delete my-container
    ```
 
 ## CI/CD
