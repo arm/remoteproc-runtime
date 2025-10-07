@@ -35,7 +35,7 @@ func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
 		}
 		flag, ok := namespaceFlags[ns.Type]
 		if !ok {
-			return 0, fmt.Errorf("Unknown namespace type %q", ns.Type)
+			return 0, fmt.Errorf("unknown namespace type %q", ns.Type)
 		}
 		flags |= flag
 	}
