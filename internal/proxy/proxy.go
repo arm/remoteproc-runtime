@@ -50,7 +50,7 @@ func effectiveNamespaceFlags(spec *specs.Spec) (uintptr, error) {
 
 	if getEUID() != 0 {
 		if flags != 0 {
-			fmt.Fprintln(os.Stderr, "[WARN] running without root; namespace isolation disabled")
+			fmt.Fprintln(os.Stderr, "[WARN] running non-root; namespace isolation disabled")
 		}
 		return 0, nil
 	}

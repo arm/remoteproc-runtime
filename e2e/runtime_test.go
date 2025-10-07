@@ -229,10 +229,10 @@ func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
 }
 
 func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
-	return getContainerStateWithEnv(bin, containerName, nil)
+	return getContainerStateWithEnv(bin, containerName)
 }
 
-func getContainerStateWithEnv(bin repo.RuntimeBin, containerName string, extraEnv []string) (specs.State, error) {
+func getContainerStateWithEnv(bin repo.RuntimeBin, containerName string) (specs.State, error) {
 	var state specs.State
 	out, err := invokeRuntime(bin, "state", containerName)
 	if err != nil {
