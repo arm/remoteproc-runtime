@@ -3,3 +3,7 @@ dist/
 
 # make artifacts
 out/
+
+# binaries
+/containerd-shim-remoteproc-v1
+/remoteproc-runtime
