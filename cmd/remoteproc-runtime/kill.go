@@ -10,7 +10,7 @@ import (
 )
 
 var killCmd = &cobra.Command{
-	Use:   "kill <ID> [SIGNAL]",
+	Use:   "kill <container-id> [SIGNAL]",
 	Short: "Send a signal to the container process",
 	Long:  "Send a signal to the container process. Supported signals: TERM (15), KILL (9), INT (2). Default is TERM.",
 	Args:  cobra.RangeArgs(1, 2),

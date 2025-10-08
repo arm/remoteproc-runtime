@@ -9,7 +9,7 @@ import (
 )
 
 var stateCmd = &cobra.Command{
-	Use:   "state <ID>",
+	Use:   "state <container-id>",
 	Short: "Get the state of a container",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
