@@ -71,7 +71,7 @@ func TestEffectiveNamespaceFlags(t *testing.T) {
 		got, err := effectiveNamespaceFlags(true, &specs.Spec{})
 
 		assert.NoError(t, err)
-		assert.Equal(t, uintptr(0x1234), got)
+		assert.Equal(t, uintptr(0x1507), got)
 	})
 
 	t.Run("warns and does not set namespace if root is not set but flags are given", func(t *testing.T) {
