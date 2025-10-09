@@ -22,7 +22,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    ```
    f /sys/class/remoteproc/remoteproc0/state                0664  root remoteproc -   -
    f /sys/class/remoteproc/remoteproc0/firmware             0664  root remoteproc -   -
-   f /sys/class/remoteproc/remoteproc0/name                0664  root remoteproc -   -
+   f /sys/class/remoteproc/remoteproc0/name                 0664  root remoteproc -   -
    ```
 
    Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed.
