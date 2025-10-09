@@ -21,8 +21,6 @@ var namespaceFlags = map[specs.LinuxNamespaceType]uintptr{
 	specs.UTSNamespace:     unix.CLONE_NEWUTS,
 }
 
-var getEUID = os.Geteuid
-
 func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
 	if spec == nil {
 		return 0, nil
@@ -48,7 +46,7 @@ func effectiveNamespaceFlags(spec *specs.Spec) (uintptr, error) {
 		return 0, err
 	}
 
-	if getEUID() != 0 {
+	if os.Geteuid() != 0 {
 		if flags != 0 {
 			fmt.Fprintln(os.Stderr, "[WARN] running non-root; namespace isolation disabled")
 		}

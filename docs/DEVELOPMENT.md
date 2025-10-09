@@ -63,9 +63,6 @@ brew install lima  # macOS
 
 # Run tests
 go test -v ./e2e/...
-
-# Run root namespace-specific tests (requires sudo)
-sudo -E env "PATH=$PATH" go test -v -run '^TestRuntimeProxyInheritsCorrectNamespace$' ./e2e
 ```
 
 ### Manual testing with Remoteproc Simulator

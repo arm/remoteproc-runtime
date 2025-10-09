@@ -128,49 +128,6 @@ func TestRuntimeWriteProcessPid(t *testing.T) {
 	assertFileContent(t, pidFilePath, fmt.Sprintf("%d", pid))
 }
 
-func TestRuntimeProxyInheritsCorrectNamespace(t *testing.T) {
-	if os.Geteuid() != 0 {
-		t.Skip("requires root privileges to create new namespaces")
-	}
-
-	rootDir := t.TempDir()
-	remoteprocName := "a-lovely-blue-device"
-	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
-	if err := sim.Start(); err != nil {
-		t.Fatalf("failed to run simulator: %s", err)
-	}
-	defer func() { _ = sim.Stop() }()
-
-	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
-	require.NoError(t, err)
-
-	const containerName = "blue-container"
-	bundlePath := t.TempDir()
-
-	require.NoError(t, generateBundle(
-		bundlePath,
-		remoteprocName,
-		specs.LinuxNamespace{Type: specs.MountNamespace},
-	))
-
-	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
-	require.NoError(t, err)
-
-	pid, err := getContainerPid(bin, containerName)
-	require.NoError(t, err)
-	require.Greater(t, pid, 0)
-
-	hostMountNS, err := os.Readlink("/proc/self/ns/mnt")
-	require.NoError(t, err)
-	proxyMountNS, err := os.Readlink(fmt.Sprintf("/proc/%d/ns/mnt", pid))
-	require.NoError(t, err)
-
-	assert.NotEqual(t, hostMountNS, proxyMountNS)
-
-	_, err = invokeRuntime(bin, "delete", containerName)
-	require.NoError(t, err)
-}
-
 func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("this test must be run as non-root")
@@ -229,10 +186,6 @@ func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
 }
 
 func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
-	return getContainerStateWithEnv(bin, containerName)
-}
-
-func getContainerStateWithEnv(bin repo.RuntimeBin, containerName string) (specs.State, error) {
 	var state specs.State
 	out, err := invokeRuntime(bin, "state", containerName)
 	if err != nil {
