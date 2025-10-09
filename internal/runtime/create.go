@@ -46,7 +46,7 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 		}
 	}()
 
-	pid, err := proxy.NewProcess(devicePath)
+	pid, err := proxy.NewProcess(spec, devicePath)
 	if err != nil {
 		return fmt.Errorf("failed to start proxy process: %w", err)
 	}
