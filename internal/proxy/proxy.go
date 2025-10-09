@@ -21,6 +21,8 @@ var namespaceFlags = map[specs.LinuxNamespaceType]uintptr{
 	specs.UTSNamespace:     unix.CLONE_NEWUTS,
 }
 
+var namespaceCloneFlagsFn = namespaceCloneFlags
+
 func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
 	if spec == nil {
 		return 0, nil
@@ -40,13 +42,13 @@ func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
 	return flags, nil
 }
 
-func effectiveNamespaceFlags(spec *specs.Spec) (uintptr, error) {
-	flags, err := namespaceCloneFlags(spec)
+func effectiveNamespaceFlags(isRoot bool, spec *specs.Spec) (uintptr, error) {
+	flags, err := namespaceCloneFlagsFn(spec)
 	if err != nil {
 		return 0, err
 	}
 
-	if os.Geteuid() != 0 {
+	if !isRoot {
 		if flags != 0 {
 			fmt.Fprintln(os.Stderr, "[WARN] running non-root; namespace isolation disabled")
 		}
@@ -62,7 +64,8 @@ func NewProcess(spec *specs.Spec, devicePath string) (int, error) {
 		return -1, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	namespaceFlags, err := effectiveNamespaceFlags(spec)
+	isRoot := os.Geteuid() == 0
+	namespaceFlags, err := effectiveNamespaceFlags(isRoot, spec)
 	if err != nil {
 		return -1, err
 	}
