@@ -4,7 +4,7 @@ For non-root users to use Remoteproc Runtime, the remoteproc driver and the cont
 
 ## How to configure rootless access to the remoteproc driver sysfs
 
-Usually, remoteproc driver can only be accessible to root. To change this setting, follow the below instructions:
+Usually, the remoteproc sysfs entries are only accessible by root. To change this setting, follow the below instructions:
 
 1. Create a group and add your user:
 
