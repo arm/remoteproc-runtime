@@ -17,7 +17,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 
 2. Use systemd-tmpfiles to set mode/owner on every boot (and re-apply easily):
 
-   Create /etc/tmpfiles.d/remoteproc.conf with following:
+   Create `/etc/tmpfiles.d/remoteproc.conf` with following:
 
    ```
    f /sys/class/remoteproc/remoteproc0/state                0664  root remoteproc -   -
