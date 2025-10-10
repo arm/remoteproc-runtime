@@ -17,6 +17,8 @@ Usually, the remoteproc sysfs entries are only accessible by root. To change thi
 
 2. Use systemd-tmpfiles to set mode/owner on every boot (and re-apply easily):
 
+As a virtual filesystem, by default permission settings in the sysfs are not persisted across reboot.
+
    Create `/etc/tmpfiles.d/remoteproc.conf` with following:
 
    ```
