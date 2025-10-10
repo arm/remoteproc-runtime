@@ -1,4 +1,4 @@
-# Permission setting for non-root users' usage of Remoteproc Runtime
+# Permission setting for rootless usage of Remoteproc Runtime
 
 For non-root users to use Remoteproc Runtime, the remoteproc driver and the container engine must be accessible for this user.
 
