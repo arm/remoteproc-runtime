@@ -42,12 +42,3 @@ As a virtual filesystem, by default permission settings in the sysfs are not per
    echo stop  | tee /sys/class/remoteproc/remoteproc0/state
    ```
 
-## Ensure your container engine is accessible by the user
-
-The user must be able to access the container engine. For example, if you are using Docker, you need to add the user to the `docker` group:
-
-```
-sudo usermod -aG docker "$USER"
-```
-
-After running the command above, log out and log in again to refresh group membership.
