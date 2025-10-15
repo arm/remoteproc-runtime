@@ -6,7 +6,7 @@ import (
 )
 
 var startCmd = &cobra.Command{
-	Use:   "start <ID>",
+	Use:   "start <container-id>",
 	Short: "Start an existing container",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

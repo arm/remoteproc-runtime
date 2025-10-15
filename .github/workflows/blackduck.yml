@@ -4,9 +4,6 @@ on:
   push:
     branches: [main]
     tags: ["*"]
-  pull_request:
-    branches: [main]
-  workflow_call:
 
 concurrency:
   group: blackduck-${{ github.head_ref || github.run_id }}
@@ -16,25 +13,15 @@ jobs:
   scan:
     name: Black Duck Scan
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      statuses: write
     env:
       DETECT_PROJECT_NAME: DEML-remoteproc-runtime
-      PUSH_REPORT_TO_DB: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Set repository reference
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ver_to_reference="${{ github.base_ref }}"
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            ver_to_reference="${{ github.ref_name }}"
-          else
-            ver_to_reference="${{ github.ref_name }}"; ver_to_reference="${ver_to_reference//\//-}"
-          fi
+          ver_to_reference="${{ github.ref_name }}"
+          ver_to_reference="${ver_to_reference//\//-}"
           echo "DETECT_PROJECT_VERSION_NAME=$ver_to_reference" >> $GITHUB_ENV
           echo "::notice title=Black Duck target::${{ env.DETECT_PROJECT_NAME }} / $ver_to_reference"
 
@@ -43,8 +30,7 @@ jobs:
         with:
           blackducksca_url: ${{ vars.BLACKDUCKSCA_URL }}
           blackducksca_token: ${{ secrets.BLACKDUCKSCA_TOKEN }}
-          blackducksca_scan_full: ${{ env.PUSH_REPORT_TO_DB }}
+          blackducksca_scan_full: true
           blackducksca_waitForScan: true
           blackducksca_scan_failure_severities: BLOCKER,CRITICAL,MAJOR
-          blackducksca_prComment_enabled: ${{ github.event_name == 'pull_request' }}
-          github_token: ${{ github.token }}
+          blackducksca_prComment_enabled: false
