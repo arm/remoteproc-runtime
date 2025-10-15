@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"os/user"
 
 	"github.com/arm/remoteproc-runtime/internal/rootpath"
 )
@@ -23,11 +24,21 @@ var (
 )
 
 func init() {
-	user := os.Getenv("USER")
-	if user == "root" {
-		rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
-	} else {
-		rprocFirmwareStorePath = rootpath.Join("home", user, "firmware")
+	// Check if kernel has custom firmware path configured
+	systemFirmwarePath := rootpath.Join("lib", "firmware")
+	if customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path"); err == nil {
+		if path := strings.TrimSpace(string(customPath)); path != "" {
+			systemFirmwarePath = path
+		}
+	}
+	// Try system firmware path first, fall back to user home
+	rprocFirmwareStorePath = systemFirmwarePath
+	if _, err := os.Stat(rprocFirmwareStorePath); err != nil {
+		currentUser, err := user.Current()
+		if err != nil {
+			fmt.Errorf("failed to get current user: %w", err)
+		}
+		rprocFirmwareStorePath = filepath.Join(currentUser.HomeDir, "firmware")
 	}
 }
 
