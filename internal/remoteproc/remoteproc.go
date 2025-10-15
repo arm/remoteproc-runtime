@@ -18,9 +18,18 @@ const (
 )
 
 var (
-	rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
+	rprocFirmwareStorePath string
 	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
 )
+
+func init() {
+	user := os.Getenv("USER")
+	if user == "root" {
+		rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
+	} else {
+		rprocFirmwareStorePath = rootpath.Join("home", user, "firmware")
+	}
+}
 
 func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)

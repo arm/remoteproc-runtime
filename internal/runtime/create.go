@@ -52,7 +52,7 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 	state.Annotations[oci.StateDriverPath] = devicePath
 	state.Annotations[oci.StateFirmwarePath] = firmwarePath
 	if err := oci.WriteState(state); err != nil {
-		return err
+		return fmt.Errorf("failed to write state: %w", err)
 	}
 
 	if pidFile != "" {
