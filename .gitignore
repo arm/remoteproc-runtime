@@ -4,6 +4,9 @@ dist/
 # make artifacts
 out/
 
+# coverage files
+coverage.out
+
 # binaries
 /containerd-shim-remoteproc-v1
 /remoteproc-runtime
