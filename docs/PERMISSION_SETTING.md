@@ -43,6 +43,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    ```
 
 ### 2. Make sure the user's systemd instance is alive
+
 1. Check what your UID is by running in your user session terminal:
    ```
    id -u
@@ -60,9 +61,10 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    export XDG_RUNTIME_DIR=/run/user/<uid>
    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
    ```
+
 ### 3. Set the firmware path to somewhere accessible by the user
+
 1. Ensure that the path of the folder that contains your firmware is written to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
    ```
    sudo echo <your firmware folder path> > /sys/module/firmware_class/parameters/path
    ```
-
