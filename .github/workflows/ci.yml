@@ -62,12 +62,12 @@ jobs:
         run: go test -v -race ./internal/... -covermode=atomic -coverprofile=coverage.out
 
       - name: Install Qlty Cloud
-        uses: qltysh/qlty-action/install@a19242102d17e497f437d7466aa01b528537e899
         if: ${{ env.PUBLISH_TEST_COVERAGE == 'true' }}
+        uses: qltysh/qlty-action/install@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
 
       - name: Upload coverage to Qlty Cloud
-        uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899
         if: ${{ env.PUBLISH_TEST_COVERAGE == 'true' }}
+        uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: coverage.out
