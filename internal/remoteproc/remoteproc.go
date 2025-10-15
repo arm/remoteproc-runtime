@@ -4,10 +4,10 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
-	"os/user"
 
 	"github.com/arm/remoteproc-runtime/internal/rootpath"
 )
@@ -36,7 +36,7 @@ func init() {
 	if _, err := os.Stat(rprocFirmwareStorePath); err != nil {
 		currentUser, err := user.Current()
 		if err != nil {
-			fmt.Errorf("failed to get current user: %w", err)
+			panic(fmt.Errorf("failed to get current user: %w", err))
 		}
 		rprocFirmwareStorePath = filepath.Join(currentUser.HomeDir, "firmware")
 	}
