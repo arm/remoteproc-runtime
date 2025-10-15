@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
-	"os/user"
 
 	"github.com/arm/remoteproc-runtime/internal/rootpath"
 )
