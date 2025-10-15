@@ -27,7 +27,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 
    Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed.
 
-3. Apply the change in remoteproc.conf:
+3. Apply the change in remoteproc.conf using root permission:
    ```
    sudo systemd-tmpfiles --create /etc/tmpfiles.d/remoteproc.conf
    ```
@@ -39,13 +39,25 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    echo start | tee /sys/class/remoteproc/remoteproc0/state
    echo stop  | tee /sys/class/remoteproc/remoteproc0/state
    ```
+5. Check what your UID is by running in your user session terminal:
+   ```
+   id -u
+   ```
+6. Ensure the systemd instance of the user is alive in your user session terminal.
+   ```
+   systemctl --user status
+   ```
+   If you get:
+   ```
+   Failed to connect to bus: No medium found
+   ```
+   it means your D-Bus socket is not set right. Try the commands below, and try `systemctl --user status` again.
+   ```
+   export XDG_RUNTIME_DIR=/run/user/<uid>
+   export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+   ```
+7. Ensure that the path of the folder that contains your firmware is written to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
+   ```
+   sudo echo <your firmware folder path> > /sys/module/firmware_class/parameters/path
+   ```
 
-## Ensure your container engine is accessible by the user
-
-The user must be able to access the container engine. For example, if you are using Docker, you need to add the user to the `docker` group:
-
-```
-sudo usermod -aG docker "$USER"
-```
-
-After running the command above, log out and log in again to refresh group membership.
