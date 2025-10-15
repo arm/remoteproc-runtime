@@ -69,7 +69,8 @@ jobs:
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: coverage.out
-          strip-prefix: github.com/Arm/remoteproc-runtime
+          strip-prefix: github.com/arm/remoteproc-runtime
+          skip-errors: false
 
       - name: Download Remoteproc Simulator
         uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
