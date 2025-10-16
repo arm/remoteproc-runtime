@@ -17,6 +17,10 @@ builds:
       - linux
     goarch:
       - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/arm/remoteproc-runtime/internal/version.Version={{.Version}}
+      - -X github.com/arm/remoteproc-runtime/internal/version.GitCommit={{.Commit}}
   - id: remoteproc-runtime
     main: ./cmd/remoteproc-runtime
     binary: remoteproc-runtime
@@ -26,6 +30,10 @@ builds:
       - linux
     goarch:
       - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/arm/remoteproc-runtime/internal/version.Version={{.Version}}
+      - -X github.com/arm/remoteproc-runtime/internal/version.GitCommit={{.Commit}}
 
 archives:
   - formats: [tar.gz]

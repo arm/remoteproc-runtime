@@ -64,6 +64,8 @@ docker ps
 
 _See [USAGE.md](docs/USAGE.md) for full installation and configuration instructions._
 
+_Try [remoteproc-runtime-example-zephyr](https://github.com/arm/remoteproc-runtime-example-zephyr/) for a minimal Zephyr RTOS application that can be deployed using Remoteproc Runtime._
+
 ## Documentation
 
 - [Usage Guide](docs/USAGE.md) - How to use the runtime and shim
