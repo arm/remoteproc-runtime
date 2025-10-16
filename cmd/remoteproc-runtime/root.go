@@ -17,7 +17,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:     "remoteproc-runtime",
-	Short:   "A simple OCI-compliant container runtime using remoteproc",
+	Short:   "An OCI-compliant container runtime using remoteproc",
 	Version: fmt.Sprintf("%s (commit: %s)", version.Version, version.GitCommit),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		level, err := parseLogLevel(logLevel)
