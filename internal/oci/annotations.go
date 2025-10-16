@@ -9,8 +9,8 @@ import (
 const (
 	SpecName = "remoteproc.name"
 
-	StateDriverPath = "remoteproc.resolved-path"
-	StateFirmwarePath     = "remoteproc.firmware"
+	StateDriverPath   = "remoteproc.resolved-path"
+	StateFirmwarePath = "remoteproc.firmware"
 )
 
 func validateSpecAnnotations(spec *specs.Spec) error {
