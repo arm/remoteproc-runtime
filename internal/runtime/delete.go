@@ -22,7 +22,7 @@ func Delete(logger *slog.Logger, containerID string, force bool) error {
 func delete(containerID string) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		return fmt.Errorf("failed to read state 1: %w", err)
+		return fmt.Errorf("failed to read state while delete: %w", err)
 	}
 
 	if state.Status == specs.StateRunning {
@@ -41,7 +41,7 @@ func delete(containerID string) error {
 func forceDelete(logger *slog.Logger, containerID string) {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		logger.Error("failed to read state 2", "error", err)
+		logger.Error("failed to read state while force delete", "error", err)
 		return
 	}
 

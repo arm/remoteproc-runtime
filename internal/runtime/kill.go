@@ -12,7 +12,7 @@ import (
 func Kill(containerID string, signal syscall.Signal) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		return fmt.Errorf("failed to read state 3: %w", err)
+		return fmt.Errorf("failed to read state while kill: %w", err)
 	}
 
 	if state.Pid > 0 {

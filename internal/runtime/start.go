@@ -12,7 +12,7 @@ import (
 func Start(containerID string) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		return fmt.Errorf("failed to read state 4: %w", err)
+		return fmt.Errorf("failed to read state while start: %w", err)
 	}
 	firmwarePath := state.Annotations[oci.StateFirmwarePath]
 	if firmwarePath == "" {
