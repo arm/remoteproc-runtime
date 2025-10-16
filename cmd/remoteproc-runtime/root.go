@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/arm/remoteproc-runtime/internal/log"
+	"github.com/arm/remoteproc-runtime/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -15,8 +16,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "remoteproc-runtime",
-	Short: "A simple OCI-compliant container runtime using remoteproc",
+	Use:     "remoteproc-runtime",
+	Short:   "A simple OCI-compliant container runtime using remoteproc",
+	Version: fmt.Sprintf("%s (commit: %s)", version.Version, version.GitCommit),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		level, err := parseLogLevel(logLevel)
 		if err != nil {
