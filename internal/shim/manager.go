@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/arm/remoteproc-runtime/internal/version"
 	apitypes "github.com/containerd/containerd/api/types"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
-	"github.com/arm/remoteproc-runtime/internal/version"
 )
 
 func NewManager(name string) containerdshim.Manager {
