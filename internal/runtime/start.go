@@ -12,12 +12,28 @@ import (
 func Start(containerID string) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		return fmt.Errorf("failed to read state: %w", err)
+		return fmt.Errorf("failed to read state 4: %w", err)
+	}
+	firmwarePath := state.Annotations[oci.StateFirmwarePath]
+	if firmwarePath == "" {
+		return fmt.Errorf("firmware path annotation missing")
 	}
 
+	storedFirmwareName, err := remoteproc.StoreFirmware(firmwarePath)
+	if err != nil {
+		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
+	}
+	needsCleanup := true
+
+	defer func() {
+		if needsCleanup {
+			_ = remoteproc.RemoveFirmware(storedFirmwareName)
+		}
+	}()
+
 	if err := remoteproc.SetFirmware(
-		state.Annotations[oci.StateResolvedPath],
-		state.Annotations[oci.StateFirmware],
+		state.Annotations[oci.StateDriverPath],
+		storedFirmwareName,
 	); err != nil {
 		return fmt.Errorf("failed to set firmware: %w", err)
 	}
@@ -30,6 +46,6 @@ func Start(containerID string) error {
 	if err := oci.WriteState(state); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
-
+	needsCleanup = false
 	return nil
 }

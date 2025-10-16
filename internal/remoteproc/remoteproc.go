@@ -110,10 +110,12 @@ func StoreFirmware(sourcePath string) (string, error) {
 	return targetFileName, nil
 }
 
+// RemoveFirmware deletes a firmware file from /lib/firmware.
 func RemoveFirmware(firmwareFileName string) error {
 	return os.Remove(filepath.Join(rprocFirmwareStorePath, firmwareFileName))
 }
 
+// SetFirmware writes the firmware file name to the remoteproc firmware sysfs entry.
 func SetFirmware(devicePath string, firmwareFileName string) error {
 	state, err := GetState(devicePath)
 	if err != nil {
