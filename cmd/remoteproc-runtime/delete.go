@@ -8,7 +8,7 @@ import (
 var forceDelete bool
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete <ID>",
+	Use:   "delete <container-id>",
 	Short: "Delete a container",
 	Long:  "Delete a container. Use --force to delete a running container.",
 	Args:  cobra.ExactArgs(1),

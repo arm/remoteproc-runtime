@@ -1,0 +1,7 @@
+[coverage]
+exclude = [
+    "e2e/**"
+]
+test_patterns = [
+    "**/*_test.go"
+]
