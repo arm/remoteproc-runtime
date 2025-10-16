@@ -15,7 +15,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "container-runtime",
+	Use:   "remoteproc-runtime",
 	Short: "A simple OCI-compliant container runtime using remoteproc",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		level, err := parseLogLevel(logLevel)
