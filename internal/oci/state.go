@@ -14,7 +14,7 @@ const (
 	stateFileName = "state.json"
 )
 
-var stateDir = rootpath.Join("run", "remoteproc")
+var stateDir = rootpath.Join(os.Getenv("XDG_RUNTIME_DIR"), "run", "remoteproc")
 
 func NewState(containerID string, bundlePath string) *specs.State {
 	return &specs.State{

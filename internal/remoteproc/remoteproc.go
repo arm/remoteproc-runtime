@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -18,9 +19,28 @@ const (
 )
 
 var (
-	rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
+	rprocFirmwareStorePath string
 	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
 )
+
+func init() {
+	// Check if kernel has custom firmware path configured
+	systemFirmwarePath := rootpath.Join("lib", "firmware")
+	if customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path"); err == nil {
+		if path := strings.TrimSpace(string(customPath)); path != "" {
+			systemFirmwarePath = path
+		}
+	}
+	// Try system firmware path first, fall back to user home
+	rprocFirmwareStorePath = systemFirmwarePath
+	if _, err := os.Stat(rprocFirmwareStorePath); err != nil {
+		currentUser, err := user.Current()
+		if err != nil {
+			panic(fmt.Errorf("failed to get current user: %w", err))
+		}
+		rprocFirmwareStorePath = filepath.Join(currentUser.HomeDir, "firmware")
+	}
+}
 
 func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)
