@@ -10,7 +10,7 @@ import (
 func State(containerID string) (*specs.State, error) {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read state while getting state: %w", err)
+		return nil, fmt.Errorf("failed to read state: %w", err)
 	}
 	return state, nil
 }
