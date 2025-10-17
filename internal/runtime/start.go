@@ -42,7 +42,7 @@ func Start(containerID string) error {
 	if err := oci.WriteState(state); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
-	
+
 	needCleanup = false
 	return nil
 }
