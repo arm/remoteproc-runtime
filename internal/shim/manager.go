@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/arm/remoteproc-runtime/internal/version"
 	apitypes "github.com/containerd/containerd/api/types"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
@@ -73,7 +74,8 @@ func (m manager) Info(ctx context.Context, optionsR io.Reader) (*apitypes.Runtim
 	info := &apitypes.RuntimeInfo{
 		Name: "io.containerd.remoteproc.v1",
 		Version: &apitypes.RuntimeVersion{
-			Version: "v1.0.0",
+			Version:  version.Version,
+			Revision: version.GitCommit,
 		},
 	}
 	return info, nil
