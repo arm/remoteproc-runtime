@@ -52,7 +52,7 @@ func forceDelete(logger *slog.Logger, containerID string) {
 	}
 
 	if err := remoteproc.RemoveFirmware(state.Annotations[oci.OptionalStateStoredFirmwareName]); err != nil {
-		logger.Error("failed to remove firmware", "error", err)
+		logger.Warn("failed to remove firmware", "error", err)
 	}
 
 	if err := oci.RemoveState(containerID); err != nil {
