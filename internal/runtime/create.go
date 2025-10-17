@@ -35,9 +35,6 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 	if err := validateFirmwareExists(firmwarePath); err != nil {
 		return err
 	}
-	if err != nil {
-		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
-	}
 
 	pid, err := proxy.NewProcess(devicePath)
 	if err != nil {
