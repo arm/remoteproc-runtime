@@ -52,6 +52,31 @@ golangci-lint run --fix
 go test -v -race ./internal/...
 ```
 
+#### Running tests on non-Linux OS
+
+If you're developing on a non-Linux operating system, you can run the tests using Docker:
+
+```bash
+docker run --rm -v $(pwd):/app -w /app golang:1.25 go test -v ./internal/...
+```
+
+To improve feedback loop performance, you can use Docker volumes to cache Go modules and build artifacts:
+
+```bash
+# Create volumes for caching (one-time setup)
+docker volume create go-mod-cache
+docker volume create go-build-cache
+
+# Run tests with caching
+docker run --rm \
+  -v $(pwd):/app \
+  -w /app \
+  -v go-mod-cache:/go/pkg/mod \
+  -v go-build-cache:/root/.cache/go-build \
+  golang:1.25 \
+  go test -v ./internal/...
+```
+
 ### Slow tests
 
 Slow tests require LimaVM to be installed. They create temporary VMs to test the shim with Docker.
