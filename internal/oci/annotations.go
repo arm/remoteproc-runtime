@@ -11,7 +11,7 @@ const (
 
 	StateDriverPath   = "remoteproc.driver-path"
 	StateFirmwarePath = "remoteproc.firmware-path"
-	StateStoredFWName = "remoteproc.stored-firmware"
+	StateStoredFirmwareName = "remoteproc.stored-firmware-name"
 )
 
 func validateSpecAnnotations(spec *specs.Spec) error {

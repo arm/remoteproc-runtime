@@ -19,7 +19,7 @@ func Start(containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
 	}
-	state.Annotations[oci.StateStoredFWName] = storedFirmwareName
+	state.Annotations[oci.StateStoredFirmwareName] = storedFirmwareName
 	needsCleanup := true
 
 	defer func() {
