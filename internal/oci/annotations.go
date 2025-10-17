@@ -9,8 +9,8 @@ import (
 const (
 	SpecName = "remoteproc.name"
 
-	StateDriverPath   = "remoteproc.resolved-path"
-	StateFirmwarePath = "remoteproc.firmware"
+	StateDriverPath   = "remoteproc.driver-path"
+	StateFirmwarePath = "remoteproc.firmware-path"
 	StateStoredFWName = "remoteproc.stored-firmware"
 )
 
