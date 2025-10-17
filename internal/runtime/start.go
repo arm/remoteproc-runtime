@@ -20,10 +20,9 @@ func Start(containerID string) error {
 		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
 	}
 	state.Annotations[oci.StateStoredFirmwareName] = storedFirmwareName
-	needsCleanup := true
-
+	needCleanup := true
 	defer func() {
-		if needsCleanup {
+		if needCleanup {
 			_ = remoteproc.RemoveFirmware(storedFirmwareName)
 		}
 	}()
@@ -43,6 +42,7 @@ func Start(containerID string) error {
 	if err := oci.WriteState(state); err != nil {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
-	needsCleanup = false
+	
+	needCleanup = false
 	return nil
 }

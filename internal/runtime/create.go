@@ -43,9 +43,7 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 	if err != nil {
 		return fmt.Errorf("failed to start proxy process: %w", err)
 	}
-
 	needCleanup := true
-
 	defer func() {
 		if needCleanup {
 			_ = proxy.StopFirmware(pid)
