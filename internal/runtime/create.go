@@ -35,21 +35,12 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 	if err := validateFirmwareExists(firmwarePath); err != nil {
 		return err
 	}
-	storedFirmwareName, err := remoteproc.StoreFirmware(firmwarePath)
-	if err != nil {
-		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
-	}
-	needCleanup := true
-	defer func() {
-		if needCleanup {
-			_ = remoteproc.RemoveFirmware(storedFirmwareName)
-		}
-	}()
 
 	pid, err := proxy.NewProcess(devicePath)
 	if err != nil {
 		return fmt.Errorf("failed to start proxy process: %w", err)
 	}
+	needCleanup := true
 	defer func() {
 		if needCleanup {
 			_ = proxy.StopFirmware(pid)
@@ -58,8 +49,8 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 
 	state := oci.NewState(containerID, bundlePath)
 	state.Pid = pid
-	state.Annotations[oci.StateResolvedPath] = devicePath
-	state.Annotations[oci.StateFirmware] = storedFirmwareName
+	state.Annotations[oci.StateDriverPath] = devicePath
+	state.Annotations[oci.StateFirmwarePath] = firmwarePath
 	if err := oci.WriteState(state); err != nil {
 		return err
 	}
