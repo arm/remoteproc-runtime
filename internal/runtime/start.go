@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/arm/remoteproc-runtime/internal/oci"
 	"github.com/arm/remoteproc-runtime/internal/proxy"
@@ -23,7 +24,7 @@ func Start(containerID string) error {
 	needCleanup := true
 	defer func() {
 		if needCleanup {
-			_ = remoteproc.RemoveFirmware(storedFirmwarePath)
+			_ = os.Remove(storedFirmwarePath)
 		}
 	}()
 

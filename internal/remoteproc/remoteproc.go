@@ -110,10 +110,6 @@ func StoreFirmware(sourcePath string) (string, error) {
 	return destPath, nil
 }
 
-func RemoveFirmware(firmwareFilePath string) error {
-	return os.Remove(firmwareFilePath)
-}
-
 func SetFirmware(devicePath string, firmwareFilePath string) error {
 	state, err := GetState(devicePath)
 	if err != nil {
