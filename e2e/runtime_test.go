@@ -165,17 +165,23 @@ func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 		_, _, _ = vm.RunCommand("remoteproc-runtime", "delete", containerName)
 	})
 
-	stdout, stderr, err := vm.RunCommand("remoteproc-runtime", "state", containerName)
-	require.NoError(t, err, "stderr: %s", stderr)
-
-	var state specs.State
-	require.NoError(t, json.Unmarshal([]byte(stdout), &state))
-	require.Greater(t, state.Pid, 0)
+	pid, err := checkContainerRunning(func() (specs.State, error) {
+		stdout, stderr, err := vm.RunCommand("remoteproc-runtime", "state", containerName)
+		if err != nil {
+			return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
+		}
+		var state specs.State
+		if err := json.Unmarshal([]byte(stdout), &state); err != nil {
+			return specs.State{}, err
+		}
+		return state, nil
+	})
+	require.NoError(t, err)
 
 	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
 	require.NoError(t, err, "stderr: %s", stderr)
 
-	proxyMountNS, stderr, err := vm.RunCommand("readlink", fmt.Sprintf("/proc/%d/ns/mnt", state.Pid))
+	proxyMountNS, stderr, err := vm.RunCommand("readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
 	require.NoError(t, err, "stderr: %s", stderr)
 
 	assert.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
@@ -216,17 +222,23 @@ func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
 		_, _, _ = vm.RunCommand("sudo", "remoteproc-runtime", "delete", containerName)
 	})
 
-	stdout, stderr, err := vm.RunCommand("sudo", "remoteproc-runtime", "state", containerName)
-	require.NoError(t, err, "stderr: %s", stderr)
-
-	var state specs.State
-	require.NoError(t, json.Unmarshal([]byte(stdout), &state))
-	require.Greater(t, state.Pid, 0)
+	pid, err := checkContainerRunning(func() (specs.State, error) {
+		stdout, stderr, err := vm.RunCommand("sudo", "remoteproc-runtime", "state", containerName)
+		if err != nil {
+			return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
+		}
+		var state specs.State
+		if err := json.Unmarshal([]byte(stdout), &state); err != nil {
+			return specs.State{}, err
+		}
+		return state, nil
+	})
+	require.NoError(t, err)
 
 	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
 	require.NoError(t, err, "stderr: %s", stderr)
 
-	proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", state.Pid))
+	proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
 	require.NoError(t, err, "stderr: %s", stderr)
 	assert.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
 
@@ -242,6 +254,17 @@ func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName stri
 	state, err := getContainerState(bin, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
+}
+
+func checkContainerRunning(fetch func() (specs.State, error)) (int, error) {
+	state, err := fetch()
+	if err != nil {
+		return 0, err
+	}
+	if state.Pid <= 0 {
+		return 0, fmt.Errorf("container is not running - pid is %d", state.Pid)
+	}
+	return state.Pid, nil
 }
 
 func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
