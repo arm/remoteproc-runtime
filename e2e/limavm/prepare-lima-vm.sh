@@ -60,7 +60,13 @@ start_vm() {
 install_binary() {
     local source_path="$1"
     local binary_name="$2"
-    local dest_path="/usr/local/bin/$binary_name"
+    local dest_dir="/usr/local/bin"
+
+    if [ "$TEMPLATE" = "alpine" ]; then
+        dest_dir="/usr/bin"
+    fi
+
+    local dest_path="$dest_dir/$binary_name"
 
     echo "Installing $binary_name..." >&2
 
