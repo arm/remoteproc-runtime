@@ -23,6 +23,7 @@ type LimaVM struct {
 var BinBuildEnv = map[string]string{
 	"GOOS":   "linux",
 	"GOARCH": "amd64",
+	"CGO_ENABLED": "0",
 }
 
 func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
