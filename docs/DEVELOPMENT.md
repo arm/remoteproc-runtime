@@ -76,8 +76,6 @@ Useful for development without access to hardware with Remoteproc support.
 
 #### Testing with Docker
 
-⚠️ If using docker rootless, the network must be set to 'Host' (`--network=host`), as the proxy runs in the host's network namespace.
-
 1. **Build and install the shim and runtime with custom root**
 
    ```bash

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRuntimeProxyKeepsHostNamespaceWhenNotRootInLimaVM(t *testing.T) {
+func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 	rootDir := t.TempDir()
 	remoteprocName := "a-lovely-blue-device"
 

@@ -19,7 +19,7 @@ var specNamespacesToUnixCloneFlags = map[specs.LinuxNamespaceType]uintptr{
 	specs.UTSNamespace:     unix.CLONE_NEWUTS,
 }
 
-func ParseNamespaceFlags(logger *slog.Logger, namespaces []specs.LinuxNamespace) (uintptr, error) {
+func ParseNamespaceFlags(namespaces []specs.LinuxNamespace) (uintptr, error) {
 	if namespaces == nil {
 		return 0, nil
 	}
@@ -32,9 +32,6 @@ func ParseNamespaceFlags(logger *slog.Logger, namespaces []specs.LinuxNamespace)
 		flag, ok := specNamespacesToUnixCloneFlags[ns.Type]
 		if !ok {
 			err := fmt.Errorf("unknown namespace type %q", ns.Type)
-			if logger != nil {
-				logger.Error("unknown namespace type", "type", ns.Type)
-			}
 			return 0, err
 		}
 		flags |= flag
@@ -43,16 +40,14 @@ func ParseNamespaceFlags(logger *slog.Logger, namespaces []specs.LinuxNamespace)
 }
 
 func LinuxCloneFlags(logger *slog.Logger, isRoot bool, namespaces []specs.LinuxNamespace) (uintptr, error) {
-	flags, err := ParseNamespaceFlags(logger, namespaces)
+	flags, err := ParseNamespaceFlags(namespaces)
 	if err != nil {
 		return 0, err
 	}
 
-	if !isRoot {
-		if flags != 0 {
-			if logger != nil {
-				logger.Warn("running non-root; namespace isolation disabled")
-			}
+	if !isRoot && flags != 0 {
+		if logger != nil {
+			logger.Warn("running non-root; namespace isolation disabled")
 		}
 		return 0, nil
 	}

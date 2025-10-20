@@ -47,10 +47,10 @@ func Create(logger *slog.Logger, containerID string, bundlePath string, pidFile 
 		}
 	}()
 
-	if spec.Linux == nil {
-		return fmt.Errorf("linux container information missing")
+	var namespaces []specs.LinuxNamespace
+	if spec.Linux != nil {
+		namespaces = spec.Linux.Namespaces
 	}
-	namespaces := spec.Linux.Namespaces
 
 	pid, err := proxy.NewProcess(logger, namespaces, devicePath)
 	if err != nil {
