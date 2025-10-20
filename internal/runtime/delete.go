@@ -29,9 +29,9 @@ func delete(containerID string) error {
 		return fmt.Errorf("cannot delete running container %s", containerID)
 	}
 
-	firmwareName, ok := state.Annotations[oci.OptionalStateStoredFirmwareName]
+	firmwarePath, ok := state.Annotations[oci.OptionalStateStoredFirmwarePath]
 	if ok {
-		if err := remoteproc.RemoveFirmware(firmwareName); err != nil {
+		if err := remoteproc.RemoveFirmware(firmwarePath); err != nil {
 			return fmt.Errorf("failed to remove firmware: %w", err)
 		}
 	}
@@ -56,9 +56,9 @@ func forceDelete(logger *slog.Logger, containerID string) {
 		}
 	}
 
-	firmwareName, ok := state.Annotations[oci.OptionalStateStoredFirmwareName]
+	firmwarePath, ok := state.Annotations[oci.OptionalStateStoredFirmwarePath]
 	if ok {
-		if err := remoteproc.RemoveFirmware(firmwareName); err != nil {
+		if err := remoteproc.RemoveFirmware(firmwarePath); err != nil {
 			logger.Error("failed to remove firmware", "error", err)
 		}
 	}

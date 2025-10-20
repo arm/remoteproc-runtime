@@ -15,21 +15,21 @@ func Start(containerID string) error {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
 	firmwarePath := state.Annotations[oci.StateFirmwarePath]
-	storedFirmwareName, err := remoteproc.StoreFirmware(firmwarePath)
+	storedFirmwarePath, err := remoteproc.StoreFirmware(firmwarePath)
 	if err != nil {
 		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
 	}
-	state.Annotations[oci.OptionalStateStoredFirmwareName] = storedFirmwareName
+	state.Annotations[oci.OptionalStateStoredFirmwarePath] = storedFirmwarePath
 	needCleanup := true
 	defer func() {
 		if needCleanup {
-			_ = remoteproc.RemoveFirmware(storedFirmwareName)
+			_ = remoteproc.RemoveFirmware(storedFirmwarePath)
 		}
 	}()
 
 	if err := remoteproc.SetFirmware(
 		state.Annotations[oci.StateDriverPath],
-		storedFirmwareName,
+		storedFirmwarePath,
 	); err != nil {
 		return fmt.Errorf("failed to set firmware: %w", err)
 	}
