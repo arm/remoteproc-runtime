@@ -2,70 +2,23 @@ package proxy
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"golang.org/x/sys/unix"
 )
 
-var namespaceFlags = map[specs.LinuxNamespaceType]uintptr{
-	specs.CgroupNamespace:  unix.CLONE_NEWCGROUP,
-	specs.IPCNamespace:     unix.CLONE_NEWIPC,
-	specs.MountNamespace:   unix.CLONE_NEWNS,
-	specs.NetworkNamespace: unix.CLONE_NEWNET,
-	specs.PIDNamespace:     unix.CLONE_NEWPID,
-	specs.TimeNamespace:    unix.CLONE_NEWTIME,
-	specs.UserNamespace:    unix.CLONE_NEWUSER,
-	specs.UTSNamespace:     unix.CLONE_NEWUTS,
-}
-
-var namespaceCloneFlagsFn = namespaceCloneFlags
-
-func namespaceCloneFlags(spec *specs.Spec) (uintptr, error) {
-	if spec == nil {
-		return 0, nil
-	}
-
-	var flags uintptr
-	for _, ns := range spec.Linux.Namespaces {
-		if ns.Path != "" {
-			continue
-		}
-		flag, ok := namespaceFlags[ns.Type]
-		if !ok {
-			return 0, fmt.Errorf("unknown namespace type %q", ns.Type)
-		}
-		flags |= flag
-	}
-	return flags, nil
-}
-
-func effectiveNamespaceFlags(isRoot bool, spec *specs.Spec) (uintptr, error) {
-	flags, err := namespaceCloneFlagsFn(spec)
-	if err != nil {
-		return 0, err
-	}
-
-	if !isRoot {
-		if flags != 0 {
-			fmt.Fprintln(os.Stderr, "[WARN] running non-root; namespace isolation disabled")
-		}
-		return 0, nil
-	}
-
-	return flags, nil
-}
-
-func NewProcess(spec *specs.Spec, devicePath string) (int, error) {
+func NewProcess(logger *slog.Logger, namespaces []specs.LinuxNamespace, devicePath string) (int, error) {
 	execPath, err := os.Executable()
 	if err != nil {
 		return -1, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
 	isRoot := os.Geteuid() == 0
-	namespaceFlags, err := effectiveNamespaceFlags(isRoot, spec)
+
+	namespaceFlags, err := LinuxCloneFlags(logger, isRoot, namespaces)
 	if err != nil {
 		return -1, err
 	}
