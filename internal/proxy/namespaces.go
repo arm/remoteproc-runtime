@@ -46,9 +46,7 @@ func LinuxCloneFlags(logger *slog.Logger, isRoot bool, namespaces []specs.LinuxN
 	}
 
 	if !isRoot && flags != 0 {
-		if logger != nil {
-			logger.Warn("running non-root; namespace isolation disabled")
-		}
+		logger.Warn("running non-root; namespace isolation disabled")
 		return 0, nil
 	}
 
