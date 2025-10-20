@@ -12,14 +12,14 @@ import (
 )
 
 func TestLinuxCloneFlags(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-
 	t.Run("converts known linux namespace flags to unix", func(t *testing.T) {
 		isRoot := true
 		namespaces := []specs.LinuxNamespace{
 			{Type: specs.CgroupNamespace},
 			{Type: specs.UserNamespace},
 		}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 		got, err := proxy.LinuxCloneFlags(logger, isRoot, namespaces)
 
@@ -35,6 +35,8 @@ func TestLinuxCloneFlags(t *testing.T) {
 			{Type: specs.UserNamespace},
 		}
 
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
 		got, err := proxy.LinuxCloneFlags(logger, isRoot, namespaces)
 
 		require.NoError(t, err)
@@ -46,6 +48,8 @@ func TestLinuxCloneFlags(t *testing.T) {
 		namespaces := []specs.LinuxNamespace{
 			{Type: specs.LinuxNamespaceType("weird-name")},
 		}
+
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 		_, err := proxy.LinuxCloneFlags(logger, isRoot, namespaces)
 

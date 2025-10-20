@@ -11,7 +11,7 @@ BINARIES=()
 
 usage() {
     echo "Usage: $0 <template> <mount-dir> <build-context> <binary1> [binary2] ..." >&2
-    echo "  template:         Lima template to use (docker or podman)" >&2
+    echo "  template:         Lima template to use (docker, podman, or alpine)" >&2
     echo "  mount-dir:        Directory attached in the vm" >&2
     echo "  build-context:    Build context directory for test-image build" >&2
     echo "  binary1...N:      Path to binaries to install in /usr/local/bin" >&2
@@ -19,9 +19,11 @@ usage() {
 }
 
 validate_inputs() {
-    if [ ! -d "$BUILD_CONTEXT" ]; then
-        echo "Error: Build context directory not found: $BUILD_CONTEXT" >&2
-        exit 1
+    if [ "$TEMPLATE" = "docker" ] || [ "$TEMPLATE" = "podman" ]; then
+        if [ ! -d "$BUILD_CONTEXT" ]; then
+            echo "Error: Build context directory not found: $BUILD_CONTEXT" >&2
+            exit 1
+        fi
     fi
 
     for binary in "${BINARIES[@]}"; do
@@ -115,6 +117,12 @@ build_image() {
                 exit 1
             fi
             ;;
+        ""|none)
+            echo "Skipping image build (no build context provided)" >&2
+            ;;
+        alpine)
+            echo "Skipping image build for alpine template" >&2
+            ;;
         *)
             echo "Error: Unsupported template '$TEMPLATE'. Only 'docker' and 'podman' are supported." >&2
             cleanup_on_failure
@@ -149,7 +157,9 @@ main() {
         install_binary "$binary_path" "$binary_name"
     done
 
-    build_image
+    if [ -n "$BUILD_CONTEXT" ] || [ "$TEMPLATE" = "docker" ] || [ "$TEMPLATE" = "podman" ]; then
+        build_image
+    fi
 
     echo "VM setup completed successfully" >&2
 

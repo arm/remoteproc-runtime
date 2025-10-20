@@ -32,6 +32,10 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 	return New("podman", mountDir, buildContext, string(runtimeBin))
 }
 
+func NewAlpine(mountDir string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
+	return New("alpine", mountDir, "", string(runtimeBin))
+}
+
 func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {
 	cmd := exec.Command(
 		prepareLimaVMScript,
