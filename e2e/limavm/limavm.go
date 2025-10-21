@@ -40,7 +40,7 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 			return vm, err
 		}
 	}
-	if err := vm.BuildImage(buildContext); err != nil {
+	if err := vm.BuildImage(buildContext, "test-image"); err != nil {
 		vm.Cleanup()
 		return vm, err
 	}
@@ -56,7 +56,7 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 		vm.Cleanup()
 		return vm, err
 	}
-	if err := vm.BuildImage(buildContext); err != nil {
+	if err := vm.BuildImage(buildContext, "test-image"); err != nil {
 		vm.Cleanup()
 		return vm, err
 	}
@@ -98,8 +98,8 @@ func (vm LimaVM) InstallBin(binToInstall string) error {
 	return nil
 }
 
-func (vm LimaVM) BuildImage(buildContext string) error {
-	buildCmd := exec.Command(buildImageScript, vm.name, vm.template, buildContext)
+func (vm LimaVM) BuildImage(buildContext string, imageName string) error {
+	buildCmd := exec.Command(buildImageScript, vm.name, vm.template, buildContext, imageName)
 	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
 
 	if err := buildStreamer.Start(); err != nil {
