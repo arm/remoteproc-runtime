@@ -4,20 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"testing"
 
-	"github.com/arm/remoteproc-runtime/e2e/repo"
-	"github.com/arm/remoteproc-runtime/e2e/runner"
-)
-
-var (
-	scriptsDir           = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts")
-	prepareLimaVMScript  = filepath.Join(scriptsDir, "prepare-lima-vm.sh")
-	installBinScript     = filepath.Join(scriptsDir, "install-bin.sh")
-	buildImageScript     = filepath.Join(scriptsDir, "build-image.sh")
-	teardownLimaVMScript = filepath.Join(scriptsDir, "teardown-lima-vm.sh")
+	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
 )
 
 type LimaVM struct {
@@ -29,43 +18,16 @@ var BinBuildEnv = map[string]string{
 }
 
 func newVM(template string, mountDir string) (LimaVM, error) {
-	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
-	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
-
-	if err := prepareStreamer.Start(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to start prepare-lima script: %w", err)
-	}
-
-	if err := prepareStreamer.Wait(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to prepare VM: %w", err)
-	}
-
-	vmName := strings.TrimSpace(prepareStreamer.Output())
-	if vmName == "" {
-		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
-	}
-
-	return LimaVM{name: vmName}, nil
+	vmName, err := scripts.PrepareLimaVM(template, mountDir)
+	return LimaVM{name: vmName}, err
 }
 
 func (vm LimaVM) InstallBin(binToInstall string) error {
-	installCmd := exec.Command(installBinScript, vm.name, binToInstall)
-	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
-
-	if err := installStreamer.Start(); err != nil {
-		return fmt.Errorf("failed to start install-bin script: %w", err)
-	}
-
-	if err := installStreamer.Wait(); err != nil {
-		return fmt.Errorf("failed to install binaries: %w", err)
-	}
-
-	return nil
+	return scripts.InstallBin(vm.name, binToInstall)
 }
 
 func (vm LimaVM) Cleanup() {
-	cmd := exec.Command(teardownLimaVMScript, vm.name)
-	_ = cmd.Run()
+	_ = scripts.TeardownLimaVM(vm.name)
 }
 
 func (vm LimaVM) cmd(name string, args ...string) *exec.Cmd {

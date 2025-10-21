@@ -1,11 +1,8 @@
 package limavm
 
 import (
-	"fmt"
-	"os/exec"
-
+	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
-	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
 type Podman struct {
@@ -33,17 +30,6 @@ func NewPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin)
 	return p, nil
 }
 
-func (p Podman) BuildImage(buildContext string, imageName string) error {
-	buildCmd := exec.Command(buildImageScript, p.name, "podman", buildContext, imageName)
-	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
-
-	if err := buildStreamer.Start(); err != nil {
-		return fmt.Errorf("failed to start build-image script: %w", err)
-	}
-
-	if err := buildStreamer.Wait(); err != nil {
-		return fmt.Errorf("failed to build image: %w", err)
-	}
-
-	return nil
+func (vm Podman) BuildImage(buildContext string, imageName string) error {
+	return scripts.BuildImage(vm.name, "podman", buildContext, imageName)
 }

@@ -1,11 +1,8 @@
 package limavm
 
 import (
-	"fmt"
-	"os/exec"
-
+	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
-	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
 type Docker struct {
@@ -35,17 +32,6 @@ func NewDocker(mountDir string, buildContext string, bins repo.Bins) (Docker, er
 	return d, nil
 }
 
-func (d Docker) BuildImage(buildContext string, imageName string) error {
-	buildCmd := exec.Command(buildImageScript, d.name, "docker", buildContext, imageName)
-	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
-
-	if err := buildStreamer.Start(); err != nil {
-		return fmt.Errorf("failed to start build-image script: %w", err)
-	}
-
-	if err := buildStreamer.Wait(); err != nil {
-		return fmt.Errorf("failed to build image: %w", err)
-	}
-
-	return nil
+func (vm Docker) BuildImage(buildContext string, imageName string) error {
+	return scripts.BuildImage(vm.name, "docker", buildContext, imageName)
 }
