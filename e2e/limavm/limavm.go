@@ -14,6 +14,7 @@ import (
 
 var (
 	prepareLimaVMScript  = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "prepare-lima-vm.sh")
+	installBinScript     = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "install-bin.sh")
 	buildImageScript     = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "build-image.sh")
 	teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "teardown-lima-vm.sh")
 )
@@ -35,23 +36,31 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 }
 
 func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {
-	cmd := exec.Command(
-		prepareLimaVMScript,
-		append([]string{template, mountDir}, binsToInstall...)...,
-	)
-	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
+	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
+	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
-	if err := streamer.Start(); err != nil {
+	if err := prepareStreamer.Start(); err != nil {
 		return LimaVM{}, fmt.Errorf("failed to start prepare script: %w", err)
 	}
 
-	if err := streamer.Wait(); err != nil {
+	if err := prepareStreamer.Wait(); err != nil {
 		return LimaVM{}, fmt.Errorf("failed to prepare VM: %w", err)
 	}
 
-	vmName := strings.TrimSpace(streamer.Output())
+	vmName := strings.TrimSpace(prepareStreamer.Output())
 	if vmName == "" {
 		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
+	}
+
+	installCmd := exec.Command(installBinScript, append([]string{vmName}, binsToInstall...)...)
+	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
+
+	if err := installStreamer.Start(); err != nil {
+		return LimaVM{}, fmt.Errorf("failed to start install-bin script: %w", err)
+	}
+
+	if err := installStreamer.Wait(); err != nil {
+		return LimaVM{}, fmt.Errorf("failed to install binaries: %w", err)
 	}
 
 	buildCmd := exec.Command(buildImageScript, vmName, template, buildContext)
