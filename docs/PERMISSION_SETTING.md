@@ -42,13 +42,13 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    echo stop  | tee /sys/class/remoteproc/remoteproc0/state
    ```
 
-### 2. Make sure the user's systemd instance is alive
+### 2. Make sure the user's instance is alive
 
 1. Check what your UID is by running in your user session terminal:
    ```
    id -u
    ```
-2. Ensure the systemd instance of the user is alive in your user session terminal.
+2. Ensure the instance of the user is alive in your user session terminal.
    ```
    systemctl --user status
    ```
