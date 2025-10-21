@@ -21,9 +21,7 @@ type LimaVM struct {
 }
 
 var BinBuildEnv = map[string]string{
-	"GOOS":   "linux",
-	"GOARCH": "amd64",
-	"CGO_ENABLED": "0",
+	"GOOS": "linux",
 }
 
 func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
@@ -32,10 +30,6 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 
 func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
 	return New("podman", mountDir, buildContext, string(runtimeBin))
-}
-
-func NewAlpine(mountDir string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
-	return New("alpine", mountDir, "", string(runtimeBin))
 }
 
 func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {

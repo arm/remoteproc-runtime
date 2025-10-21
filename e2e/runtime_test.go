@@ -137,7 +137,7 @@ func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewAlpine(rootDir, runtimeBin)
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
 	require.NoError(t, err)
 	t.Cleanup(vm.Cleanup)
 
@@ -194,7 +194,7 @@ func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewAlpine(rootDir, runtimeBin)
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
 	require.NoError(t, err)
 	t.Cleanup(vm.Cleanup)
 
