@@ -14,12 +14,6 @@ usage() {
     exit 1
 }
 
-cleanup_on_failure() {
-    echo "Cleaning up after failure..." >&2
-    limactl stop "$VM_NAME" 2>/dev/null || true
-    limactl delete "$VM_NAME" 2>/dev/null || true
-}
-
 build_image() {
     echo "Building image..." >&2
     local tmp_context="/tmp/docker-build-$$"
@@ -27,13 +21,11 @@ build_image() {
     echo "Copying build context to VM..." >&2
     if ! limactl shell "$VM_NAME" mkdir -p "$tmp_context"; then
         echo "Error: Failed to create temp directory in VM" >&2
-        cleanup_on_failure
         exit 1
     fi
 
     if ! limactl copy -r "$BUILD_CONTEXT/." "$VM_NAME:$tmp_context/"; then
         echo "Error: Failed to copy build context" >&2
-        cleanup_on_failure
         exit 1
     fi
 
@@ -42,7 +34,6 @@ build_image() {
             echo "Building Docker image..." >&2
             if ! limactl shell "$VM_NAME" docker build -t test-image "$tmp_context" >&2; then
                 echo "Error: Failed to build Docker image" >&2
-                cleanup_on_failure
                 exit 1
             fi
             ;;
@@ -50,13 +41,11 @@ build_image() {
             echo "Building Podman image..." >&2
             if ! limactl shell "$VM_NAME" podman build -t test-image "$tmp_context" >&2; then
                 echo "Error: Failed to build Podman image" >&2
-                cleanup_on_failure
                 exit 1
             fi
             ;;
         *)
             echo "Error: Unsupported template '$TEMPLATE'. Only 'docker' and 'podman' are supported." >&2
-            cleanup_on_failure
             exit 1
             ;;
     esac

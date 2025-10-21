@@ -12,12 +12,6 @@ usage() {
     exit 1
 }
 
-cleanup_on_failure() {
-    echo "Cleaning up after failure..." >&2
-    limactl stop "$VM_NAME" 2>/dev/null || true
-    limactl delete "$VM_NAME" 2>/dev/null || true
-}
-
 install_binary() {
     local source_path="$1"
     local binary_name="$2"
