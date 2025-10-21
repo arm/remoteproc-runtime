@@ -10,7 +10,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 
 1. Create a group and add your user:
 
-   ```
+   ```sh
    sudo groupadd remoteproc
    sudo usermod -aG remoteproc "$USER"
    ```
@@ -30,11 +30,11 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed.
 
 3. Apply the change in remoteproc.conf using root permission:
-   ```
+   ```sh
    sudo systemd-tmpfiles --create /etc/tmpfiles.d/remoteproc.conf
    ```
 4. Log in as a user in the remoteproc group and try the following commands to make sure that you can access the remoteproc driver as this user:
-   ```
+   ```sh
    # read state
    cat /sys/class/remoteproc/remoteproc0/state
    # start/stop
@@ -45,11 +45,11 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 ### 2. Make sure the user's instance is alive
 
 1. Check what your UID is by running in your user session terminal:
-   ```
+   ```sh
    id -u
    ```
 2. Ensure the instance of the user is alive in your user session terminal.
-   ```
+   ```sh
    systemctl --user status
    ```
    If you get:
@@ -57,7 +57,7 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
    Failed to connect to bus: No medium found
    ```
    it means your D-Bus socket is not set right. Try the commands below, and try `systemctl --user status` again.
-   ```
+   ```sh
    export XDG_RUNTIME_DIR=/run/user/<uid>
    export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
    ```
@@ -65,6 +65,6 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 ### 3. Set the firmware path to somewhere accessible by the user
 
 1. Ensure that the path of the folder that contains your firmware is written to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
-   ```
+   ```sh
    sudo echo <your firmware folder path> > /sys/module/firmware_class/parameters/path
    ```
