@@ -39,8 +39,16 @@ func TestRuntimeDir_XDG(t *testing.T) {
 	testDir := os.Getenv("XDG_RUNTIME_DIR")
 	if testDir == "" {
 		testDir = "/tmp/xdg_runtime_test"
-		os.Setenv("XDG_RUNTIME_DIR", testDir)
-		defer os.Unsetenv("XDG_RUNTIME_DIR")
+		err := os.Setenv("XDG_RUNTIME_DIR", testDir)
+		if err != nil {
+			t.Fatalf("os.Setenv failed: %v", err)
+		}
+		defer func() {
+			err := os.Unsetenv("XDG_RUNTIME_DIR")
+			if err != nil {
+				t.Fatalf("os.Unsetenv failed: %v", err)
+			}
+		}()
 	}
 
 	got, err := RuntimeDir()
@@ -54,8 +62,16 @@ func TestRuntimeDir_XDG(t *testing.T) {
 
 func TestRuntimeDir_Default(t *testing.T) {
 	xdgRuntimeDirOriginal := os.Getenv("XDG_RUNTIME_DIR")
-	os.Unsetenv("XDG_RUNTIME_DIR")
-	defer os.Setenv("XDG_RUNTIME_DIR", xdgRuntimeDirOriginal)
+	err := os.Unsetenv("XDG_RUNTIME_DIR")
+	if err != nil {
+		t.Fatalf("os.Unsetenv failed: %v", err)
+	}
+	defer func() {
+		err := os.Setenv("XDG_RUNTIME_DIR", xdgRuntimeDirOriginal)
+		if err != nil {
+			t.Fatalf("os.Setenv failed: %v", err)
+		}
+	}()
 	home, err := os.UserHomeDir()
 	if err != nil {
 		t.Fatalf("os.UserHomeDir() failed: %v", err)
