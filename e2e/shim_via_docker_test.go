@@ -21,7 +21,7 @@ func TestDocker(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithDocker(rootpathPrefix, "../testdata", bins)
+	vm, err := limavm.NewDocker(rootpathPrefix, "../testdata", bins)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -105,7 +105,7 @@ func TestDocker(t *testing.T) {
 	})
 }
 
-func requireDockerContainerFinished(t *testing.T, vm limavm.LimaVM, containerID string) {
+func requireDockerContainerFinished(t *testing.T, vm limavm.Docker, containerID string) {
 	t.Helper()
 
 	const retryWindow = 15 * time.Second
@@ -124,7 +124,7 @@ func requireDockerContainerFinished(t *testing.T, vm limavm.LimaVM, containerID 
 	}, retryWindow, time.Second)
 }
 
-func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.LimaVM, containerID string) {
+func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.Docker, containerID string) {
 	t.Helper()
 
 	requireDockerContainerFinished(t, vm, containerID)

@@ -21,49 +21,14 @@ var (
 )
 
 type LimaVM struct {
-	name     string
-	template string
+	name string
 }
 
 var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
-	vm, err := new("docker", mountDir)
-	if err != nil {
-		return LimaVM{}, err
-	}
-	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
-		if err := vm.InstallBin(bin); err != nil {
-			vm.Cleanup()
-			return vm, err
-		}
-	}
-	if err := vm.BuildImage(buildContext, "test-image"); err != nil {
-		vm.Cleanup()
-		return vm, err
-	}
-	return vm, nil
-}
-
-func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
-	vm, err := new("podman", mountDir)
-	if err != nil {
-		return LimaVM{}, err
-	}
-	if err := vm.InstallBin(string(runtimeBin)); err != nil {
-		vm.Cleanup()
-		return vm, err
-	}
-	if err := vm.BuildImage(buildContext, "test-image"); err != nil {
-		vm.Cleanup()
-		return vm, err
-	}
-	return vm, nil
-}
-
-func new(template string, mountDir string) (LimaVM, error) {
+func newVM(template string, mountDir string) (LimaVM, error) {
 	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
 	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
@@ -80,7 +45,7 @@ func new(template string, mountDir string) (LimaVM, error) {
 		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
 	}
 
-	return LimaVM{name: vmName, template: template}, nil
+	return LimaVM{name: vmName}, nil
 }
 
 func (vm LimaVM) InstallBin(binToInstall string) error {
@@ -93,21 +58,6 @@ func (vm LimaVM) InstallBin(binToInstall string) error {
 
 	if err := installStreamer.Wait(); err != nil {
 		return fmt.Errorf("failed to install binaries: %w", err)
-	}
-
-	return nil
-}
-
-func (vm LimaVM) BuildImage(buildContext string, imageName string) error {
-	buildCmd := exec.Command(buildImageScript, vm.name, vm.template, buildContext, imageName)
-	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
-
-	if err := buildStreamer.Start(); err != nil {
-		return fmt.Errorf("failed to start build-image script: %w", err)
-	}
-
-	if err := buildStreamer.Wait(); err != nil {
-		return fmt.Errorf("failed to build image: %w", err)
 	}
 
 	return nil
