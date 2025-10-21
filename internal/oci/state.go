@@ -14,8 +14,10 @@ const (
 	stateFileName = "state.json"
 )
 
-var stateDir string
-var stateDirErr error
+var (
+	stateDir    string
+	stateDirErr error
+)
 
 func init() {
 	stateDir, stateDirErr = userdirs.RuntimeDir()

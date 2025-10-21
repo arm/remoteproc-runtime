@@ -18,9 +18,7 @@ const (
 	rprocFirmwareFileName     = "firmware"
 )
 
-var (
-	rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
-)
+var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
 
 func setFirmwareStorePath() (string, error) {
 	// Check if kernel has custom firmware path configured
