@@ -28,19 +28,45 @@ var BinBuildEnv = map[string]string{
 }
 
 func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
-	return New("docker", mountDir, buildContext, string(bins.Runtime), string(bins.Shim))
+	const template = "docker"
+	vm, err := New(template, mountDir)
+	if err != nil {
+		return LimaVM{}, err
+	}
+	if err := vm.InstallBinaries(string(bins.Runtime), string(bins.Shim)); err != nil {
+		vm.Cleanup()
+		return vm, err
+	}
+	if err := vm.BuildImage(template, buildContext); err != nil {
+		vm.Cleanup()
+		return vm, err
+	}
+	return vm, nil
 }
 
 func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
-	return New("podman", mountDir, buildContext, string(runtimeBin))
+	const template = "podman"
+	vm, err := New(template, mountDir)
+	if err != nil {
+		return LimaVM{}, err
+	}
+	if err := vm.InstallBinaries(string(runtimeBin)); err != nil {
+		vm.Cleanup()
+		return vm, err
+	}
+	if err := vm.BuildImage(template, buildContext); err != nil {
+		vm.Cleanup()
+		return vm, err
+	}
+	return vm, nil
 }
 
-func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {
+func New(template string, mountDir string) (LimaVM, error) {
 	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
 	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
 	if err := prepareStreamer.Start(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to start prepare script: %w", err)
+		return LimaVM{}, fmt.Errorf("failed to start prepare-lima script: %w", err)
 	}
 
 	if err := prepareStreamer.Wait(); err != nil {
@@ -52,29 +78,37 @@ func New(template string, mountDir string, buildContext string, binsToInstall ..
 		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
 	}
 
-	installCmd := exec.Command(installBinScript, append([]string{vmName}, binsToInstall...)...)
+	return LimaVM{name: vmName}, nil
+}
+
+func (vm LimaVM) InstallBinaries(binsToInstall ...string) error {
+	installCmd := exec.Command(installBinScript, append([]string{vm.name}, binsToInstall...)...)
 	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
 
 	if err := installStreamer.Start(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to start install-bin script: %w", err)
+		return fmt.Errorf("failed to start install-bin script: %w", err)
 	}
 
 	if err := installStreamer.Wait(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to install binaries: %w", err)
+		return fmt.Errorf("failed to install binaries: %w", err)
 	}
 
-	buildCmd := exec.Command(buildImageScript, vmName, template, buildContext)
+	return nil
+}
+
+func (vm LimaVM) BuildImage(template string, buildContext string) error {
+	buildCmd := exec.Command(buildImageScript, vm.name, template, buildContext)
 	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
 
 	if err := buildStreamer.Start(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to start build-image script: %w", err)
+		return fmt.Errorf("failed to start build-image script: %w", err)
 	}
 
 	if err := buildStreamer.Wait(); err != nil {
-		return LimaVM{}, fmt.Errorf("failed to build image: %w", err)
+		return fmt.Errorf("failed to build image: %w", err)
 	}
 
-	return LimaVM{name: vmName}, nil
+	return nil
 }
 
 func (vm LimaVM) Cleanup() {
