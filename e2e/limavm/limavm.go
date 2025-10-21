@@ -29,7 +29,7 @@ var BinBuildEnv = map[string]string{
 
 func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
 	const template = "docker"
-	vm, err := New(template, mountDir)
+	vm, err := new(template, mountDir)
 	if err != nil {
 		return LimaVM{}, err
 	}
@@ -46,7 +46,7 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 
 func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
 	const template = "podman"
-	vm, err := New(template, mountDir)
+	vm, err := new(template, mountDir)
 	if err != nil {
 		return LimaVM{}, err
 	}
@@ -61,7 +61,7 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 	return vm, nil
 }
 
-func New(template string, mountDir string) (LimaVM, error) {
+func new(template string, mountDir string) (LimaVM, error) {
 	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
 	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
