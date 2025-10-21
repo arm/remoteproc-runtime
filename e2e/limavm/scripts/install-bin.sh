@@ -3,12 +3,12 @@
 set -e
 
 VM_NAME=""
-BINARIES=()
+BINARY_TO_INSTALL=""
 
 usage() {
-    echo "Usage: $0 <vm-name> <binary1> [binary2] ..." >&2
-    echo "  vm-name:          Name of the Lima VM" >&2
-    echo "  binary1...N:      Paths to binaries to install in /usr/local/bin" >&2
+    echo "Usage: $0 <vm-name> <binary-to-install>" >&2
+    echo "  vm-name:            Name of the Lima VM" >&2
+    echo "  binary-to-install:  Path to binary to install in /usr/local/bin" >&2
     exit 1
 }
 
@@ -39,27 +39,22 @@ install_binary() {
 }
 
 main() {
-    if [ $# -lt 2 ]; then
+    if [ $# -ne 2 ]; then
         usage
     fi
 
     VM_NAME="$1"
-    shift
-    BINARIES=("$@")
+    BINARY_TO_INSTALL="$2"
 
-    for binary in "${BINARIES[@]}"; do
-        if [ ! -f "$binary" ]; then
-            echo "Error: Binary not found: $binary" >&2
-            exit 1
-        fi
-    done
+    if [ ! -f "$BINARY_TO_INSTALL" ]; then
+      echo "Error: Binary not found: $BINARY_TO_INSTALL" >&2
+      exit 1
+    fi
 
-    for binary_path in "${BINARIES[@]}"; do
-        binary_name=$(basename "$binary_path")
-        install_binary "$binary_path" "$binary_name"
-    done
+    binary_name=$(basename "$BINARY_TO_INSTALL")
+    install_binary "$BINARY_TO_INSTALL" "$binary_name"
 
-    echo "Binaries installed successfully" >&2
+    echo "Binary installed successfully" >&2
 }
 
 main "$@"

@@ -34,9 +34,11 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 	if err != nil {
 		return LimaVM{}, err
 	}
-	if err := vm.InstallBinaries(string(bins.Runtime), string(bins.Shim)); err != nil {
-		vm.Cleanup()
-		return vm, err
+	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
+		if err := vm.InstallBin(bin); err != nil {
+			vm.Cleanup()
+			return vm, err
+		}
 	}
 	if err := vm.BuildImage(template, buildContext); err != nil {
 		vm.Cleanup()
@@ -51,7 +53,7 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 	if err != nil {
 		return LimaVM{}, err
 	}
-	if err := vm.InstallBinaries(string(runtimeBin)); err != nil {
+	if err := vm.InstallBin(string(runtimeBin)); err != nil {
 		vm.Cleanup()
 		return vm, err
 	}
@@ -82,8 +84,8 @@ func new(template string, mountDir string) (LimaVM, error) {
 	return LimaVM{name: vmName}, nil
 }
 
-func (vm LimaVM) InstallBinaries(binsToInstall ...string) error {
-	installCmd := exec.Command(installBinScript, append([]string{vm.name}, binsToInstall...)...)
+func (vm LimaVM) InstallBin(binToInstall string) error {
+	installCmd := exec.Command(installBinScript, vm.name, binToInstall)
 	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
 
 	if err := installStreamer.Start(); err != nil {
