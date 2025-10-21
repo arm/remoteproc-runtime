@@ -21,7 +21,8 @@ var (
 )
 
 type LimaVM struct {
-	name string
+	name     string
+	template string
 }
 
 var BinBuildEnv = map[string]string{
@@ -29,8 +30,7 @@ var BinBuildEnv = map[string]string{
 }
 
 func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM, error) {
-	const template = "docker"
-	vm, err := new(template, mountDir)
+	vm, err := new("docker", mountDir)
 	if err != nil {
 		return LimaVM{}, err
 	}
@@ -40,7 +40,7 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 			return vm, err
 		}
 	}
-	if err := vm.BuildImage(template, buildContext); err != nil {
+	if err := vm.BuildImage(buildContext); err != nil {
 		vm.Cleanup()
 		return vm, err
 	}
@@ -48,8 +48,7 @@ func NewWithDocker(mountDir string, buildContext string, bins repo.Bins) (LimaVM
 }
 
 func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (LimaVM, error) {
-	const template = "podman"
-	vm, err := new(template, mountDir)
+	vm, err := new("podman", mountDir)
 	if err != nil {
 		return LimaVM{}, err
 	}
@@ -57,7 +56,7 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 		vm.Cleanup()
 		return vm, err
 	}
-	if err := vm.BuildImage(template, buildContext); err != nil {
+	if err := vm.BuildImage(buildContext); err != nil {
 		vm.Cleanup()
 		return vm, err
 	}
@@ -81,7 +80,7 @@ func new(template string, mountDir string) (LimaVM, error) {
 		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
 	}
 
-	return LimaVM{name: vmName}, nil
+	return LimaVM{name: vmName, template: template}, nil
 }
 
 func (vm LimaVM) InstallBin(binToInstall string) error {
@@ -99,8 +98,8 @@ func (vm LimaVM) InstallBin(binToInstall string) error {
 	return nil
 }
 
-func (vm LimaVM) BuildImage(template string, buildContext string) error {
-	buildCmd := exec.Command(buildImageScript, vm.name, template, buildContext)
+func (vm LimaVM) BuildImage(buildContext string) error {
+	buildCmd := exec.Command(buildImageScript, vm.name, vm.template, buildContext)
 	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
 
 	if err := buildStreamer.Start(); err != nil {
