@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/arm/remoteproc-runtime/internal/rootpath"
+	"github.com/arm/remoteproc-runtime/internal/userdirs"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -14,7 +14,15 @@ const (
 	stateFileName = "state.json"
 )
 
-var stateDir = rootpath.Join(os.Getenv("XDG_RUNTIME_DIR"), "run", "remoteproc")
+var stateDir string
+var stateDirErr error
+
+func init() {
+	stateDir, stateDirErr = userdirs.RuntimeDir()
+	if stateDirErr != nil || stateDir == "" {
+		panic(fmt.Errorf("error getting runtime dir: %v", stateDirErr))
+	}
+}
 
 func NewState(containerID string, bundlePath string) *specs.State {
 	return &specs.State{
