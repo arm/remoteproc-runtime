@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	prepareLimaVMScript  = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "prepare-lima-vm.sh")
-	teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "teardown-lima-vm.sh")
+	prepareLimaVMScript  = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "prepare-lima-vm.sh")
+	teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "teardown-lima-vm.sh")
 )
 
 type LimaVM struct {
