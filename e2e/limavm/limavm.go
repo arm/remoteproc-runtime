@@ -14,6 +14,7 @@ import (
 
 var (
 	prepareLimaVMScript  = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "prepare-lima-vm.sh")
+	buildImageScript     = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "build-image.sh")
 	teardownLimaVMScript = filepath.Join(repo.MustFindRootDir(), "e2e", "limavm", "scripts", "teardown-lima-vm.sh")
 )
 
@@ -36,7 +37,7 @@ func NewWithPodman(mountDir string, buildContext string, runtimeBin repo.Runtime
 func New(template string, mountDir string, buildContext string, binsToInstall ...string) (LimaVM, error) {
 	cmd := exec.Command(
 		prepareLimaVMScript,
-		append([]string{template, mountDir, buildContext}, binsToInstall...)...,
+		append([]string{template, mountDir}, binsToInstall...)...,
 	)
 	streamer := runner.NewStreamingCmd(cmd).WithPrefix("prepare-vm")
 
@@ -51,6 +52,17 @@ func New(template string, mountDir string, buildContext string, binsToInstall ..
 	vmName := strings.TrimSpace(streamer.Output())
 	if vmName == "" {
 		return LimaVM{}, fmt.Errorf("prepare script did not return VM name")
+	}
+
+	buildCmd := exec.Command(buildImageScript, vmName, template, buildContext)
+	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
+
+	if err := buildStreamer.Start(); err != nil {
+		return LimaVM{}, fmt.Errorf("failed to start build-image script: %w", err)
+	}
+
+	if err := buildStreamer.Wait(); err != nil {
+		return LimaVM{}, fmt.Errorf("failed to build image: %w", err)
 	}
 
 	return LimaVM{name: vmName}, nil
