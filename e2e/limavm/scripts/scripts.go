@@ -38,19 +38,24 @@ func PrepareLimaVM(template string, mountDir string) (string, error) {
 	return vmName, nil
 }
 
-func InstallBin(vmName string, binToInstall string) error {
+func InstallBin(vmName string, binToInstall string) (string, error) {
 	installCmd := exec.Command(installBinScript, vmName, binToInstall)
 	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
 
 	if err := installStreamer.Start(); err != nil {
-		return fmt.Errorf("failed to start install-bin script: %w", err)
+		return "", fmt.Errorf("failed to start install-bin script: %w", err)
 	}
 
 	if err := installStreamer.Wait(); err != nil {
-		return fmt.Errorf("failed to install binaries: %w", err)
+		return "", fmt.Errorf("failed to install binary: %w", err)
 	}
 
-	return nil
+	installedBinLocation := strings.TrimSpace(installStreamer.Output())
+	if installedBinLocation == "" {
+		return "", fmt.Errorf("install script did not return installed binary location")
+	}
+
+	return installedBinLocation, nil
 }
 
 func TeardownLimaVM(vmName string) error {

@@ -22,7 +22,7 @@ func newVM(template string, mountDir string) (VM, error) {
 	return VM{name: vmName}, err
 }
 
-func (vm VM) InstallBin(binToInstall string) error {
+func (vm VM) InstallBin(binToInstall string) (string, error) {
 	return scripts.InstallBin(vm.name, binToInstall)
 }
 
