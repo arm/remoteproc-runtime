@@ -7,9 +7,7 @@ import (
 	"path/filepath"
 )
 
-type RuntimeBin string
-
-func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (RuntimeBin, error) {
+func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
 	const binToBuild = "remoteproc-runtime"
 	repoRootDir, err := findRootDir()
 	if err != nil {
@@ -33,12 +31,10 @@ func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]str
 	if out, err := build.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to build binary %s: %s\n%s", binOut, err, out)
 	}
-	return RuntimeBin(binOut), nil
+	return binOut, nil
 }
 
-type ShimBin string
-
-func BuildShimBin(binOutDir string, env map[string]string) (ShimBin, error) {
+func BuildShimBin(binOutDir string, env map[string]string) (string, error) {
 	const binToBuild = "containerd-shim-remoteproc-v1"
 	repoRootDir, err := findRootDir()
 	if err != nil {
@@ -60,27 +56,19 @@ func BuildShimBin(binOutDir string, env map[string]string) (ShimBin, error) {
 	if out, err := build.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to build binary %s: %s\n%s", binOut, err, out)
 	}
-	return ShimBin(binOut), nil
+	return binOut, nil
 }
 
-type Bins struct {
-	Shim    ShimBin
-	Runtime RuntimeBin
-}
-
-func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]string) (Bins, error) {
+func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]string) ([]string, error) {
 	runtime, err := BuildRuntimeBin(binOutDir, rootPathPrefix, env)
 	if err != nil {
-		return Bins{}, err
+		return nil, err
 	}
 
 	shim, err := BuildShimBin(binOutDir, env)
 	if err != nil {
-		return Bins{}, err
+		return nil, err
 	}
 
-	return Bins{
-		Runtime: runtime,
-		Shim:    shim,
-	}, nil
+	return []string{runtime, shim}, nil
 }

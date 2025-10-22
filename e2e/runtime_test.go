@@ -128,24 +128,24 @@ func TestRuntimeWriteProcessPid(t *testing.T) {
 	assertFileContent(t, pidFilePath, fmt.Sprintf("%d", pid))
 }
 
-func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
+func assertContainerStatus(t testing.TB, runtimeBin string, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
-	state, err := getContainerState(bin, containerName)
+	state, err := getContainerState(runtimeBin, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
 }
 
-func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
-	state, err := getContainerState(bin, containerName)
+func getContainerPid(runtimeBin string, containerName string) (int, error) {
+	state, err := getContainerState(runtimeBin, containerName)
 	if err != nil {
 		return 0, err
 	}
 	return state.Pid, err
 }
 
-func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
+func getContainerState(runtimeBin string, containerName string) (specs.State, error) {
 	var state specs.State
-	out, err := invokeRuntime(bin, "state", containerName)
+	out, err := invokeRuntime(runtimeBin, "state", containerName)
 	if err != nil {
 		return state, fmt.Errorf("can't get container state: %w", err)
 	}
@@ -192,8 +192,8 @@ func generateBundle(targetDir string, remoteprocName string) error {
 	return nil
 }
 
-func invokeRuntime(bin repo.RuntimeBin, args ...string) ([]byte, error) {
-	cmd := exec.Command(string(bin), args...)
+func invokeRuntime(runtimeBin string, args ...string) ([]byte, error) {
+	cmd := exec.Command(runtimeBin, args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

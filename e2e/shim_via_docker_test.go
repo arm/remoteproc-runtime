@@ -21,9 +21,17 @@ func TestDocker(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithDocker(rootpathPrefix, "../testdata", bins)
+	vm, err := limavm.NewDocker(rootpathPrefix)
 	require.NoError(t, err)
 	defer vm.Cleanup()
+
+	for _, bin := range bins {
+		_, err := vm.InstallBin(bin)
+		require.NoError(t, err)
+	}
+
+	imageName := "test-image"
+	require.NoError(t, vm.BuildImage("../testdata", imageName))
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-device"
@@ -40,7 +48,7 @@ func TestDocker(t *testing.T) {
 			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
-			"test-image")
+			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
@@ -71,7 +79,7 @@ func TestDocker(t *testing.T) {
 			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
-			"test-image")
+			imageName)
 		assert.Error(t, err)
 		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: a-processor")
 	})
@@ -89,7 +97,7 @@ func TestDocker(t *testing.T) {
 			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
-			"test-image")
+			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
@@ -105,7 +113,7 @@ func TestDocker(t *testing.T) {
 	})
 }
 
-func requireDockerContainerFinished(t *testing.T, vm limavm.LimaVM, containerID string) {
+func requireDockerContainerFinished(t *testing.T, vm limavm.Docker, containerID string) {
 	t.Helper()
 
 	const retryWindow = 15 * time.Second
@@ -124,7 +132,7 @@ func requireDockerContainerFinished(t *testing.T, vm limavm.LimaVM, containerID 
 	}, retryWindow, time.Second)
 }
 
-func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.LimaVM, containerID string) {
+func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.Docker, containerID string) {
 	t.Helper()
 
 	requireDockerContainerFinished(t, vm, containerID)

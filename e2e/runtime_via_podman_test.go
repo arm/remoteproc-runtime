@@ -19,9 +19,15 @@ func TestPodman(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithPodman(rootpathPrefix, "../testdata", runtimeBin)
+	vm, err := limavm.NewPodman(rootpathPrefix)
 	require.NoError(t, err)
 	defer vm.Cleanup()
+
+	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
+
+	imageName := "fancy-image"
+	require.NoError(t, vm.BuildImage("../testdata", imageName))
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-device"
@@ -36,10 +42,10 @@ func TestPodman(t *testing.T) {
 		stdout, stderr, err := vm.RunCommand(
 			"podman",
 			"--cgroup-manager=cgroupfs",
-			"--runtime=/usr/local/bin/remoteproc-runtime", // <- hardcoding ain't great
+			fmt.Sprintf("--runtime=%s", installedRuntimeBin),
 			"run", "-d",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
-			"test-image")
+			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
