@@ -21,19 +21,16 @@ install_binary() {
 
     if ! limactl copy "$source_path" "$VM_NAME:/tmp/$binary_name"; then
         echo "Error: Failed to copy $binary_name" >&2
-        cleanup_on_failure
         exit 1
     fi
 
     if ! limactl shell "$VM_NAME" sudo mv "/tmp/$binary_name" "$dest_path"; then
         echo "Error: Failed to install $binary_name" >&2
-        cleanup_on_failure
         exit 1
     fi
 
     if ! limactl shell "$VM_NAME" sudo chmod +x "$dest_path"; then
         echo "Error: Failed to make $binary_name executable" >&2
-        cleanup_on_failure
         exit 1
     fi
 }
