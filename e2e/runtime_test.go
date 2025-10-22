@@ -107,7 +107,8 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
-		_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
+		_, stderr, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
+		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 	})
 
