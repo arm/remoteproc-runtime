@@ -26,7 +26,7 @@ func (s *shimSocket) Close() {
 	_ = containerdshim.RemoveSocket(s.addr)
 }
 
-var errSocketAlreadyExists = errors.New("socket aready exists")
+var errSocketAlreadyExists = errors.New("socket already exists")
 
 func newShimSocket(ctx context.Context, path, id string) (*shimSocket, error) {
 	address, err := containerdshim.SocketAddress(ctx, path, id, false)
