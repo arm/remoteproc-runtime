@@ -71,5 +71,4 @@ func BuildImage(vmName string, template string, buildContext string, imageName s
 	}
 
 	return nil
-
 }
