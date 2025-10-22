@@ -18,7 +18,7 @@ func NewDocker(mountDir string, bins repo.Bins) (Docker, error) {
 	d := Docker{VM: vm}
 
 	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
-		if err := d.InstallBin(bin); err != nil {
+		if _, err := d.InstallBin(bin); err != nil {
 			d.Cleanup()
 			return Docker{}, err
 		}
