@@ -2,29 +2,18 @@ package limavm
 
 import (
 	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
-	"github.com/arm/remoteproc-runtime/e2e/repo"
 )
 
 type Docker struct {
 	VM
 }
 
-func NewDocker(mountDir string, bins repo.Bins) (Docker, error) {
+func NewDocker(mountDir string) (Docker, error) {
 	vm, err := newVM("docker", mountDir)
 	if err != nil {
 		return Docker{}, err
 	}
-
-	d := Docker{VM: vm}
-
-	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
-		if _, err := d.InstallBin(bin); err != nil {
-			d.Cleanup()
-			return Docker{}, err
-		}
-	}
-
-	return d, nil
+	return Docker{VM: vm}, nil
 }
 
 func (vm Docker) BuildImage(buildContext string, imageName string) error {
