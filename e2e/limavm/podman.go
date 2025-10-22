@@ -6,7 +6,7 @@ import (
 )
 
 type Podman struct {
-	LimaVM
+	VM
 }
 
 func NewPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (Podman, error) {
@@ -15,7 +15,7 @@ func NewPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin)
 		return Podman{}, err
 	}
 
-	p := Podman{LimaVM: vm}
+	p := Podman{VM: vm}
 
 	if err := p.InstallBin(string(runtimeBin)); err != nil {
 		p.Cleanup()

@@ -9,7 +9,7 @@ import (
 	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
 )
 
-type LimaVM struct {
+type VM struct {
 	name string
 }
 
@@ -17,25 +17,25 @@ var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func newVM(template string, mountDir string) (LimaVM, error) {
+func newVM(template string, mountDir string) (VM, error) {
 	vmName, err := scripts.PrepareLimaVM(template, mountDir)
-	return LimaVM{name: vmName}, err
+	return VM{name: vmName}, err
 }
 
-func (vm LimaVM) InstallBin(binToInstall string) error {
+func (vm VM) InstallBin(binToInstall string) error {
 	return scripts.InstallBin(vm.name, binToInstall)
 }
 
-func (vm LimaVM) Cleanup() {
+func (vm VM) Cleanup() {
 	_ = scripts.TeardownLimaVM(vm.name)
 }
 
-func (vm LimaVM) cmd(name string, args ...string) *exec.Cmd {
+func (vm VM) cmd(name string, args ...string) *exec.Cmd {
 	allArgs := append([]string{"shell", vm.name, name}, args...)
 	return exec.Command("limactl", allArgs...)
 }
 
-func (vm LimaVM) RunCommand(name string, args ...string) (stdout, stderr string, err error) {
+func (vm VM) RunCommand(name string, args ...string) (stdout, stderr string, err error) {
 	cmd := vm.cmd(name, args...)
 
 	var stdoutBuf, stderrBuf bytes.Buffer

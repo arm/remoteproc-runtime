@@ -6,7 +6,7 @@ import (
 )
 
 type Docker struct {
-	LimaVM
+	VM
 }
 
 func NewDocker(mountDir string, buildContext string, bins repo.Bins) (Docker, error) {
@@ -15,7 +15,7 @@ func NewDocker(mountDir string, buildContext string, bins repo.Bins) (Docker, er
 		return Docker{}, err
 	}
 
-	d := Docker{LimaVM: vm}
+	d := Docker{VM: vm}
 
 	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
 		if err := d.InstallBin(bin); err != nil {
