@@ -24,6 +24,7 @@ func TestPodman(t *testing.T) {
 	defer vm.Cleanup()
 
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
 
 	imageName := "fancy-image"
 	require.NoError(t, vm.BuildImage("../testdata", imageName))
