@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/arm/remoteproc-runtime/e2e/runner"
@@ -80,4 +81,10 @@ func (vm LimaVM) RunCommand(name string, args ...string) (stdout, stderr string,
 		return stdout, stderr, fmt.Errorf("cmd failed: %w\nstdout:\n%s\nstderr:\n%s", err, stdout, stderr)
 	}
 	return stdout, stderr, nil
+}
+
+func Require(t *testing.T) {
+	if _, err := exec.LookPath("limactl"); err != nil {
+		t.Skip("limactl not found. Install limavm: https://lima-vm.io/")
+	}
 }
