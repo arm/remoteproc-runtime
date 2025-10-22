@@ -41,8 +41,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    env:
-      PUBLISH_TEST_COVERAGE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
@@ -54,25 +52,7 @@ jobs:
         run: go mod download
 
       - name: Run fast tests
-        if: ${{ env.PUBLISH_TEST_COVERAGE != 'true' }}
         run: go test -v -race ./internal/...
-
-      - name: Run fast tests and generate coverage
-        if: ${{ env.PUBLISH_TEST_COVERAGE == 'true' }}
-        run: go test -v -race ./internal/... -covermode=atomic -coverprofile=coverage.out
-
-      - name: Install Qlty Cloud
-        if: ${{ env.PUBLISH_TEST_COVERAGE == 'true' }}
-        uses: qltysh/qlty-action/install@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
-
-      - name: Upload coverage to Qlty Cloud
-        if: ${{ env.PUBLISH_TEST_COVERAGE == 'true' }}
-        uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
-        with:
-          token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
-          files: coverage.out
-          strip-prefix: github.com/arm/remoteproc-runtime
-          skip-errors: false
 
       - name: Download Remoteproc Simulator
         uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
