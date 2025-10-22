@@ -25,7 +25,7 @@ func TestDocker(t *testing.T) {
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
-	for _, bin := range []string{string(bins.Runtime), string(bins.Shim)} {
+	for _, bin := range bins {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
