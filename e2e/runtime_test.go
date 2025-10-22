@@ -7,9 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 
+	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/remoteproc"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -128,11 +130,141 @@ func TestRuntimeWriteProcessPid(t *testing.T) {
 	assertFileContent(t, pidFilePath, fmt.Sprintf("%d", pid))
 }
 
+func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "a-lovely-blue-device"
+
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
+	require.NoError(t, err)
+	t.Cleanup(vm.Cleanup)
+
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	t.Cleanup(func() { _ = sim.Stop() })
+
+	const containerName = "not-root-namespace-container"
+	bundlePath := filepath.Join(rootDir, "not-root-namespace-bundle")
+	require.NoError(t, generateBundle(
+		bundlePath,
+		remoteprocName,
+		specs.LinuxNamespace{Type: specs.MountNamespace},
+	))
+
+	_, stderr, err := vm.RunCommand(
+		"remoteproc-runtime",
+		"create", "--bundle", bundlePath,
+		containerName,
+	)
+	require.NoError(t, err, "stderr: %s", stderr)
+	t.Cleanup(func() {
+		_, _, _ = vm.RunCommand("remoteproc-runtime", "delete", containerName)
+	})
+
+	pid, err := checkContainerRunning(func() (specs.State, error) {
+		stdout, stderr, err := vm.RunCommand("remoteproc-runtime", "state", containerName)
+		if err != nil {
+			return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
+		}
+		var state specs.State
+		if err := json.Unmarshal([]byte(stdout), &state); err != nil {
+			return specs.State{}, err
+		}
+		return state, nil
+	})
+	require.NoError(t, err)
+
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	proxyMountNS, stderr, err := vm.RunCommand("readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	assert.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+}
+
+func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
+	rootDir := t.TempDir()
+	remoteprocName := "a-lovely-blue-device"
+
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
+	require.NoError(t, err)
+	t.Cleanup(vm.Cleanup)
+
+	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
+	if err := sim.Start(); err != nil {
+		t.Fatalf("failed to run simulator: %s", err)
+	}
+	t.Cleanup(func() { _ = sim.Stop() })
+
+	const containerName = "root-namespace-container"
+	bundlePath := filepath.Join(rootDir, "root-namespace-bundle")
+	require.NoError(t, generateBundle(
+		bundlePath,
+		remoteprocName,
+		specs.LinuxNamespace{Type: specs.MountNamespace},
+	))
+
+	_, stderr, err := vm.RunCommand(
+		"sudo", "remoteproc-runtime",
+		"create", "--bundle", bundlePath,
+		containerName,
+	)
+	require.NoError(t, err, "stderr: %s", stderr)
+	t.Cleanup(func() {
+		_, _, _ = vm.RunCommand("sudo", "remoteproc-runtime", "delete", containerName)
+	})
+
+	pid, err := checkContainerRunning(func() (specs.State, error) {
+		stdout, stderr, err := vm.RunCommand("sudo", "remoteproc-runtime", "state", containerName)
+		if err != nil {
+			return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
+		}
+		var state specs.State
+		if err := json.Unmarshal([]byte(stdout), &state); err != nil {
+			return specs.State{}, err
+		}
+		return state, nil
+	})
+	require.NoError(t, err)
+
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+	assert.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+
+	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+	_, stderr, err = vm.RunCommand("sudo", "remoteproc-runtime", "start", containerName)
+	require.NoError(t, err, "stderr: %s", stderr)
+	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+}
+
 func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(bin, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
+}
+
+func checkContainerRunning(fetch func() (specs.State, error)) (int, error) {
+	state, err := fetch()
+	if err != nil {
+		return 0, err
+	}
+	if state.Pid <= 0 {
+		return 0, fmt.Errorf("container is not running - pid is %d", state.Pid)
+	}
+	return state.Pid, nil
 }
 
 func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
@@ -156,7 +288,7 @@ func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, 
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string) error {
+func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
@@ -179,6 +311,7 @@ func generateBundle(targetDir string, remoteprocName string) error {
 		Annotations: map[string]string{
 			"remoteproc.name": remoteprocName,
 		},
+		Linux: &specs.Linux{Namespaces: namespaces},
 	}
 
 	specPath := filepath.Join(targetDir, "config.json")
