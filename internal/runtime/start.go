@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/arm/remoteproc-runtime/internal/oci"
 	"github.com/arm/remoteproc-runtime/internal/proxy"
@@ -14,10 +15,22 @@ func Start(containerID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
+	firmwarePath := state.Annotations[oci.StateFirmwarePath]
+	storedFirmwarePath, err := remoteproc.StoreFirmware(firmwarePath)
+	if err != nil {
+		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
+	}
+	state.Annotations[oci.OptionalStateStoredFirmwarePath] = storedFirmwarePath
+	needCleanup := true
+	defer func() {
+		if needCleanup {
+			_ = os.Remove(storedFirmwarePath)
+		}
+	}()
 
 	if err := remoteproc.SetFirmware(
-		state.Annotations[oci.StateResolvedPath],
-		state.Annotations[oci.StateFirmware],
+		state.Annotations[oci.StateDriverPath],
+		storedFirmwarePath,
 	); err != nil {
 		return fmt.Errorf("failed to set firmware: %w", err)
 	}
@@ -31,5 +44,6 @@ func Start(containerID string) error {
 		return fmt.Errorf("failed to write state: %w", err)
 	}
 
+	needCleanup = false
 	return nil
 }

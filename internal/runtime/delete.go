@@ -3,10 +3,10 @@ package runtime
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"syscall"
 
 	"github.com/arm/remoteproc-runtime/internal/oci"
-	"github.com/arm/remoteproc-runtime/internal/remoteproc"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -29,7 +29,12 @@ func delete(containerID string) error {
 		return fmt.Errorf("cannot delete running container %s", containerID)
 	}
 
-	_ = remoteproc.RemoveFirmware(state.Annotations[oci.StateFirmware])
+	firmwarePath, ok := state.Annotations[oci.OptionalStateStoredFirmwarePath]
+	if ok {
+		if err := os.Remove(firmwarePath); err != nil {
+			return fmt.Errorf("failed to remove firmware: %w", err)
+		}
+	}
 
 	if err := oci.RemoveState(containerID); err != nil {
 		return fmt.Errorf("failed to remove state: %w", err)
@@ -51,8 +56,11 @@ func forceDelete(logger *slog.Logger, containerID string) {
 		}
 	}
 
-	if err := remoteproc.RemoveFirmware(state.Annotations[oci.StateFirmware]); err != nil {
-		logger.Error("failed to remove firmware", "error", err)
+	firmwarePath, ok := state.Annotations[oci.OptionalStateStoredFirmwarePath]
+	if ok {
+		if err := os.Remove(firmwarePath); err != nil {
+			logger.Error("failed to remove firmware", "error", err)
+		}
 	}
 
 	if err := oci.RemoveState(containerID); err != nil {

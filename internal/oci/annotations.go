@@ -9,8 +9,10 @@ import (
 const (
 	SpecName = "remoteproc.name"
 
-	StateResolvedPath = "remoteproc.resolved-path"
-	StateFirmware     = "remoteproc.firmware"
+	StateDriverPath   = "remoteproc.driver-path"
+	StateFirmwarePath = "remoteproc.firmware-path"
+
+	OptionalStateStoredFirmwarePath = "remoteproc.stored-firmware-path"
 )
 
 func validateSpecAnnotations(spec *specs.Spec) error {
@@ -22,7 +24,7 @@ func validateSpecAnnotations(spec *specs.Spec) error {
 }
 
 func validateStateAnnotations(state *specs.State) error {
-	return validateAnnotationsExist(state.Annotations, StateResolvedPath, StateFirmware)
+	return validateAnnotationsExist(state.Annotations, StateDriverPath, StateFirmwarePath)
 }
 
 func validateAnnotationsExist(annotations map[string]string, keys ...string) error {
