@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
@@ -108,7 +107,7 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
-		require.NoError(t, vm.SendSignal(pid, syscall.SIGTERM))
+		_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 	})
 
