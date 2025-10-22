@@ -51,8 +51,6 @@ build_image() {
             exit 1
             ;;
     esac
-
-    limactl shell "$VM_NAME" rm -rf "$tmp_context" 2>/dev/null || true
 }
 
 main() {
