@@ -9,7 +9,7 @@ type Podman struct {
 	VM
 }
 
-func NewPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin) (Podman, error) {
+func NewPodman(mountDir string, runtimeBin repo.RuntimeBin) (Podman, error) {
 	vm, err := newVM("podman", mountDir)
 	if err != nil {
 		return Podman{}, err
@@ -18,11 +18,6 @@ func NewPodman(mountDir string, buildContext string, runtimeBin repo.RuntimeBin)
 	p := Podman{VM: vm}
 
 	if err := p.InstallBin(string(runtimeBin)); err != nil {
-		p.Cleanup()
-		return Podman{}, err
-	}
-
-	if err := p.BuildImage(buildContext, "test-image"); err != nil {
 		p.Cleanup()
 		return Podman{}, err
 	}

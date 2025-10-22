@@ -9,7 +9,7 @@ type Docker struct {
 	VM
 }
 
-func NewDocker(mountDir string, buildContext string, bins repo.Bins) (Docker, error) {
+func NewDocker(mountDir string, bins repo.Bins) (Docker, error) {
 	vm, err := newVM("docker", mountDir)
 	if err != nil {
 		return Docker{}, err
@@ -22,11 +22,6 @@ func NewDocker(mountDir string, buildContext string, bins repo.Bins) (Docker, er
 			d.Cleanup()
 			return Docker{}, err
 		}
-	}
-
-	if err := d.BuildImage(buildContext, "test-image"); err != nil {
-		d.Cleanup()
-		return Docker{}, err
 	}
 
 	return d, nil
