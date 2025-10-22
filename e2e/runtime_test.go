@@ -193,7 +193,7 @@ func generateBundle(targetDir string, remoteprocName string) error {
 }
 
 func invokeRuntime(runtimeBin string, args ...string) ([]byte, error) {
-	cmd := exec.Command(string(runtimeBin), args...)
+	cmd := exec.Command(runtimeBin, args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
