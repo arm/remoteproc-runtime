@@ -12,21 +12,24 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 
 | OCI Feature | Support Level | Notes |
 |-------------|---------------|-------|
-| **Core Operations** | ✓ Full | create, start, kill, delete, state |
-| **State Lifecycle** | ✓ Full | created → running → stopped |
-| **config.json** | ✓ Partial | Root, process.args[0], annotations only |
-| **Namespaces** | ✗ None | Not applicable for auxiliary processors |
-| **Cgroups** | ✗ None | Not applicable for auxiliary processors |
-| **Mounts** | ✓ Minimal | Firmware extraction only |
-| **Process Management** | ✗ Minimal | Single arg (firmware name), no stdio |
-| **Security Features** | ✗ None | Hardware-level security only |
-| **Hooks** | ✗ None | Simple deployment model |
-| **Device Management** | ✓ Custom | Via remoteproc sysfs interface |
-| **Signal Handling** | ✓ Custom | Proxy-mediated control |
+| **Core OCI Compliance** | | |
+| [Core Operations](#1-core-operations) | ✓ Full | create, start, kill, delete, state |
+| [State Lifecycle](#2-state-lifecycle) | ✓ Full | created → running → stopped |
+| [Configuration](#3-configuration) | ✓ Partial | Root, process.args[0], annotations only |
+| **Key Differences from Standard OCI Runtimes** | | |
+| [Single Container per Processor](#1-single-container-per-processor-limitation) | ✗ Limitation | One container per processor at a time |
+| [Namespace Isolation](#2-namespace-isolation) | ✗ None | Not applicable for auxiliary processors |
+| [Resource Management and Cgroups](#3-resource-management-and-cgroups) | ✗ None | Not applicable for auxiliary processors |
+| [Filesystem and Mounts](#4-filesystem-and-mounts) | ✓ Minimal | Firmware extraction only |
+| [Process Management and I/O](#5-process-management-and-io) | ✗ Minimal | Single arg (firmware name), no stdio |
+| [Security Features](#6-security-features) | ✗ None | Hardware-level security only |
+| [Lifecycle Hooks](#7-lifecycle-hooks) | ✗ None | Simple deployment model |
+| [Device Access](#8-device-access) | ✓ Custom | Via remoteproc sysfs interface |
+| [Signal Handling](#9-signal-handling) | ✓ Custom | Proxy-mediated control |
 
 ## Core OCI Compliance
 
-### Implemented OCI Features
+### 1. Core Operations
 
 The runtime implements all required OCI operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)):
 
@@ -36,10 +39,14 @@ The runtime implements all required OCI operations ([OCI Runtime Spec - Operatio
 - **delete**: Removes container resources and firmware ([spec](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#delete))
 - **state**: Queries container state (created, running, stopped) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#state))
 
+### 2. State Lifecycle
+
 The runtime correctly follows the OCI state lifecycle ([OCI Runtime Spec - Lifecycle](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#lifecycle)):
 ```
 creating → created → running → stopped
 ```
+
+### 3. Configuration
 
 Container configuration via `config.json` supports:
 - Root filesystem specification ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#root))
@@ -234,6 +241,6 @@ The runtime adds state annotations:
 
 ## References
 
-- OCI Runtime Specification: https://github.com/opencontainers/runtime-spec
-- Linux Remoteproc Framework: https://docs.kernel.org/staging/remoteproc.html
-- Linux Remoteproc SysFS: https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-remoteproc
+- [OCI Runtime Specification](https://github.com/opencontainers/runtime-spec)
+- [Linux Remoteproc Framework](https://docs.kernel.org/staging/remoteproc.html)
+- [Linux Remoteproc SysFS](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-remoteproc)
