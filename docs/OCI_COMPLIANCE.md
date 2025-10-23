@@ -8,6 +8,22 @@ The remoteproc-runtime is an OCI-compliant container runtime designed for deploy
 
 Unlike standard OCI runtimes (runc, crun, kata) that execute processes within isolated environments on the same machine, remoteproc-runtime deploys firmware to separate physical processors. These auxiliary processors (Cortex-M cores, DSPs, etc.) handle real-time tasks, ambient workloads, or specialized processing alongside a main Linux-capable CPU.
 
+## Compliance Summary
+
+| OCI Feature | Support Level | Notes |
+|-------------|---------------|-------|
+| **Core Operations** | ✓ Full | create, start, kill, delete, state |
+| **State Lifecycle** | ✓ Full | created → running → stopped |
+| **config.json** | ✓ Partial | Root, process.args[0], annotations only |
+| **Namespaces** | ✗ None | Not applicable for auxiliary processors |
+| **Cgroups** | ✗ None | Not applicable for auxiliary processors |
+| **Mounts** | ✓ Minimal | Firmware extraction only |
+| **Process Management** | ✗ Minimal | Single arg (firmware name), no stdio |
+| **Security Features** | ✗ None | Hardware-level security only |
+| **Hooks** | ✗ None | Simple deployment model |
+| **Device Management** | ✓ Custom | Via remoteproc sysfs interface |
+| **Signal Handling** | ✓ Custom | Proxy-mediated control |
+
 ## Core OCI Compliance
 
 ### ✓ Implemented OCI Features
@@ -265,22 +281,6 @@ Required annotation in config.json ([OCI Config Spec - Annotations](https://gith
 The runtime adds state annotations:
 - `remoteproc.resolved-path`: Full sysfs device path
 - `remoteproc.firmware`: Stored firmware filename in `/lib/firmware/`
-
-## Compliance Summary
-
-| OCI Feature | Support Level | Notes |
-|-------------|---------------|-------|
-| **Core Operations** | ✓ Full | create, start, kill, delete, state |
-| **State Lifecycle** | ✓ Full | created → running → stopped |
-| **config.json** | ✓ Partial | Root, process.args[0], annotations only |
-| **Namespaces** | ✗ None | Not applicable for auxiliary processors |
-| **Cgroups** | ✗ None | Not applicable for auxiliary processors |
-| **Mounts** | ✓ Minimal | Firmware extraction only |
-| **Process Management** | ✗ Minimal | Single arg (firmware name), no stdio |
-| **Security Features** | ✗ None | Hardware-level security only |
-| **Hooks** | ✗ None | Simple deployment model |
-| **Device Management** | ✓ Custom | Via remoteproc sysfs interface |
-| **Signal Handling** | ✓ Custom | Proxy-mediated control |
 
 ## Architectural Philosophy
 
