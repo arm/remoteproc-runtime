@@ -18,7 +18,7 @@ func joinHomeDir(elem ...string) (string, error) {
 func RuntimeDir() (string, error) {
 	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntimeDir != "" {
-		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
+		return filepath.Join(xdgRuntimeDir, ".remoteproc-runtime"), nil
 	}
-	return joinHomeDir("remoteproc-runtime") // I'M NOT SURE ABOUT THIS BEING SENSIBLE DEFAULT
+	return joinHomeDir(".remoteproc-runtime") // I'M NOT SURE ABOUT THIS BEING SENSIBLE DEFAULT
 }
