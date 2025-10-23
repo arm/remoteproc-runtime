@@ -20,7 +20,7 @@ const (
 
 var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
 
-func setFirmwareStorePath() (string, error) {
+func getSystemFirmwarePath() (string, error) {
 	// Check if kernel has custom firmware path configured
 	systemFirmwarePath := rootpath.Join("lib", "firmware")
 	if customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path"); err == nil {
