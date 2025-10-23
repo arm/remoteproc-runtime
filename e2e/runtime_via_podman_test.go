@@ -12,44 +12,54 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPodmanContainerLifecycle(t *testing.T) {
-	rootDir := t.TempDir()
-	remoteprocName := "yolo-device"
-	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+func TestPodman(t *testing.T) {
+	limavm.Require(t)
+
+	rootpathPrefix := t.TempDir()
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
+	vm, err := limavm.NewPodman(rootpathPrefix)
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
-	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
-	if err := sim.Start(); err != nil {
-		t.Fatalf("failed to run simulator: %s", err)
-	}
-	defer func() { _ = sim.Stop() }()
+	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
 
-	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	imageName := "fancy-image"
+	require.NoError(t, vm.BuildImage("../testdata", imageName))
 
-	stdout, stderr, err := vm.RunCommand(
-		"podman",
-		"--cgroup-manager=cgroupfs",
-		"--runtime=/usr/local/bin/remoteproc-runtime", // <- hardcoding ain't great
-		"run", "-d",
-		"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
-		"test-image")
-	require.NoError(t, err, "stderr: %s", stderr)
-	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+	t.Run("basic container lifecycle", func(t *testing.T) {
+		remoteprocName := "yolo-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
 
-	containerID := strings.TrimSpace(stdout)
-	_, stderr, err = vm.RunCommand("podman", "stop", containerID)
-	assert.NoError(t, err, "stderr: %s", stderr)
-	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
-	_, stderr, err = vm.RunCommand("podman", "start", containerID)
-	assert.NoError(t, err, "stderr: %s", stderr)
-	remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		stdout, stderr, err := vm.RunCommand(
+			"podman",
+			"--cgroup-manager=cgroupfs",
+			fmt.Sprintf("--runtime=%s", installedRuntimeBin),
+			"run", "-d",
+			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
+			imageName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
-	_, stderr, err = vm.RunCommand("podman", "stop", containerID)
-	assert.NoError(t, err, "stderr: %s", stderr)
-	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		containerID := strings.TrimSpace(stdout)
+		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+		assert.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+		_, stderr, err = vm.RunCommand("podman", "start", containerID)
+		assert.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+		assert.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	})
 }

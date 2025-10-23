@@ -1,5 +1,7 @@
 # Remoteproc Runtime
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/arm/remoteproc-runtime)](https://goreportcard.com/report/github.com/arm/remoteproc-runtime)
+
 **Deploy firmware to embedded processors using standard container tools.**
 
 An [OCI spec](https://github.com/opencontainers/runtime-spec) container runtime that deploys firmware to auxiliary processors using the [Linux remoteproc framework](https://docs.kernel.org/staging/remoteproc.html#introduction).
