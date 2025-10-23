@@ -2,11 +2,11 @@
 
 ## Overview
 
-The remoteproc-runtime is an OCI-compliant container runtime designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While it implements the core OCI runtime operations, it differs significantly from traditional container runtimes in several fundamental ways.
+The Remoteproc Runtime is an OCI-compliant container runtime designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While it implements the core OCI runtime operations, it differs significantly from traditional container runtimes in several fundamental ways.
 
 ## Purpose and Context
 
-Unlike standard OCI runtimes (runc, crun, kata) that execute processes within isolated environments on the same machine, remoteproc-runtime deploys firmware to separate physical processors. These auxiliary processors (Cortex-M cores, DSPs, etc.) handle real-time tasks, ambient workloads, or specialized processing alongside a main Linux-capable CPU.
+Unlike standard OCI runtimes (runc, crun, kata) that execute processes within isolated environments on the same machine, Remoteproc Runtime deploys firmware to separate physical processors. These auxiliary processors (Cortex-M cores, DSPs, etc.) handle real-time tasks, ambient workloads, or specialized processing alongside a main Linux-capable CPU.
 
 ## Compliance Summary
 
@@ -284,7 +284,7 @@ The runtime adds state annotations:
 
 ## Architectural Philosophy
 
-The remoteproc-runtime demonstrates that OCI's value extends beyond traditional container isolation. By implementing the core OCI operations and state model, it enables:
+The Remoteproc Runtime demonstrates that OCI's value extends beyond traditional container isolation. By implementing the core OCI operations and state model, it enables:
 
 1. **Unified tooling**: Use Docker, Podman, Kubernetes to deploy firmware
 2. **Standard packaging**: Container images for firmware distribution
@@ -301,5 +301,5 @@ This pragmatic approach creates an OCI-compliant runtime optimized for embedded 
 ## References
 
 - OCI Runtime Specification: https://github.com/opencontainers/runtime-spec
-- Linux remoteproc framework: https://docs.kernel.org/staging/remoteproc.html
-- Remoteproc Runtime Repository: https://github.com/arm/remoteproc-runtime
+- Linux Remoteproc Framework: https://docs.kernel.org/staging/remoteproc.html
+- Linux Remoteproc SysFS: https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-remoteproc
