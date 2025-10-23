@@ -31,6 +31,35 @@ func testRuntimeDir_XDGSet(t *testing.T) {
 	}
 }
 
+func testRuntimeDir_XDGUnset(t *testing.T) {
+	xdgRuntimeDirOriginal := os.Getenv("XDG_RUNTIME_DIR")
+	if xdgRuntimeDirOriginal != "" {
+		err := os.Unsetenv("XDG_RUNTIME_DIR")
+		if err != nil {
+			t.Fatalf("os.Unsetenv failed: %v", err)
+		}
+	}
+	defer func() {
+		err := os.Setenv("XDG_RUNTIME_DIR", xdgRuntimeDirOriginal)
+		if err != nil {
+			t.Fatalf("os.Setenv failed: %v", err)
+		}
+	}()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("os.UserHomeDir() failed: %v", err)
+	}
+
+	want := filepath.Join(home, "remoteproc-runtime")
+	got, err := userdirs.RuntimeDir()
+	if err != nil {
+		t.Fatalf("RuntimeDir failed: %v", err)
+	}
+	if got != want {
+		t.Errorf("RuntimeDir() = %q, want %q", got, want)
+	}
+}
+
 func overrideEnv(t *testing.T, key, value string) (func(), error) {
 	originalValue, hadOriginal := os.LookupEnv(key)
 	err := os.Setenv(key, value)
@@ -48,25 +77,4 @@ func overrideEnv(t *testing.T, key, value string) (func(), error) {
 			t.Fatalf("env restore failed: %v", err)
 		}
 	}, nil
-}
-
-func testRuntimeDir_XDGUnset(t *testing.T) {
-	xdgRuntimeDirOriginal := os.Getenv("XDG_RUNTIME_DIR")
-	cleanup, err := overrideEnv("XDG_RUNTIME_DIR", "")
-	if err != nil {
-		t.Fatalf("overrideEnv failed: %v", err)
-	}
-	defer cleanup()
-	if err != nil {
-		t.Fatalf("os.UserHomeDir() failed: %v", err)
-	}
-
-	want := filepath.Join(home, "remoteproc-runtime")
-	got, err := userdirs.RuntimeDir()
-	if err != nil {
-		t.Fatalf("RuntimeDir failed: %v", err)
-	}
-	if got != want {
-		t.Errorf("RuntimeDir() = %q, want %q", got, want)
-	}
 }
