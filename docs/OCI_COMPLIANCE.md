@@ -21,7 +21,7 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 | [Process Management and I/O](#7-process-management-and-io) | 🟡 Minimal | Single arg (firmware name), no stdio |
 | [Security Features](#8-security-features) | 🔴 None | Hardware-level security only |
 | [Additional Operations](#9-additional-operations) | 🔴 None | No exec, pause, checkpoint, etc. |
-| [Device Access](#10-device-access) | 🔵 Custom | Via remoteproc sysfs interface |
+| [Device Access](#10-device-access) | 🔴 None | Not applicable for auxiliary processors |
 | [Signal Handling](#11-signal-handling) | 🔵 Custom | Proxy-mediated control |
 | **Other** | | |
 | [Single Container per Processor](#12-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time |
