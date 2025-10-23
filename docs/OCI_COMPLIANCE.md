@@ -252,5 +252,5 @@ The runtime adds state annotations:
 ## References
 
 - [OCI Runtime Specification](https://github.com/opencontainers/runtime-spec)
-- [Linux Remoteproc Framework](https://docs.kernel.org/staging/remoteproc.html)
+- [Linux remoteproc framework](https://docs.kernel.org/staging/remoteproc.html)
 - [Linux remoteproc SysFS](https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-remoteproc)
