@@ -15,7 +15,7 @@ func TestRuntimeDir(t *testing.T) {
 
 func testRuntimeDir_XDGSet(t *testing.T) {
 	testDir := "/tmp/xdg_runtime_test"
-	cleanup, err := overrideEnv("XDG_RUNTIME_DIR", testDir)
+	cleanup, err := overrideEnv(t, "XDG_RUNTIME_DIR", testDir)
 	if err != nil {
 		t.Fatalf("overrideEnv failed: %v", err)
 	}

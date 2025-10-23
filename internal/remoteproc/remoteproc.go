@@ -134,9 +134,9 @@ func StoreFirmware(sourcePath string) (string, error) {
 	}
 
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
-	rprocFirmwareStorePath, err := setFirmwareStorePath()
+	rprocFirmwareStorePath, err := getFirmwareStorePath()
 	if err != nil {
-		return "", fmt.Errorf("failed to set firmware store path: %w", err)
+		return "", fmt.Errorf("failed to get firmware store path: %w", err)
 	}
 	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
 	if err := os.WriteFile(destPath, data, 0o644); err != nil {
