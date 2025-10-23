@@ -61,14 +61,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 2. Namespace Isolation
 
-**Standard OCI**: Must support seven Linux namespaces for process isolation ([OCI Config Spec - Linux Namespaces](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#namespaces)):
-- `pid`: Process isolation
-- `network`: Network stack isolation
-- `mount`: Filesystem mount isolation
-- `ipc`: Inter-process communication isolation
-- `uts`: Hostname/domain isolation
-- `user`: UID/GID mapping
-- `cgroup`: Control group hierarchy isolation
+**Standard OCI**: Must support Linux namespaces for process isolation ([OCI Config Spec - Linux Namespaces](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#namespaces)).
 
 **Remoteproc Runtime**: **No namespace isolation implemented**.
 
@@ -78,13 +71,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 3. Resource Management and Cgroups
 
-**Standard OCI**: Requires cgroups support for resource limits ([OCI Config Spec - Linux Control Groups](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#control-groups)):
-- Memory limits (hard limits, soft reservations, swap) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#memory))
-- CPU allocation and quotas ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#cpu))
-- Block I/O restrictions ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#block-io))
-- PID limits (process count) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#pids))
-- Network bandwidth controls ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#network))
-- RDMA and huge page limits ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#hugepage-limits))
+**Standard OCI**: Requires cgroups support for resource limits ([OCI Config Spec - Linux Control Groups](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#control-groups)).
 
 **Remoteproc Runtime**: **No cgroups support**.
 
@@ -94,14 +81,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 4. Process Management and I/O
 
-**Standard OCI**: Full process management features ([OCI Config Spec - Process](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)):
-- stdin/stdout/stderr redirection ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
-- TTY/pseudoterminal allocation ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
-- Console size configuration ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
-- Process environment variables ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
-- Working directory specification ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
-- User/group ID specification ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#user))
-- Resource limits (rlimits) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-rlimits))
+**Standard OCI**: Full process management features ([OCI Config Spec - Process](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)).
 
 **Remoteproc Runtime**: **Minimal process management**:
 - Process.Args ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)) must contain exactly **one argument**: the firmware binary name
@@ -117,12 +97,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 5. Filesystem and Mounts
 
-**Standard OCI**: Comprehensive filesystem support ([OCI Config Spec - Mounts](https://github.com/opencontainers/runtime-spec/blob/main/config.md#mounts)):
-- Rootfs is chroot'd and becomes process root ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#root))
-- Extensive mount options (bind, rbind, propagation modes) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#mounts))
-- Mount ordering and dependencies
-- Read-only rootfs enforcement ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#root))
-- Device node mounting
+**Standard OCI**: Comprehensive filesystem support ([OCI Config Spec - Mounts](https://github.com/opencontainers/runtime-spec/blob/main/config.md#mounts)).
 
 **Remoteproc Runtime**: **Limited filesystem usage**:
 - Rootfs is read to extract firmware binary during create phase
@@ -137,17 +112,9 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 - No need for complex filesystem layouts or mount management
 - Firmware persistence handled by copying to system firmware directory
 
-**Note**: The containerd shim (`containerd-shim-remoteproc-v1`) does mount volumes specified in the OCI spec to support advanced use cases, but the core runtime does not require this.
-
 ### 6. Security Features
 
-**Standard OCI**: Extensive Linux security mechanisms ([OCI Config Spec - Linux Process](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#linux-process)):
-- Capabilities (fine-grained privilege control) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#capabilities))
-- Seccomp (syscall filtering) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#seccomp))
-- AppArmor/SELinux profiles ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#apparmor), [spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#selinux-process-label))
-- Masked and read-only paths ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#masked-paths))
-- Device access control (cgroup devices) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices))
-- No new privileges flag ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#no-new-privileges))
+**Standard OCI**: Extensive Linux security mechanisms ([OCI Config Spec - Linux Process](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#linux-process)).
 
 **Remoteproc Runtime**: **No security features implemented**.
 
@@ -164,13 +131,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 7. Lifecycle Hooks
 
-**Standard OCI**: Runtime must support lifecycle hooks ([OCI Config Spec - Hooks](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-hooks)):
-- `prestart`: Before environment creation ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#prestart))
-- `createRuntime`: During environment setup ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#createruntime-hooks))
-- `createContainer`: During container initialization ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#createcontainer-hooks))
-- `startContainer`: Before user program execution ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#startcontainer-hooks))
-- `poststart`: After program begins running ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#poststart))
-- `poststop`: After container termination ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#poststop))
+**Standard OCI**: Runtime must support lifecycle hooks ([OCI Config Spec - Hooks](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-hooks)).
 
 **Remoteproc Runtime**: **No hooks support**.
 
@@ -183,11 +144,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 8. Additional Operations
 
-**Standard OCI**: Optional but common operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)):
-- `exec`: Execute additional processes inside container (non-standard extension)
-- `pause`/`resume`: Freeze/unfreeze container execution (non-standard extension)
-- `checkpoint`/`restore`: CRIU-based container migration (non-standard extension)
-- `update`: Modify resource constraints on running containers ([spec](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#update))
+**Standard OCI**: Optional but common operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)).
 
 **Remoteproc Runtime**: **None of these operations are supported**.
 
@@ -199,11 +156,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 9. Device Access
 
-**Standard OCI**: Device management ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)):
-- Explicit device allowlist/denylist ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices))
-- Read/write/mknod permissions per device ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices))
-- Default devices automatically provided (`/dev/null`, `/dev/zero`, `/dev/random`, `/dev/tty`, `/dev/console`, `/dev/ptmx`) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#default-devices))
-- cgroup devices controller enforcement ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices))
+**Standard OCI**: Device management ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)).
 
 **Remoteproc Runtime**: **Implicit device access**:
 - Runtime resolves processor name to `/sys/class/remoteproc/remoteprocN/` path
@@ -215,10 +168,7 @@ Container configuration via `config.json` is fully supported with ([OCI Config S
 
 ### 10. Signal Handling
 
-**Standard OCI**: Container process receives signals directly:
-- SIGTERM, SIGKILL for termination
-- SIGSTOP, SIGCONT for pause/resume
-- Arbitrary signals can be sent to container init process
+**Standard OCI**: Container process receives signals directly.
 
 **Remoteproc Runtime**: **Proxy-mediated signal handling**:
 - SIGUSR1: Start signal (transitions proxy from phase 1 to phase 2)
