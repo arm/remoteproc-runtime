@@ -145,15 +145,17 @@ Container configuration via `config.json` supports:
 
 ### 10. Device Access
 
-**Standard OCI**: Device management ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)).
+**Standard OCI**: Device management for passing `/dev` devices into containers ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)).
 
-**Remoteproc Runtime**: **Implicit device access**:
-- Runtime resolves processor name to `/sys/class/remoteproc/remoteprocN/` path
-- No device permission management
-- Access controlled by Linux file permissions on sysfs files
-- Must run with sufficient privileges to write to remoteproc sysfs interface
+**Remoteproc Runtime**: **No device access**.
 
-**Rationale**: The "device" is the remote processor itself, accessed via kernel sysfs interface rather than device nodes.
+**Rationale**:
+- Firmware runs on a separate processor with no access to Linux `/dev` devices
+- The proxy process interacts with `/sys/class/remoteproc/remoteprocN/` (sysfs, not device nodes)
+- Auxiliary processor peripherals are hardware-mapped, not Linux devices
+- Runtime needs privileges to write sysfs files, but this is a deployment requirement, not OCI device passthrough
+
+**Impact**: Firmware accesses hardware peripherals directly through processor-specific memory-mapped I/O, not through Linux device nodes.
 
 ### 11. Signal Handling
 
