@@ -13,19 +13,18 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 | OCI Feature | Support Level | Notes |
 |-------------|---------------|-------|
 | **Core OCI Compliance** | | |
-| [Core Operations](#1-core-operations) | ✓ Full | create, start, kill, delete, state |
-| [State Lifecycle](#2-state-lifecycle) | ✓ Full | created → running → stopped |
-| [Configuration](#3-configuration) | ✓ Partial | Root, process.args[0], annotations only |
+| [Core Operations](#1-core-operations) | 🟢 Full | create, start, kill, delete, state |
+| [State Lifecycle](#2-state-lifecycle-and-hooks) | 🟡 Partial | State transitions supported, no hooks |
+| [Configuration](#3-configuration) | 🟡 Partial | Root, process.args[0], annotations only |
 | **Key Differences from Standard OCI Runtimes** | | |
-| [Single Container per Processor](#1-single-container-per-processor-limitation) | ✗ Limitation | One container per processor at a time |
-| [Namespace Isolation](#2-namespace-isolation) | ✗ None | Not applicable for auxiliary processors |
-| [Resource Management and Cgroups](#3-resource-management-and-cgroups) | ✗ None | Not applicable for auxiliary processors |
-| [Filesystem and Mounts](#4-filesystem-and-mounts) | ✓ Minimal | Firmware extraction only |
-| [Process Management and I/O](#5-process-management-and-io) | ✗ Minimal | Single arg (firmware name), no stdio |
-| [Security Features](#6-security-features) | ✗ None | Hardware-level security only |
-| [Lifecycle Hooks](#7-lifecycle-hooks) | ✗ None | Simple deployment model |
-| [Device Access](#8-device-access) | ✓ Custom | Via remoteproc sysfs interface |
-| [Signal Handling](#9-signal-handling) | ✓ Custom | Proxy-mediated control |
+| [Single Container per Processor](#1-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time |
+| [Namespace Isolation](#2-namespace-isolation) | 🔴 None | Not applicable for auxiliary processors |
+| [Resource Management and Cgroups](#3-resource-management-and-cgroups) | 🔴 None | Not applicable for auxiliary processors |
+| [Filesystem and Mounts](#4-filesystem-and-mounts) | 🟡 Partial | Firmware extraction only |
+| [Process Management and I/O](#5-process-management-and-io) | 🟡 Partial | Single arg (firmware name), no stdio |
+| [Security Features](#6-security-features) | 🔴 None | Hardware-level security only |
+| [Device Access](#8-device-access) | 🔵 Custom | Via remoteproc sysfs interface |
+| [Signal Handling](#9-signal-handling) | 🔵 Custom | Proxy-mediated control |
 
 ## Core OCI Compliance
 
@@ -39,12 +38,20 @@ The runtime implements all required OCI operations ([OCI Runtime Spec - Operatio
 - **delete**: Removes container resources and firmware ([spec](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#delete))
 - **state**: Queries container state (created, running, stopped) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#state))
 
-### 2. State Lifecycle
+### 2. State Lifecycle and Hooks
 
-The runtime correctly follows the OCI state lifecycle ([OCI Runtime Spec - Lifecycle](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#lifecycle)):
+**State Lifecycle**: The runtime correctly follows the OCI state lifecycle ([OCI Runtime Spec - Lifecycle](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#lifecycle)):
 ```
 creating → created → running → stopped
 ```
+
+**Lifecycle Hooks**: The runtime does **not** support lifecycle hooks ([OCI Config Spec - Hooks](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-hooks)).
+
+**Rationale**: The simple firmware deployment model doesn't require complex orchestration. Setup consists of copying a file and writing to sysfs.
+
+**Impact**: Custom setup/teardown tasks can happen via:
+- Container orchestrator mechanisms (Kubernetes init containers, sidecars)
+- Direct sysfs monitoring
 
 ### 3. Configuration
 
@@ -136,20 +143,7 @@ Container configuration via `config.json` supports:
 - Processor-level security features (Secure Boot, memory protection)
 - Hardware isolation mechanisms
 
-### 7. Lifecycle Hooks
-
-**Standard OCI**: Runtime must support lifecycle hooks ([OCI Config Spec - Hooks](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-hooks)).
-
-**Remoteproc Runtime**: **No hooks support**.
-
-**Rationale**: The simple firmware deployment model doesn't require complex orchestration. Setup consists of copying a file and writing to sysfs.
-
-**Impact**: Integration with logging, monitoring, and networking tools must happen via:
-- Container orchestrator mechanisms (Kubernetes init containers, sidecars)
-- External tooling that monitors sysfs or processor state
-- Shim-level event publishing (TaskCreate, TaskStart, TaskExit events)
-
-### 8. Additional Operations
+### 7. Additional Operations
 
 **Standard OCI**: Optional but common operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)).
 
@@ -161,7 +155,7 @@ Container configuration via `config.json` supports:
 - **checkpoint/restore**: Processor state is hardware-specific, not portable
 - **update**: No runtime-modifiable parameters
 
-### 9. Device Access
+### 8. Device Access
 
 **Standard OCI**: Device management ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)).
 
@@ -173,7 +167,7 @@ Container configuration via `config.json` supports:
 
 **Rationale**: The "device" is the remote processor itself, accessed via kernel sysfs interface rather than device nodes.
 
-### 10. Signal Handling
+### 9. Signal Handling
 
 **Standard OCI**: Container process receives signals directly.
 
