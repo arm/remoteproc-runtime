@@ -10,21 +10,21 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 
 ## Compliance Summary
 
-| OCI Feature | Support Level | Notes |
-|-------------|---------------|-------|
-| [Core Operations](#1-core-operations) | 🟢 Full | create, start, kill, delete, state |
-| [State Lifecycle and Hooks](#2-state-lifecycle-and-hooks) | 🟡 Minimal | State transitions supported, no hooks |
-| [Configuration](#3-configuration) | 🟡 Minimal | Root, process.args[0], annotations only |
-| [Namespace Isolation](#4-namespace-isolation) | 🔴 None | Not applicable for auxiliary processors |
-| [Resource Management and Cgroups](#5-resource-management-and-cgroups) | 🔴 None | Not applicable for auxiliary processors |
-| [Filesystem and Mounts](#6-filesystem-and-mounts) | 🟡 Minimal | Firmware extraction only |
-| [Process Management and I/O](#7-process-management-and-io) | 🟡 Minimal | Single arg (firmware name), no stdio |
-| [Security Features](#8-security-features) | 🔴 None | Hardware-level security only |
-| [Additional Operations](#9-additional-operations) | 🔴 None | No exec, pause, checkpoint, etc. |
-| [Device Access](#10-device-access) | 🔴 None | Not applicable for auxiliary processors |
-| [Signal Handling](#11-signal-handling) | 🔵 Custom | Proxy-mediated control |
-| **Other** | | |
-| [Single Container per Processor](#12-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time |
+| OCI Feature                                                                     | Support Level | Notes                                   |
+| ------------------------------------------------------------------------------- | ------------- | --------------------------------------- |
+| [Core Operations](#1-core-operations)                                           | 🟢 Full       | create, start, kill, delete, state      |
+| [State Lifecycle and Hooks](#2-state-lifecycle-and-hooks)                       | 🟡 Minimal    | State transitions supported, no hooks   |
+| [Configuration](#3-configuration)                                               | 🟡 Minimal    | Root, process.args[0], annotations only |
+| [Namespace Isolation](#4-namespace-isolation)                                   | 🔴 None       | Not applicable for auxiliary processors |
+| [Resource Management and Cgroups](#5-resource-management-and-cgroups)           | 🔴 None       | Not applicable for auxiliary processors |
+| [Filesystem and Mounts](#6-filesystem-and-mounts)                               | 🟡 Minimal    | Firmware extraction only                |
+| [Process Management and I/O](#7-process-management-and-io)                      | 🟡 Minimal    | Single arg (firmware name), no stdio    |
+| [Security Features](#8-security-features)                                       | 🔴 None       | Hardware-level security only            |
+| [Additional Operations](#9-additional-operations)                               | 🔴 None       | No exec, pause, checkpoint, etc.        |
+| [Device Access](#10-device-access)                                              | 🔴 None       | Not applicable for auxiliary processors |
+| [Signal Handling](#11-signal-handling)                                          | 🔵 Custom     | Proxy-mediated control                  |
+| **Other**                                                                       |               |                                         |
+| [Single Container per Processor](#12-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time   |
 
 ## Compliance Details
 
@@ -41,6 +41,7 @@ The runtime implements all required OCI operations ([OCI Runtime Spec - Operatio
 ### 2. State Lifecycle and Hooks
 
 **State Lifecycle**: The runtime correctly follows the OCI state lifecycle ([OCI Runtime Spec - Lifecycle](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#lifecycle)):
+
 ```
 creating → created → running → stopped
 ```
@@ -50,12 +51,14 @@ creating → created → running → stopped
 **Rationale**: The simple firmware deployment model doesn't require complex orchestration. Setup consists of copying a file and writing to sysfs.
 
 **Impact**: Custom setup/teardown tasks can happen via:
+
 - Container orchestrator mechanisms (Kubernetes init containers, sidecars)
 - Direct sysfs monitoring
 
 ### 3. Configuration
 
 Container configuration via `config.json` supports:
+
 - Root filesystem specification ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#root))
 - Process arguments (firmware binary name) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
 - Annotations (remoteproc.name for processor selection) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#annotations))
@@ -86,6 +89,7 @@ Container configuration via `config.json` supports:
 **Standard OCI**: Comprehensive filesystem support ([OCI Config Spec - Mounts](https://github.com/opencontainers/runtime-spec/blob/main/config.md#mounts)).
 
 **Remoteproc Runtime**: **Limited filesystem usage**:
+
 - Rootfs is read to extract firmware binary during create phase
 - Firmware copied to `/lib/firmware/` with unique timestamped name
 - Proxy process does **not** chroot or mount the rootfs
@@ -94,6 +98,7 @@ Container configuration via `config.json` supports:
 **Rationale**: The firmware binary is loaded by the Linux kernel's remoteproc framework into the processor's memory. The rootfs serves as a packaging mechanism only.
 
 **Impact**:
+
 - Container images can be minimal (single-file firmware)
 - No need for complex filesystem layouts or mount management
 - Firmware persistence handled by copying to system firmware directory
@@ -103,6 +108,7 @@ Container configuration via `config.json` supports:
 **Standard OCI**: Full process management features ([OCI Config Spec - Process](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)).
 
 **Remoteproc Runtime**: **Minimal process management**:
+
 - Process.Args ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)) must contain exactly **one argument**: the firmware binary name
 - No stdin/stdout/stderr (firmware has no standard I/O channels)
 - No TTY support (no interactive terminal)
@@ -121,12 +127,14 @@ Container configuration via `config.json` supports:
 **Remoteproc Runtime**: **No security features implemented**.
 
 **Rationale**:
+
 - Firmware security is processor-specific (MPU, TrustZone, etc.)
 - No syscalls to filter - firmware doesn't use Linux syscalls
 - Security boundary is the hardware separation between processors
 - Host security doesn't apply to auxiliary processor execution
 
 **Impact**: Firmware trustworthiness must be ensured through:
+
 - Container image signing and verification (supply chain security)
 - Processor-level security features (Secure Boot, memory protection)
 - Hardware isolation mechanisms
@@ -138,6 +146,7 @@ Container configuration via `config.json` supports:
 **Remoteproc Runtime**: **None of these operations are supported**.
 
 **Rationale**:
+
 - **exec**: No shell or process model on auxiliary processor
 - **pause/resume**: Remoteproc framework has `suspended` state, but not exposed by runtime
 - **checkpoint/restore**: Processor state is hardware-specific, not portable
@@ -150,6 +159,7 @@ Container configuration via `config.json` supports:
 **Remoteproc Runtime**: **No device access**.
 
 **Rationale**:
+
 - Firmware runs on a separate processor with no access to Linux `/dev` devices
 - The proxy process interacts with `/sys/class/remoteproc/remoteprocN/` (sysfs, not device nodes)
 - Auxiliary processor peripherals are hardware-mapped, not Linux devices
@@ -162,6 +172,7 @@ Container configuration via `config.json` supports:
 **Standard OCI**: Container process receives signals directly.
 
 **Remoteproc Runtime**: **Proxy-mediated signal handling**:
+
 - SIGUSR1: Start signal (transitions proxy from phase 1 to phase 2)
 - SIGTERM/SIGINT: Graceful stop (proxy stops processor via sysfs)
 - SIGKILL: Force termination (kills proxy, processor may remain running)
@@ -187,10 +198,12 @@ The firmware itself cannot receive signals - it runs on a separate processor wit
 The runtime implements a two-phase proxy process lifecycle unique to remoteproc:
 
 **Phase 1**: Wait for start signal
+
 - Proxy blocks waiting for SIGUSR1 or termination signal
 - Allows separation of container creation and execution
 
 **Phase 2**: Monitor and maintain
+
 - Writes firmware filename to sysfs `firmware` attribute
 - Writes "start" to sysfs `state` attribute
 - Polls processor state
@@ -203,15 +216,16 @@ This design integrates with the Linux kernel's remoteproc framework expectations
 
 The runtime maps remoteproc kernel states to OCI states:
 
-| Remoteproc State | OCI State | Description |
-|------------------|-----------|-------------|
-| offline | created | Firmware loaded but not started |
-| running | running | Processor executing firmware |
-| offline/suspended/crashed | stopped | Processor not executing |
+| Remoteproc State          | OCI State | Description                     |
+| ------------------------- | --------- | ------------------------------- |
+| offline                   | created   | Firmware loaded but not started |
+| running                   | running   | Processor executing firmware    |
+| offline/suspended/crashed | stopped   | Processor not executing         |
 
 ### Firmware Storage
 
 Firmware is copied to `/lib/firmware/` with a unique name:
+
 ```
 <original-name>-<timestamp>-<random-suffix>
 ```
@@ -221,6 +235,7 @@ This prevents conflicts when multiple containers use the same firmware base name
 ### Annotations
 
 Required annotation in config.json ([OCI Config Spec - Annotations](https://github.com/opencontainers/runtime-spec/blob/main/config.md#annotations)):
+
 ```json
 {
   "annotations": {
@@ -230,6 +245,7 @@ Required annotation in config.json ([OCI Config Spec - Annotations](https://gith
 ```
 
 The runtime adds state annotations:
+
 - `remoteproc.resolved-path`: Full sysfs device path
 - `remoteproc.firmware`: Stored firmware filename in `/lib/firmware/`
 
