@@ -10,23 +10,22 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 
 ## Compliance Summary
 
-| OCI Feature | Support Level | Notes |
+| Feature | Support Level | Notes |
 |-------------|---------------|-------|
-| **Core OCI Compliance** | | |
 | [Core Operations](#1-core-operations) | 🟢 Full | create, start, kill, delete, state |
-| [State Lifecycle](#2-state-lifecycle-and-hooks) | 🟡 Partial | State transitions supported, no hooks |
+| [State Lifecycle and Hooks](#2-state-lifecycle-and-hooks) | 🟡 Partial | State transitions supported, no hooks |
 | [Configuration](#3-configuration) | 🟡 Partial | Root, process.args[0], annotations only |
-| **Key Differences from Standard OCI Runtimes** | | |
-| [Single Container per Processor](#1-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time |
-| [Namespace Isolation](#2-namespace-isolation) | 🔴 None | Not applicable for auxiliary processors |
-| [Resource Management and Cgroups](#3-resource-management-and-cgroups) | 🔴 None | Not applicable for auxiliary processors |
-| [Filesystem and Mounts](#4-filesystem-and-mounts) | 🟡 Partial | Firmware extraction only |
-| [Process Management and I/O](#5-process-management-and-io) | 🟡 Partial | Single arg (firmware name), no stdio |
-| [Security Features](#6-security-features) | 🔴 None | Hardware-level security only |
-| [Device Access](#8-device-access) | 🔵 Custom | Via remoteproc sysfs interface |
-| [Signal Handling](#9-signal-handling) | 🔵 Custom | Proxy-mediated control |
+| [Single Container per Processor](#4-single-container-per-processor-limitation) | 🟠 Limitation | One container per processor at a time |
+| [Namespace Isolation](#5-namespace-isolation) | 🔴 None | Not applicable for auxiliary processors |
+| [Resource Management and Cgroups](#6-resource-management-and-cgroups) | 🔴 None | Not applicable for auxiliary processors |
+| [Filesystem and Mounts](#7-filesystem-and-mounts) | 🟡 Partial | Firmware extraction only |
+| [Process Management and I/O](#8-process-management-and-io) | 🟡 Partial | Single arg (firmware name), no stdio |
+| [Security Features](#9-security-features) | 🔴 None | Hardware-level security only |
+| [Additional Operations](#10-additional-operations) | 🔴 None | No exec, pause, checkpoint, etc. |
+| [Device Access](#11-device-access) | 🔵 Custom | Via remoteproc sysfs interface |
+| [Signal Handling](#12-signal-handling) | 🔵 Custom | Proxy-mediated control |
 
-## Core OCI Compliance
+## Compliance Details
 
 ### 1. Core Operations
 
@@ -61,9 +60,7 @@ Container configuration via `config.json` supports:
 - Annotations (remoteproc.name for processor selection) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#annotations))
 - OCI version compatibility ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#specification-version))
 
-## Key Differences from Standard OCI Runtimes
-
-### 1. Single Container per Processor Limitation
+### 4. Single Container per Processor Limitation
 
 **Standard OCI**: Runtimes can create and run multiple independent containers simultaneously.
 
@@ -73,7 +70,7 @@ Container configuration via `config.json` supports:
 
 **Impact**: Container orchestrators (Kubernetes, Docker Swarm) must be aware of this 1:1 mapping between containers and processor resources.
 
-### 2. Namespace Isolation
+### 5. Namespace Isolation
 
 **Standard OCI**: Must support Linux namespaces for process isolation ([OCI Config Spec - Linux Namespaces](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#namespaces)).
 
@@ -83,7 +80,7 @@ Container configuration via `config.json` supports:
 
 **Impact**: Security boundaries are hardware-enforced (separate processors) rather than software-enforced (Linux namespaces).
 
-### 3. Resource Management and Cgroups
+### 6. Resource Management and Cgroups
 
 **Standard OCI**: Requires cgroups support for resource limits ([OCI Config Spec - Linux Control Groups](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#control-groups)).
 
@@ -93,23 +90,7 @@ Container configuration via `config.json` supports:
 
 **Impact**: Resource management must be handled at the hardware level or through processor-specific configuration mechanisms, not via Linux cgroups.
 
-### 4. Process Management and I/O
-
-**Standard OCI**: Full process management features ([OCI Config Spec - Process](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)).
-
-**Remoteproc Runtime**: **Minimal process management**:
-- Process.Args ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)) must contain exactly **one argument**: the firmware binary name
-- No stdin/stdout/stderr (firmware has no standard I/O channels)
-- No TTY support (no interactive terminal)
-- No environment variables passed to firmware
-- No working directory (firmware runs in processor context)
-- Proxy process exists solely to manage processor lifecycle via sysfs
-
-**Rationale**: Auxiliary processor firmware communicates through hardware mechanisms (shared memory, mailboxes, interrupts), not standard POSIX I/O. The OCI container is a deployment vehicle, not an execution environment.
-
-**Impact**: Container images are dramatically simplified - they contain only the firmware binary, with no shell, libraries, or standard userspace tools.
-
-### 5. Filesystem and Mounts
+### 7. Filesystem and Mounts
 
 **Standard OCI**: Comprehensive filesystem support ([OCI Config Spec - Mounts](https://github.com/opencontainers/runtime-spec/blob/main/config.md#mounts)).
 
@@ -126,7 +107,23 @@ Container configuration via `config.json` supports:
 - No need for complex filesystem layouts or mount management
 - Firmware persistence handled by copying to system firmware directory
 
-### 6. Security Features
+### 8. Process Management and I/O
+
+**Standard OCI**: Full process management features ([OCI Config Spec - Process](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)).
+
+**Remoteproc Runtime**: **Minimal process management**:
+- Process.Args ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process)) must contain exactly **one argument**: the firmware binary name
+- No stdin/stdout/stderr (firmware has no standard I/O channels)
+- No TTY support (no interactive terminal)
+- No environment variables passed to firmware
+- No working directory (firmware runs in processor context)
+- Proxy process exists solely to manage processor lifecycle via sysfs
+
+**Rationale**: Auxiliary processor firmware communicates through hardware mechanisms (shared memory, mailboxes, interrupts), not standard POSIX I/O. The OCI container is a deployment vehicle, not an execution environment.
+
+**Impact**: Container images are dramatically simplified - they contain only the firmware binary, with no shell, libraries, or standard userspace tools.
+
+### 9. Security Features
 
 **Standard OCI**: Extensive Linux security mechanisms ([OCI Config Spec - Linux Process](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#linux-process)).
 
@@ -143,7 +140,7 @@ Container configuration via `config.json` supports:
 - Processor-level security features (Secure Boot, memory protection)
 - Hardware isolation mechanisms
 
-### 7. Additional Operations
+### 10. Additional Operations
 
 **Standard OCI**: Optional but common operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)).
 
@@ -155,7 +152,7 @@ Container configuration via `config.json` supports:
 - **checkpoint/restore**: Processor state is hardware-specific, not portable
 - **update**: No runtime-modifiable parameters
 
-### 8. Device Access
+### 11. Device Access
 
 **Standard OCI**: Device management ([OCI Config Spec - Linux Devices](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#devices)).
 
@@ -167,7 +164,7 @@ Container configuration via `config.json` supports:
 
 **Rationale**: The "device" is the remote processor itself, accessed via kernel sysfs interface rather than device nodes.
 
-### 9. Signal Handling
+### 12. Signal Handling
 
 **Standard OCI**: Container process receives signals directly.
 
