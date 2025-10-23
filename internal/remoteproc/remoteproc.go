@@ -28,14 +28,28 @@ func getSystemFirmwarePath() (string, error) {
 			systemFirmwarePath = path
 		}
 	}
+	return systemFirmwarePath, nil
+}
+
+func getUserFirmwarePath() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current user: %w", err)
+	}
+	return filepath.Join(currentUser.HomeDir, "firmware"), nil
+}
+
+func getFirmwareStorePath() (string, error) {
 	// Try system firmware path first, fall back to user home
-	rprocFirmwareStorePath := systemFirmwarePath
+	rprocFirmwareStorePath, err := getSystemFirmwarePath()
+	if err != nil {
+		return "", fmt.Errorf("failed to get system firmware path: %w", err)
+	}
 	if _, err := os.Stat(rprocFirmwareStorePath); err != nil {
-		currentUser, err := user.Current()
+		rprocFirmwareStorePath, err = getUserFirmwarePath()
 		if err != nil {
-			return "", fmt.Errorf("failed to get current user: %w", err)
+			return "", fmt.Errorf("failed to get user firmware path: %w", err)
 		}
-		rprocFirmwareStorePath = filepath.Join(currentUser.HomeDir, "firmware")
 	}
 	return rprocFirmwareStorePath, nil
 }
