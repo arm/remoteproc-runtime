@@ -242,7 +242,7 @@ The runtime implements a two-phase proxy process lifecycle unique to remoteproc:
 **Phase 2**: Monitor and maintain
 - Writes firmware filename to sysfs `firmware` attribute
 - Writes "start" to sysfs `state` attribute
-- Polls processor state every second
+- Polls processor state
 - Exits if processor stops or crashes
 - Responds to graceful stop signals
 
