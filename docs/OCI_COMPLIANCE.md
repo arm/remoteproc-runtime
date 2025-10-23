@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Remoteproc Runtime is an OCI-compliant container runtime designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While it implements the core OCI runtime operations, it differs significantly from traditional container runtimes in several fundamental ways.
+The Remoteproc Runtime is an OCI-compliant runtime optimized for embedded system requirements rather than general-purpose containerization. It is designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While it implements the core OCI runtime operations, it differs significantly from traditional container runtimes in several fundamental ways.
 
 ## Purpose and Context
 
@@ -281,22 +281,6 @@ Required annotation in config.json ([OCI Config Spec - Annotations](https://gith
 The runtime adds state annotations:
 - `remoteproc.resolved-path`: Full sysfs device path
 - `remoteproc.firmware`: Stored firmware filename in `/lib/firmware/`
-
-## Architectural Philosophy
-
-The Remoteproc Runtime demonstrates that OCI's value extends beyond traditional container isolation. By implementing the core OCI operations and state model, it enables:
-
-1. **Unified tooling**: Use Docker, Podman, Kubernetes to deploy firmware
-2. **Standard packaging**: Container images for firmware distribution
-3. **Orchestration integration**: Kubernetes DaemonSets, StatefulSets for processor management
-4. **CI/CD pipelines**: Build, test, deploy firmware with container tooling
-
-The runtime intentionally omits features (namespaces, cgroups, security) that are:
-- Inapplicable to auxiliary processor firmware
-- Redundant with hardware isolation
-- Unnecessary for the simple deployment model
-
-This pragmatic approach creates an OCI-compliant runtime optimized for embedded system requirements rather than general-purpose containerization.
 
 ## References
 
