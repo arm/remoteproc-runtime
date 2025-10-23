@@ -41,7 +41,7 @@ The runtime correctly follows the OCI state lifecycle ([OCI Runtime Spec - Lifec
 creating → created → running → stopped
 ```
 
-Container configuration via `config.json` is fully supported with ([OCI Config Spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md)):
+Container configuration via `config.json` supports:
 - Root filesystem specification ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#root))
 - Process arguments (firmware binary name) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#process))
 - Annotations (remoteproc.name for processor selection) ([spec](https://github.com/opencontainers/runtime-spec/blob/main/config.md#annotations))
