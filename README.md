@@ -72,4 +72,4 @@ _Try [remoteproc-runtime-example-zephyr](https://github.com/arm/remoteproc-runti
 
 - [Usage Guide](docs/USAGE.md) - How to use the runtime and shim
 - [Development Guide](docs/DEVELOPMENT.md) - Building and testing instructions
-- [OCI Compliance](docs/OCI_COMPLIANCE.md) - How runtime diverges from OCI Runtime Specification
+- [OCI Compliance](docs/OCI_COMPLIANCE.md) - How the runtime diverges from OCI Runtime Specification
