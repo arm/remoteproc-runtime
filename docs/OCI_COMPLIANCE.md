@@ -26,7 +26,7 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 
 ## Core OCI Compliance
 
-### ✓ Implemented OCI Features
+### Implemented OCI Features
 
 The runtime implements all required OCI operations ([OCI Runtime Spec - Operations](https://github.com/opencontainers/runtime-spec/blob/main/runtime.md#operations)):
 
@@ -179,7 +179,7 @@ The firmware itself cannot receive signals - it runs on a separate processor wit
 
 **Rationale**: Signals control the lifecycle management proxy, not the firmware. The firmware is controlled by writing to sysfs (`state` file).
 
-## Unique Remoteproc Features
+## Unique Remoteproc Runtime Features
 
 ### Firmware Lifecycle Management
 
