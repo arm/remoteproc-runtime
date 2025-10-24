@@ -25,7 +25,7 @@ func newVM(template string, mountDir string) (VM, error) {
 func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
 	installPath, err := scripts.InstallBin(vm.name, binToInstall)
 	if err != nil {
-		return InstalledBin{}, nil
+		return InstalledBin{}, err
 	}
 	return InstalledBin{vm: vm, pathToBin: installPath}, nil
 }
