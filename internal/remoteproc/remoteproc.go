@@ -20,34 +20,60 @@ const (
 
 var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
 
-func getSystemFirmwarePath() (string, error) {
+func getCustomFirmwarePath() (string, error) {
 	// Check if kernel has custom firmware path configured
-	systemFirmwarePath := rootpath.Join("lib", "firmware")
-	if customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path"); err == nil {
+	customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path")
+	if err == nil {
 		if path := strings.TrimSpace(string(customPath)); path != "" {
-			systemFirmwarePath = path
+			return path, nil
+		} else {
+			return "", fmt.Errorf("custom firmware path is empty")
 		}
+	} else {
+		return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
 	}
-	return systemFirmwarePath, nil
+}
+
+func getSystemFirmwarePath() string {
+	// Check if kernel has custom firmware path configured
+	systemFirmwarePath, _ := getCustomFirmwarePath()
+	if systemFirmwarePath != "" {
+		return systemFirmwarePath
+	} else {
+		return rootpath.Join("lib", "firmware")
+	}
 }
 
 func getUserFirmwarePath() (string, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current user: %w", err)
+	customPath, err := getCustomFirmwarePath()
+	if customPath != "" && err == nil {
+		if _, err := os.Stat(customPath); err == nil {
+			return customPath, nil
+		} else {
+			return "", fmt.Errorf("custom firmware path %s is not accessible: %w", customPath, err)
+		}
+	} else {
+		return "", fmt.Errorf("no custom firmware path configured for non-root user")
 	}
-	return filepath.Join(currentUser.HomeDir, "firmware"), nil
 }
 
 func getFirmwareStorePath() (string, error) {
 	// Try system firmware path first, fall back to user home
-	rprocFirmwareStorePath, err := getSystemFirmwarePath()
+	currentUser, err := user.Current()
 	if err != nil {
-		return "", fmt.Errorf("failed to get system firmware path: %w", err)
+		return "", fmt.Errorf("failed to get current user: %w", err)
 	}
-	if _, err := os.Stat(rprocFirmwareStorePath); err != nil {
+	isRoot := currentUser.Uid == "0"
+
+	var rprocFirmwareStorePath string
+	if isRoot {
+		rprocFirmwareStorePath = getSystemFirmwarePath()
+		if rprocFirmwareStorePath == "" {
+			return "", fmt.Errorf("failed to get system firmware path: %w", err)
+		}
+	} else {
 		rprocFirmwareStorePath, err = getUserFirmwarePath()
-		if err != nil {
+		if rprocFirmwareStorePath == "" || err != nil {
 			return "", fmt.Errorf("failed to get user firmware path: %w", err)
 		}
 	}
