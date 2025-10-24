@@ -22,8 +22,12 @@ func newVM(template string, mountDir string) (VM, error) {
 	return VM{name: vmName}, err
 }
 
-func (vm VM) InstallBin(binToInstall string) (string, error) {
-	return scripts.InstallBin(vm.name, binToInstall)
+func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
+	installPath, err := scripts.InstallBin(vm.name, binToInstall)
+	if err != nil {
+		return InstalledBin{}, err
+	}
+	return InstalledBin{vm: vm, pathToBin: installPath}, nil
 }
 
 func (vm VM) Cleanup() {
@@ -50,6 +54,19 @@ func (vm VM) RunCommand(name string, args ...string) (stdout, stderr string, err
 		return stdout, stderr, fmt.Errorf("cmd failed: %w\nstdout:\n%s\nstderr:\n%s", err, stdout, stderr)
 	}
 	return stdout, stderr, nil
+}
+
+type InstalledBin struct {
+	vm        VM
+	pathToBin string
+}
+
+func (b InstalledBin) String() string {
+	return b.pathToBin
+}
+
+func (b InstalledBin) Run(args ...string) (stdout, stderr string, err error) {
+	return b.vm.RunCommand(b.pathToBin, args...)
 }
 
 func Require(t *testing.T) {
