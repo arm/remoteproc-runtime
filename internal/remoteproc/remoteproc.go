@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,10 +18,67 @@ const (
 	rprocFirmwareFileName     = "firmware"
 )
 
-var (
-	rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
-	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
-)
+var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
+
+func getCustomFirmwarePath() (string, error) {
+	// Check if kernel has custom firmware path configured
+	customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path")
+	if err == nil {
+		if path := strings.TrimSpace(string(customPath)); path != "" {
+			return path, nil
+		} else {
+			return "", fmt.Errorf("custom firmware path is empty")
+		}
+	} else {
+		return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
+	}
+}
+
+func getSystemFirmwarePath() string {
+	// Check if kernel has custom firmware path configured
+	systemFirmwarePath, _ := getCustomFirmwarePath()
+	if systemFirmwarePath != "" {
+		return systemFirmwarePath
+	} else {
+		return rootpath.Join("lib", "firmware")
+	}
+}
+
+func getUserFirmwarePath() (string, error) {
+	customPath, err := getCustomFirmwarePath()
+	if customPath != "" && err == nil {
+		if _, err := os.Stat(customPath); err == nil {
+			return customPath, nil
+		} else {
+			return "", fmt.Errorf("custom firmware path %s is not accessible: %w", customPath, err)
+		}
+	} else {
+		return "", fmt.Errorf("no custom firmware path configured for non-root user")
+	}
+}
+
+func getFirmwareStorePath() (string, error) {
+	// Try system firmware path first, fall back to user home
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current user: %w", err)
+	}
+	isRoot := currentUser.Uid == "0"
+
+	var rprocFirmwareStorePath string
+	if isRoot {
+		rprocFirmwareStorePath = getSystemFirmwarePath()
+		if rprocFirmwareStorePath == "" {
+			return "", fmt.Errorf("failed to get system firmware path: %w", err)
+		}
+	} else {
+		rprocFirmwareStorePath, err = getUserFirmwarePath()
+		if rprocFirmwareStorePath == "" || err != nil {
+			return "", fmt.Errorf("failed to get user firmware path: %w", err)
+		}
+	}
+	return rprocFirmwareStorePath, nil
+}
 
 func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)
@@ -102,7 +160,10 @@ func StoreFirmware(sourcePath string) (string, error) {
 	}
 
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
-
+	rprocFirmwareStorePath, err := getFirmwareStorePath()
+	if err != nil {
+		return "", fmt.Errorf("failed to get firmware store path: %w", err)
+	}
 	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
 	if err := os.WriteFile(destPath, data, 0o644); err != nil {
 		return "", fmt.Errorf("failed to write firmware file %s: %w", destPath, err)
