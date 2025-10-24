@@ -21,7 +21,7 @@ func testRuntimeDir_XDGSet(t *testing.T) {
 	}
 	defer cleanup()
 
-	want := filepath.Join(testDir, "remoteproc-runtime")
+	want := filepath.Join(testDir, ".remoteproc-runtime")
 	got, err := userdirs.RuntimeDir()
 	if err != nil {
 		t.Fatalf("RuntimeDir failed: %v", err)
@@ -50,7 +50,7 @@ func testRuntimeDir_XDGUnset(t *testing.T) {
 		t.Fatalf("os.UserHomeDir() failed: %v", err)
 	}
 
-	want := filepath.Join(home, "remoteproc-runtime")
+	want := filepath.Join(home, ".remoteproc-runtime")
 	got, err := userdirs.RuntimeDir()
 	if err != nil {
 		t.Fatalf("RuntimeDir failed: %v", err)
