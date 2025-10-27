@@ -33,6 +33,8 @@ install_binary() {
         echo "Error: Failed to make $binary_name executable" >&2
         exit 1
     fi
+
+    echo "$dest_path"
 }
 
 main() {
@@ -49,9 +51,10 @@ main() {
     fi
 
     binary_name=$(basename "$BINARY_TO_INSTALL")
-    install_binary "$BINARY_TO_INSTALL" "$binary_name"
+    installed_path=$(install_binary "$BINARY_TO_INSTALL" "$binary_name")
 
     echo "Binary installed successfully" >&2
+    echo "$installed_path"
 }
 
 main "$@"

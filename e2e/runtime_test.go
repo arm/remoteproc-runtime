@@ -1,11 +1,9 @@
 package e2e
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -19,54 +17,138 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRuntimeContainerLifecycle(t *testing.T) {
-	rootDir := t.TempDir()
-	remoteprocName := "yolo-device"
-	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
-	if err := sim.Start(); err != nil {
-		t.Fatalf("failed to run simulator: %s", err)
-	}
-	defer func() { _ = sim.Stop() }()
-	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
+func TestRuntime(t *testing.T) {
+	limavm.Require(t)
+
+	dirMountedInVM := t.TempDir()
+
+	rootpathPrefix := filepath.Join(dirMountedInVM, "fake-root")
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	containerName := "test-container"
-
-	bundlePath := t.TempDir()
-	require.NoError(t, generateBundle(bundlePath, remoteprocName))
-	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
+	vm, err := limavm.NewDebian(dirMountedInVM)
 	require.NoError(t, err)
-	assertContainerStatus(t, bin, containerName, specs.StateCreated)
-	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	defer vm.Cleanup()
 
-	_, err = invokeRuntime(bin, "start", containerName)
+	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
-	assertContainerStatus(t, bin, containerName, specs.StateRunning)
-	remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
-	_, err = invokeRuntime(bin, "kill", containerName)
-	require.NoError(t, err)
-	assertContainerStatus(t, bin, containerName, specs.StateStopped)
-	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	t.Run("basic container lifecycle", func(t *testing.T) {
+		remoteprocName := "yolo-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
 
-	_, err = invokeRuntime(bin, "delete", containerName)
-	require.NoError(t, err)
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+
+		_, stderr, err := installedRuntime.Run(
+			"create",
+			"--bundle", bundlePath,
+			containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+		_, stderr, err = installedRuntime.Run("start", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
+		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+		_, stderr, err = installedRuntime.Run("kill", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntime, containerName, specs.StateStopped)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+		_, stderr, err = installedRuntime.Run("delete", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+	})
+
+	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName("some-processor")
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, "other-processor"))
+
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor", "stderr: %s", stderr)
+	})
+
+	t.Run("killing process by pid stops the running container", func(t *testing.T) {
+		remoteprocName := "nice-processor"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+
+		pid, err := getContainerPid(installedRuntime, containerName)
+		require.NoError(t, err)
+		require.Greater(t, pid, 0)
+
+		_, stderr, err = installedRuntime.Run("start", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+		_, stderr, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
+		require.NoError(t, err, "stderr: %s", stderr)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+	})
+
+	t.Run("writes pid to file specified by --pid-file", func(t *testing.T) {
+		remoteprocName := "oh-what-a-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
+
+		_, stderr, err := installedRuntime.Run(
+			"create",
+			"--bundle", bundlePath,
+			"--pid-file", pidFile,
+			containerName,
+		)
+		require.NoError(t, err, "stderr: %s", stderr)
+
+		pid, err := getContainerPid(installedRuntime, containerName)
+		require.NoError(t, err)
+		require.Greater(t, pid, 0)
+
+		require.FileExists(t, pidFile)
+		assertFileContent(t, pidFile, fmt.Sprintf("%d", pid))
+	})
 }
 
-func TestRuntimeRemoteprocNameMismatch(t *testing.T) {
-	rootDir := t.TempDir()
-	sim := remoteproc.NewSimulator(rootDir).WithName("some-processor")
-	if err := sim.Start(); err != nil {
-		t.Fatalf("failed to run simulator: %s", err)
-	}
-	defer func() { _ = sim.Stop() }()
-	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
-	require.NoError(t, err)
-
-	bundlePath := t.TempDir()
-	require.NoError(t, generateBundle(bundlePath, "other-processor"))
-	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, "test-container")
-	assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor")
+func testID(t testing.TB) string {
+	name := strings.ToLower(t.Name())
+	name = strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, " ", "-")
+	return name
 }
 
 func TestRuntimeKillProcessByPid(t *testing.T) {
@@ -249,9 +331,9 @@ func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
 	remoteproc.AssertState(t, sim.DeviceDir(), "running")
 }
 
-func assertContainerStatus(t testing.TB, bin repo.RuntimeBin, containerName string, wantStatus specs.ContainerState) {
+func assertContainerStatus(t testing.TB, runtime limavm.InstalledBin, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
-	state, err := getContainerState(bin, containerName)
+	state, err := getContainerState(runtime, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
 }
@@ -267,21 +349,21 @@ func checkContainerRunning(fetch func() (specs.State, error)) (int, error) {
 	return state.Pid, nil
 }
 
-func getContainerPid(bin repo.RuntimeBin, containerName string) (int, error) {
-	state, err := getContainerState(bin, containerName)
+func getContainerPid(runtime limavm.InstalledBin, containerName string) (int, error) {
+	state, err := getContainerState(runtime, containerName)
 	if err != nil {
 		return 0, err
 	}
 	return state.Pid, err
 }
 
-func getContainerState(bin repo.RuntimeBin, containerName string) (specs.State, error) {
+func getContainerState(runtime limavm.InstalledBin, containerName string) (specs.State, error) {
 	var state specs.State
-	out, err := invokeRuntime(bin, "state", containerName)
+	out, stderr, err := runtime.Run("state", containerName)
 	if err != nil {
-		return state, fmt.Errorf("can't get container state: %w", err)
+		return state, fmt.Errorf("command failed: %w\n<stderr>\n%s\n</stderr>", err, stderr)
 	}
-	err = json.Unmarshal(out, &state)
+	err = json.Unmarshal([]byte(out), &state)
 	if err != nil {
 		return state, fmt.Errorf("failed to unmarshal state: %w", err)
 	}
@@ -321,33 +403,6 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 	}
 	if err := os.WriteFile(specPath, specData, 0o644); err != nil {
 		return err
-	}
-	return nil
-}
-
-func invokeRuntime(bin repo.RuntimeBin, args ...string) ([]byte, error) {
-	cmd := exec.Command(string(bin), args...)
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		return nil, fmt.Errorf("command failed: %w\n<stderr>\n%s\n</stderr>", err, stderr.String())
-	}
-
-	return stdout.Bytes(), nil
-}
-
-func sendSignal(pid int, signal syscall.Signal) error {
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to find process %d: %w", pid, err)
-	}
-	err = process.Signal(signal)
-	if err != nil {
-		return fmt.Errorf("failed to send signal %s to process %d: %w", signal, pid, err)
 	}
 	return nil
 }
