@@ -22,7 +22,7 @@ var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
 
 func getCustomFirmwarePath() (string, error) {
 	// Check if kernel has custom firmware path configured
-	customPath, err := os.ReadFile("/sys/module/firmware_class/parameters/path")
+	customPath, err := os.ReadFile(rootpath.Join("sys", "module", "firmware_class", "parameters", "path"))
 	if err == nil {
 		if path := strings.TrimSpace(string(customPath)); path != "" {
 			return path, nil
