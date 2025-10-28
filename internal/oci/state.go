@@ -17,19 +17,19 @@ const (
 
 var (
 	stateDirOnce sync.Once
-	stateDir     string
+	_stateDir    string
 	stateDirErr  error
 )
 
 func getStateDir() (string, error) {
 	stateDirOnce.Do(func() {
-		stateDir, stateDirErr = userdirs.RuntimeDir()
+		_stateDir, stateDirErr = userdirs.RuntimeDir()
 		if stateDirErr != nil {
 			stateDirErr = fmt.Errorf("failed to get runtime directory: %w", stateDirErr)
 			return
 		}
 	})
-	return stateDir, stateDirErr
+	return _stateDir, stateDirErr
 }
 
 func NewState(containerID string, bundlePath string) *specs.State {
