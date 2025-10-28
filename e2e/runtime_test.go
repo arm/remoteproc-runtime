@@ -219,9 +219,12 @@ func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
+	vm, err := limavm.NewDebian(rootDir)
 	require.NoError(t, err)
 	t.Cleanup(vm.Cleanup)
+
+	installedRuntime, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
 
 	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
 	if err := sim.Start(); err != nil {
@@ -237,18 +240,17 @@ func TestRuntimeProxyKeepsHostNamespaceWhenNotRoot(t *testing.T) {
 		specs.LinuxNamespace{Type: specs.MountNamespace},
 	))
 
-	_, stderr, err := vm.RunCommand(
-		"remoteproc-runtime",
+	_, stderr, err := installedRuntime.Run(
 		"create", "--bundle", bundlePath,
 		containerName,
 	)
 	require.NoError(t, err, "stderr: %s", stderr)
 	t.Cleanup(func() {
-		_, _, _ = vm.RunCommand("remoteproc-runtime", "delete", containerName)
+		_, _, _ = installedRuntime.Run("delete", containerName)
 	})
 
 	pid, err := checkContainerRunning(func() (specs.State, error) {
-		stdout, stderr, err := vm.RunCommand("remoteproc-runtime", "state", containerName)
+		stdout, stderr, err := installedRuntime.Run("state", containerName)
 		if err != nil {
 			return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
 		}
@@ -276,9 +278,12 @@ func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewWithPodman(rootDir, "../testdata", runtimeBin)
+	vm, err := limavm.NewDebian(rootDir)
 	require.NoError(t, err)
 	t.Cleanup(vm.Cleanup)
+
+	installedRuntime, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
 
 	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
 	if err := sim.Start(); err != nil {
