@@ -21,7 +21,6 @@ const (
 var rprocClassPath = rootpath.Join("sys", "class", "remoteproc")
 
 func getCustomFirmwarePath() (string, error) {
-	// Check if kernel has custom firmware path configured
 	customPath, err := os.ReadFile(rootpath.Join("sys", "module", "firmware_class", "parameters", "path"))
 	if err == nil {
 		if path := strings.TrimSpace(string(customPath)); path != "" {
@@ -35,10 +34,9 @@ func getCustomFirmwarePath() (string, error) {
 }
 
 func getSystemFirmwarePath() string {
-	// Check if kernel has custom firmware path configured
 	customPath, err := getCustomFirmwarePath()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path: %v\n", err)
+		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
 	}
 	if customPath != "" {
 		return customPath
@@ -63,7 +61,6 @@ func getUserFirmwarePath() (string, error) {
 }
 
 func getFirmwareStorePath() (string, error) {
-	// Try system firmware path first, fall back to user home
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current user: %w", err)
@@ -144,7 +141,6 @@ func GetState(devicePath string) (State, error) {
 	return state, nil
 }
 
-// StoreFirmware copies a firmware file to /lib/firmware with a unique suffix
 // to prevent overwriting existing files. Returns the new file name.
 func StoreFirmware(sourcePath string) (string, error) {
 	data, err := os.ReadFile(sourcePath)
