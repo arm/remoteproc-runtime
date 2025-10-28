@@ -36,9 +36,12 @@ func getCustomFirmwarePath() (string, error) {
 
 func getSystemFirmwarePath() string {
 	// Check if kernel has custom firmware path configured
-	systemFirmwarePath, _ := getCustomFirmwarePath()
-	if systemFirmwarePath != "" {
-		return systemFirmwarePath
+	customPath, err := getCustomFirmwarePath()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path: %v\n", err)
+	}
+	if customPath != "" {
+		return customPath
 	} else {
 		return rootpath.Join("lib", "firmware")
 	}
