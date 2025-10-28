@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
@@ -152,59 +151,82 @@ func testID(t testing.TB) string {
 }
 
 func TestRuntimeKillProcessByPid(t *testing.T) {
+	limavm.Require(t)
+
 	rootDir := t.TempDir()
+
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.NewDebian(rootDir)
+	require.NoError(t, err)
+	defer vm.Cleanup()
+
+	installedRuntime, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
+
 	sim := remoteproc.NewSimulator(rootDir).WithName("nice-processor")
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
 	defer func() { _ = sim.Stop() }()
-	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
-	require.NoError(t, err)
 
 	const containerName = "test-container"
 
-	bundlePath := t.TempDir()
+	bundlePath := filepath.Join(rootDir, "bundle")
 	require.NoError(t, generateBundle(bundlePath, "nice-processor"))
-	_, err = invokeRuntime(bin, "create", "--bundle", bundlePath, containerName)
-	require.NoError(t, err)
+	_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+	require.NoError(t, err, "stderr: %s", stderr)
 
-	pid, err := getContainerPid(bin, containerName)
+	pid, err := getContainerPid(installedRuntime, containerName)
 	require.NoError(t, err)
 	require.Greater(t, pid, 0)
 
-	_, err = invokeRuntime(bin, "start", containerName)
-	require.NoError(t, err)
+	_, stderr, err = installedRuntime.Run("start", containerName)
+	require.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.RequireState(t, sim.DeviceDir(), "running")
 
-	require.NoError(t, sendSignal(pid, syscall.SIGTERM))
+	_, stderr, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
 	remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 }
 
 func TestRuntimeWriteProcessPid(t *testing.T) {
+	limavm.Require(t)
+
 	rootDir := t.TempDir()
 	remoteprocName := "oh-what-a-device"
+
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	vm, err := limavm.NewDebian(rootDir)
+	require.NoError(t, err)
+	defer vm.Cleanup()
+
+	installedRuntime, err := vm.InstallBin(runtimeBin)
+	require.NoError(t, err)
+
 	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
 	if err := sim.Start(); err != nil {
 		t.Fatalf("failed to run simulator: %s", err)
 	}
 	defer func() { _ = sim.Stop() }()
-	bin, err := repo.BuildRuntimeBin(t.TempDir(), rootDir, nil)
-	require.NoError(t, err)
 
 	const containerName = "test-container"
 
-	bundlePath := t.TempDir()
-	pidFilePath := filepath.Join(t.TempDir(), "pidfile.txt")
+	bundlePath := filepath.Join(rootDir, "bundle")
+	pidFilePath := filepath.Join(rootDir, "pidfile.txt")
 	require.NoError(t, generateBundle(bundlePath, remoteprocName))
-	_, err = invokeRuntime(
-		bin, "create",
+	_, stderr, err := installedRuntime.Run(
+		"create",
 		"--bundle", bundlePath,
 		"--pid-file", pidFilePath,
 		containerName,
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "stderr: %s", stderr)
 
-	pid, err := getContainerPid(bin, containerName)
+	pid, err := getContainerPid(installedRuntime, containerName)
 	require.NoError(t, err)
 	require.Greater(t, pid, 0)
 
@@ -282,7 +304,7 @@ func TestRuntimeProxyKeepsHostNamespaceWhenRootInLimaVM(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(vm.Cleanup)
 
-	installedRuntime, err := vm.InstallBin(runtimeBin)
+	_, err = vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
 	sim := remoteproc.NewSimulator(rootDir).WithName(remoteprocName)
