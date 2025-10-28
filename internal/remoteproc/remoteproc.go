@@ -49,15 +49,17 @@ func getSystemFirmwarePath() string {
 
 func getUserFirmwarePath() (string, error) {
 	customPath, err := getCustomFirmwarePath()
-	if customPath != "" && err == nil {
-		if _, err := os.Stat(customPath); err == nil {
-			return customPath, nil
-		} else {
-			return "", fmt.Errorf("custom firmware path %s is not accessible: %w", customPath, err)
-		}
-	} else {
+	if err != nil {
+		return "", fmt.Errorf("failed to read custom firmware path: %w", err)
+	}
+	if customPath == "" {
 		return "", fmt.Errorf("no custom firmware path configured for non-root user")
 	}
+	if _, err := os.Stat(customPath); err != nil {
+		return "", fmt.Errorf("custom firmware path %s is not accessible: %w", customPath, err)
+	}
+
+	return customPath, nil
 }
 
 func getFirmwareStorePath() (string, error) {
