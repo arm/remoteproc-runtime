@@ -78,7 +78,7 @@ func getFirmwareStorePath() (string, error) {
 		}
 	} else {
 		rprocFirmwareStorePath, err = getUserFirmwarePath()
-		if rprocFirmwareStorePath == "" || err != nil {
+		if err != nil {
 			return "", fmt.Errorf("failed to get user firmware path: %w", err)
 		}
 	}
