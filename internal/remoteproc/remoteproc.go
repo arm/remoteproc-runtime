@@ -26,8 +26,8 @@ func getCustomFirmwarePath() (string, error) {
 	if err == nil {
 		if path := strings.TrimSpace(string(customPath)); path != "" {
 			return path, nil
-		} else {
-			return "", fmt.Errorf("custom firmware path is empty")
+		} else if os.IsPermission(err) {
+			return "", nil
 		}
 	} else {
 		return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
