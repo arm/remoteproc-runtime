@@ -73,3 +73,7 @@ _Try [remoteproc-runtime-example-zephyr](https://github.com/arm/remoteproc-runti
 - [Usage Guide](docs/USAGE.md) - How to use the runtime and shim
 - [Development Guide](docs/DEVELOPMENT.md) - Building and testing instructions
 - [OCI Compliance](docs/OCI_COMPLIANCE.md) - How the runtime diverges from OCI Runtime Specification
+
+## Acknowledgments
+
+This project builds on the pioneering work of [Chris Adeniyi-Jones](https://github.com/cadeniyi) and [Basma Elgaabouri](https://github.com/basmaelgaabouri) as part of [Arm's SMARTER project](https://getsmarter.io/). Their [blog post](https://developer.arm.com/community/arm-community-blogs/b/embedded-and-microcontrollers-blog/posts/deploying-hybrid-containerized-application-heterogeneous-edge-platform) and [hybrid-runtime repository](https://github.com/smarter-project/hybrid-runtime) served as the blueprint for containerized remoteproc deployment, and their guidance was invaluable in bringing this project to life.
