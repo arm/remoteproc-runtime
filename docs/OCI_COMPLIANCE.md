@@ -189,7 +189,7 @@ The firmware itself cannot receive signals - it runs on a separate processor wit
 
 **Rationale**: Hardware constraint - auxiliary processors have single execution contexts and cannot run multiple firmware images concurrently.
 
-**Impact**: Container orchestrators (Kubernetes, Docker Swarm) must be aware of this 1:1 mapping between containers and processor resources.
+**Impact**: The user cannot schedule multiple containers on a single processor concurrently, attempts to do so will return an error from the runtime.
 
 ## Unique Remoteproc Runtime Features
 
