@@ -185,7 +185,7 @@ The firmware itself cannot receive signals - it runs on a separate processor wit
 
 **Standard OCI**: Runtimes can create and run multiple independent containers simultaneously.
 
-**Remoteproc Runtime**: Can only run **one container at a time per remote processor**. Each auxiliary processor can execute only one firmware image. The previous container must be stopped before a new one can be started.
+**Remoteproc Runtime**: Can only run **one container at a time per remote processor**. Each auxiliary processor can execute only one firmware image. Any firmware running on the target processor, be it a container from our runtime or otherwise, must be stopped before a new container can be started.
 
 **Rationale**: Hardware constraint - auxiliary processors have single execution contexts and cannot run multiple firmware images concurrently.
 
