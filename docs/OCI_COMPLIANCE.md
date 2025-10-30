@@ -99,8 +99,8 @@ Container configuration via `config.json` supports:
 
 **Impact**:
 
-- Container images can be minimal (single-file firmware)
-- No need for complex filesystem layouts or mount management
+- The firmware file in the rootfs is the only source of filesystem state passed from the container engine to the remote processor.
+- Container engine provides no mechanism for filesystem sharing between host and remote processor
 - Firmware persistence handled by copying to system firmware directory
 
 ### 7. Process Management and I/O
