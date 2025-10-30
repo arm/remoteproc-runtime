@@ -13,12 +13,12 @@ Unlike standard OCI runtimes (runc, crun, kata) that execute processes within is
 | OCI Feature                                                                     | Support Level | Notes                                   |
 | ------------------------------------------------------------------------------- | ------------- | --------------------------------------- |
 | [Core Operations](#1-core-operations)                                           | 🟢 Full       | create, start, kill, delete, state      |
-| [State Lifecycle and Hooks](#2-state-lifecycle-and-hooks)                       | 🟡 Minimal    | State transitions supported, no hooks   |
-| [Configuration](#3-configuration)                                               | 🟡 Minimal    | Root, process.args[0], annotations only |
+| [State Lifecycle and Hooks](#2-state-lifecycle-and-hooks)                       | 🟡 Partial    | State transitions supported, no hooks   |
+| [Configuration](#3-configuration)                                               | 🟡 Partial    | Root, process.args[0], annotations only |
 | [Namespace Isolation](#4-namespace-isolation)                                   | 🔴 None       | Not applicable for auxiliary processors |
 | [Resource Management and Cgroups](#5-resource-management-and-cgroups)           | 🔴 None       | Not applicable for auxiliary processors |
-| [Filesystem and Mounts](#6-filesystem-and-mounts)                               | 🟡 Minimal    | Firmware extraction only                |
-| [Process Management and I/O](#7-process-management-and-io)                      | 🟡 Minimal    | Single arg (firmware name), no stdio    |
+| [Filesystem and Mounts](#6-filesystem-and-mounts)                               | 🟡 Partial    | Firmware extraction only                |
+| [Process Management and I/O](#7-process-management-and-io)                      | 🟡 Partial    | Single arg (firmware name), no stdio    |
 | [Security Features](#8-security-features)                                       | 🔴 None       | Hardware-level security only            |
 | [Additional Operations](#9-additional-operations)                               | 🔴 None       | No exec, pause, checkpoint, etc.        |
 | [Device Access](#10-device-access)                                              | 🔴 None       | Not applicable for auxiliary processors |
