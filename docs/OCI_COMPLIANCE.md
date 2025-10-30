@@ -247,7 +247,7 @@ Required annotation in config.json ([OCI Config Spec - Annotations](https://gith
 The runtime adds state annotations:
 
 - `remoteproc.resolved-path`: Full sysfs device path
-- `remoteproc.firmware`: Stored firmware filename in `/lib/firmware/`
+- `remoteproc.firmware`: Path to firmware file
 
 ## References
 
