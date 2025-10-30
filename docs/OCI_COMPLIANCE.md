@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Remoteproc Runtime is an OCI-compliant runtime optimized for embedded system requirements rather than general-purpose containerization. It is designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While it implements the core OCI runtime operations, it differs significantly from traditional container runtimes in several fundamental ways.
+Remoteproc Runtime is designed for deploying firmware to auxiliary processors (remote processors) in embedded systems via the Linux remoteproc framework. While aligns as closely to the OCI runtime specification as possible, the inherent constraints of loading firmware onto a remote processor means it differs from traditional container runtimes in several fundamental ways.
 
 ## Purpose and Context
 
