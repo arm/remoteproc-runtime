@@ -60,5 +60,5 @@ func parseLogLevel(level string) (slog.Level, error) {
 // Since Remoteproc Runtime does not leverage cgroups at all, we're making user's life easier by not requiring them to pass that argument.
 func ignoreUnsupportedPodmanFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().Bool("systemd-cgroup", false, "")
-	cmd.PersistentFlags().MarkHidden("systemd-cgroup")
+	_ = cmd.PersistentFlags().MarkHidden("systemd-cgroup")
 }
