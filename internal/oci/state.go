@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
-	"github.com/arm/remoteproc-runtime/internal/rootpath"
+	"github.com/arm/remoteproc-runtime/internal/userdirs"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -14,7 +15,22 @@ const (
 	stateFileName = "state.json"
 )
 
-var stateDir = rootpath.Join("run", "remoteproc")
+var (
+	stateDirOnce sync.Once
+	_stateDir    string
+	stateDirErr  error
+)
+
+func getStateDir() (string, error) {
+	stateDirOnce.Do(func() {
+		_stateDir, stateDirErr = userdirs.RuntimeDir()
+		if stateDirErr != nil {
+			stateDirErr = fmt.Errorf("failed to get runtime directory: %w", stateDirErr)
+			return
+		}
+	})
+	return _stateDir, stateDirErr
+}
 
 func NewState(containerID string, bundlePath string) *specs.State {
 	return &specs.State{
@@ -28,6 +44,10 @@ func NewState(containerID string, bundlePath string) *specs.State {
 }
 
 func WriteState(state *specs.State) error {
+	stateDir, err := getStateDir()
+	if err != nil {
+		return err
+	}
 	containerStateDir := filepath.Join(stateDir, state.ID)
 	if err := os.MkdirAll(containerStateDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create state directory: %w", err)
@@ -58,6 +78,10 @@ func atomicWrite(filePath string, content []byte) error {
 }
 
 func ReadState(containerID string) (*specs.State, error) {
+	stateDir, err := getStateDir()
+	if err != nil {
+		return nil, err
+	}
 	stateFilePath := filepath.Join(stateDir, containerID, stateFileName)
 	f, err := os.Open(stateFilePath)
 	if err != nil {
@@ -75,6 +99,10 @@ func ReadState(containerID string) (*specs.State, error) {
 }
 
 func RemoveState(containerID string) error {
+	stateDir, err := getStateDir()
+	if err != nil {
+		return err
+	}
 	containerStateDir := filepath.Join(stateDir, containerID)
 	if err := os.RemoveAll(containerStateDir); err != nil {
 		return fmt.Errorf("cannot remove container state dir: %w", err)
