@@ -39,6 +39,8 @@ func ParseNamespaceFlags(namespaces []specs.LinuxNamespace) (uintptr, error) {
 	return flags, nil
 }
 
+/* We mimic runc here - if not root, we ignore namespace isolation due to insufficient permissions
+ * https://github.com/opencontainers/runc/blob/a75076b4a413f628c4b6aa4c5568b159aa128a56/libcontainer/specconv/example.go */
 func LinuxCloneFlags(logger *slog.Logger, isRoot bool, namespaces []specs.LinuxNamespace) (uintptr, error) {
 	flags, err := ParseNamespaceFlags(namespaces)
 	if err != nil {
