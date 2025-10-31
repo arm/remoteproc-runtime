@@ -75,7 +75,7 @@ type Sudo struct {
 }
 
 func NewSudo(b InstalledBin) Sudo {
-	return Sudo{vm: b.vm, pathToBin: b.pathToBin}
+	return Sudo(b)
 }
 
 func (r Sudo) Run(args ...string) (stdout, stderr string, err error) {
