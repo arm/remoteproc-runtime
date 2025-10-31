@@ -18,9 +18,33 @@ const (
 )
 
 var (
-	rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
-	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
+	rprocClassPath    = rootpath.Join("sys", "class", "remoteproc")
+	firmwareParamPath = rootpath.Join("sys", "module", "firmware_class", "parameters", "path")
 )
+
+func getCustomFirmwarePath() (string, error) {
+	customPath, err := os.ReadFile(firmwareParamPath)
+	if err == nil {
+		if path := strings.TrimSpace(string(customPath)); path != "" {
+			return path, nil
+		} else {
+			return "", nil
+		}
+	}
+	return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
+}
+
+func getSystemFirmwarePath() string {
+	customPath, err := getCustomFirmwarePath()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
+	}
+	if customPath != "" {
+		return customPath
+	} else {
+		return rootpath.Join("lib", "firmware")
+	}
+}
 
 func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)
@@ -84,7 +108,7 @@ func GetState(devicePath string) (State, error) {
 	return state, nil
 }
 
-// StoreFirmware copies a firmware file to /lib/firmware with a unique suffix
+// StoreFirmware copies a firmware file to kernel's firmware directory from sourcePath with a unique suffix
 // to prevent overwriting existing files. Returns the new file name.
 func StoreFirmware(sourcePath string) (string, error) {
 	data, err := os.ReadFile(sourcePath)
@@ -102,8 +126,12 @@ func StoreFirmware(sourcePath string) (string, error) {
 	}
 
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
-
+	rprocFirmwareStorePath := getSystemFirmwarePath()
 	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
+	err = os.MkdirAll(filepath.Dir(destPath), 0o755)
+	if err != nil {
+		return "", fmt.Errorf("failed to create firmware storage directory %s: %w", filepath.Dir(destPath), err)
+	}
 	if err := os.WriteFile(destPath, data, 0o644); err != nil {
 		return "", fmt.Errorf("failed to write firmware file %s: %w", destPath, err)
 	}
