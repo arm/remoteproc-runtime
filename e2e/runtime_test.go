@@ -142,8 +142,8 @@ func TestRuntime(t *testing.T) {
 		assertFileContent(t, pidFile, fmt.Sprintf("%d", pid))
 	})
 
-	t.Run("proxy process creates new process", func(t *testing.T) {
-		t.Run("in requested namespace when root", func(t *testing.T) {
+	t.Run("proxy process namespacing", func(t *testing.T) {
+		t.Run("creates process in requested namespace when root", func(t *testing.T) {
 			remoteprocName := "lovely-blue-device"
 			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
 			if err := sim.Start(); err != nil {
@@ -194,7 +194,7 @@ func TestRuntime(t *testing.T) {
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
 
-		t.Run("in user's namespace when not root", func(t *testing.T) {
+		t.Run("creates process in user's namespace when not root", func(t *testing.T) {
 			remoteprocName := "lovely-blue-device"
 			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
 			if err := sim.Start(); err != nil {
