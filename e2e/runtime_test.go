@@ -143,6 +143,8 @@ func TestRuntime(t *testing.T) {
 	})
 
 	t.Run("proxy process namespacing", func(t *testing.T) {
+		installedRuntimeSudo := limavm.NewSudo(installedRuntime)
+
 		t.Run("creates process in requested namespace when root", func(t *testing.T) {
 			remoteprocName := "lovely-blue-device"
 			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
@@ -159,25 +161,16 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
-			_, stderr, err := vm.RunCommand("sudo", installedRuntime.String(),
-				"create", "--bundle", bundlePath,
+			_, stderr, err := installedRuntimeSudo.Run(
+				"create",
+				"--bundle", bundlePath,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
-				_, _, _ = vm.RunCommand("sudo", "remoteproc-runtime", "delete", containerName)
+				_, _, _ = installedRuntimeSudo.Run("delete", containerName)
 			})
 
-			pid, err := checkContainerRunning(func() (specs.State, error) {
-				stdout, stderr, err := vm.RunCommand("sudo", "remoteproc-runtime", "state", containerName)
-				if err != nil {
-					return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
-				}
-				var state specs.State
-				if err := json.Unmarshal([]byte(stdout), &state); err != nil {
-					return specs.State{}, err
-				}
-				return state, nil
-			})
+			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
 			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
@@ -189,7 +182,7 @@ func TestRuntime(t *testing.T) {
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
-			_, stderr, err = vm.RunCommand("sudo", "remoteproc-runtime", "start", containerName)
+			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
@@ -210,25 +203,16 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
-			_, stderr, err := vm.RunCommand(installedRuntime.String(),
-				"create", "--bundle", bundlePath,
+			_, stderr, err := installedRuntime.Run(
+				"create",
+				"--bundle", bundlePath,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
-				_, _, _ = vm.RunCommand("sudo", "remoteproc-runtime", "delete", containerName)
+				_, _, _ = installedRuntimeSudo.Run("delete", containerName)
 			})
 
-			pid, err := checkContainerRunning(func() (specs.State, error) {
-				stdout, stderr, err := vm.RunCommand("sudo", "remoteproc-runtime", "state", containerName)
-				if err != nil {
-					return specs.State{}, fmt.Errorf("stderr: %s: %w", stderr, err)
-				}
-				var state specs.State
-				if err := json.Unmarshal([]byte(stdout), &state); err != nil {
-					return specs.State{}, err
-				}
-				return state, nil
-			})
+			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
 			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
@@ -240,7 +224,7 @@ func TestRuntime(t *testing.T) {
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
-			_, stderr, err = vm.RunCommand("sudo", "remoteproc-runtime", "start", containerName)
+			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
@@ -254,25 +238,14 @@ func testID(t testing.TB) string {
 	return name
 }
 
-func assertContainerStatus(t testing.TB, runtime limavm.InstalledBin, containerName string, wantStatus specs.ContainerState) {
+func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(runtime, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
 }
 
-func checkContainerRunning(fetch func() (specs.State, error)) (int, error) {
-	state, err := fetch()
-	if err != nil {
-		return 0, err
-	}
-	if state.Pid <= 0 {
-		return 0, fmt.Errorf("container is not running - pid is %d", state.Pid)
-	}
-	return state.Pid, nil
-}
-
-func getContainerPid(runtime limavm.InstalledBin, containerName string) (int, error) {
+func getContainerPid(runtime limavm.Runnable, containerName string) (int, error) {
 	state, err := getContainerState(runtime, containerName)
 	if err != nil {
 		return 0, err
@@ -280,7 +253,7 @@ func getContainerPid(runtime limavm.InstalledBin, containerName string) (int, er
 	return state.Pid, err
 }
 
-func getContainerState(runtime limavm.InstalledBin, containerName string) (specs.State, error) {
+func getContainerState(runtime limavm.Runnable, containerName string) (specs.State, error) {
 	var state specs.State
 	out, stderr, err := runtime.Run("state", containerName)
 	if err != nil {
