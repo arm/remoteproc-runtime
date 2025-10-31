@@ -35,6 +35,8 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Set the logging level (trace, debug, info, warn, error, fatal, panic)")
+
+	ignoreUnsupportedPodmanFlag(rootCmd)
 }
 
 func parseLogLevel(level string) (slog.Level, error) {
@@ -50,4 +52,13 @@ func parseLogLevel(level string) (slog.Level, error) {
 	default:
 		return slog.LevelInfo, fmt.Errorf("invalid log level %q, must be one of: debug, info, warn, error", level)
 	}
+}
+
+// Silently ignore unsupported `--systemd-cgroup` flag.
+//
+// Podman will automatically pass `--systemd-cgroup` to the runtime's `create`, unless `--cgroup-manager=cgroupfs` is used when invoking Podman.
+// Since Remoteproc Runtime does not leverage cgroups at all, we're making user's life easier by not requiring them to pass that argument.
+func ignoreUnsupportedPodmanFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().Bool("systemd-cgroup", false, "")
+	_ = cmd.PersistentFlags().MarkHidden("systemd-cgroup")
 }
