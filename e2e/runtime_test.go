@@ -244,7 +244,6 @@ func TestRuntime(t *testing.T) {
 			require.NoError(t, err, "stderr: %s", stderr)
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
-
 	})
 }
 
