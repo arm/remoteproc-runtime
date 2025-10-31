@@ -56,7 +56,6 @@ func parseLogLevel(level string) (slog.Level, error) {
 
 // Silently ignore unsupported `--systemd-cgroup` flag.
 //
-// Runtime does not leverage cgroups at all.
 // Podman will automatically pass `--systemd-cgroup` to the runtime's `create`, unless `--cgroup-manager=cgroupfs` is used when invoking Podman.
 // Since Remoteproc Runtime does not leverage cgroups at all, we're making user's lifes easier by not requiring them to pass that argument.
 func ignoreUnsupportedPodmanFlag(cmd *cobra.Command) {
