@@ -56,17 +56,30 @@ func (vm VM) RunCommand(name string, args ...string) (stdout, stderr string, err
 	return stdout, stderr, nil
 }
 
+type Runnable interface {
+	Run(args ...string) (stdout, stderr string, err error)
+}
+
 type InstalledBin struct {
 	vm        VM
 	pathToBin string
 }
 
-func (b InstalledBin) String() string {
-	return b.pathToBin
-}
-
 func (b InstalledBin) Run(args ...string) (stdout, stderr string, err error) {
 	return b.vm.RunCommand(b.pathToBin, args...)
+}
+
+type Sudo struct {
+	vm        VM
+	pathToBin string
+}
+
+func NewSudo(b InstalledBin) Sudo {
+	return Sudo{vm: b.vm, pathToBin: b.pathToBin}
+}
+
+func (r Sudo) Run(args ...string) (stdout, stderr string, err error) {
+	return r.vm.RunCommand("sudo", append([]string{r.pathToBin}, args...)...)
 }
 
 func Require(t *testing.T) {
