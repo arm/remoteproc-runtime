@@ -141,6 +141,94 @@ func TestRuntime(t *testing.T) {
 		require.FileExists(t, pidFile)
 		assertFileContent(t, pidFile, fmt.Sprintf("%d", pid))
 	})
+
+	t.Run("proxy process namespacing", func(t *testing.T) {
+		installedRuntimeSudo := limavm.NewSudo(installedRuntime)
+
+		t.Run("creates process in requested namespace when root", func(t *testing.T) {
+			remoteprocName := "lovely-blue-device"
+			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+			if err := sim.Start(); err != nil {
+				t.Fatalf("failed to run simulator: %s", err)
+			}
+			defer func() { _ = sim.Stop() }()
+
+			uniqueID := testID(t)
+			containerName := uniqueID
+			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+			require.NoError(t, generateBundle(
+				bundlePath,
+				remoteprocName,
+				specs.LinuxNamespace{Type: specs.MountNamespace},
+			))
+			_, stderr, err := installedRuntimeSudo.Run(
+				"create",
+				"--bundle", bundlePath,
+				containerName)
+			require.NoError(t, err, "stderr: %s", stderr)
+			t.Cleanup(func() {
+				_, _, _ = installedRuntimeSudo.Run("delete", containerName)
+			})
+
+			pid, err := getContainerPid(installedRuntimeSudo, containerName)
+			require.NoError(t, err)
+
+			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+			require.NoError(t, err, "stderr: %s", stderr)
+
+			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+			require.NoError(t, err, "stderr: %s", stderr)
+			assert.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+
+			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
+			require.NoError(t, err, "stderr: %s", stderr)
+			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		})
+
+		t.Run("creates process in user's namespace when not root", func(t *testing.T) {
+			remoteprocName := "lovely-blue-device"
+			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+			if err := sim.Start(); err != nil {
+				t.Fatalf("failed to run simulator: %s", err)
+			}
+			defer func() { _ = sim.Stop() }()
+
+			uniqueID := testID(t)
+			containerName := uniqueID
+			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+			require.NoError(t, generateBundle(
+				bundlePath,
+				remoteprocName,
+				specs.LinuxNamespace{Type: specs.MountNamespace},
+			))
+			_, stderr, err := installedRuntime.Run(
+				"create",
+				"--bundle", bundlePath,
+				containerName)
+			require.NoError(t, err, "stderr: %s", stderr)
+			t.Cleanup(func() {
+				_, _, _ = installedRuntimeSudo.Run("delete", containerName)
+			})
+
+			pid, err := getContainerPid(installedRuntimeSudo, containerName)
+			require.NoError(t, err)
+
+			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+			require.NoError(t, err, "stderr: %s", stderr)
+
+			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+			require.NoError(t, err, "stderr: %s", stderr)
+			assert.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+
+			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
+			require.NoError(t, err, "stderr: %s", stderr)
+			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		})
+	})
 }
 
 func testID(t testing.TB) string {
@@ -150,14 +238,14 @@ func testID(t testing.TB) string {
 	return name
 }
 
-func assertContainerStatus(t testing.TB, runtime limavm.InstalledBin, containerName string, wantStatus specs.ContainerState) {
+func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(runtime, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
 }
 
-func getContainerPid(runtime limavm.InstalledBin, containerName string) (int, error) {
+func getContainerPid(runtime limavm.Runnable, containerName string) (int, error) {
 	state, err := getContainerState(runtime, containerName)
 	if err != nil {
 		return 0, err
@@ -165,7 +253,7 @@ func getContainerPid(runtime limavm.InstalledBin, containerName string) (int, er
 	return state.Pid, err
 }
 
-func getContainerState(runtime limavm.InstalledBin, containerName string) (specs.State, error) {
+func getContainerState(runtime limavm.Runnable, containerName string) (specs.State, error) {
 	var state specs.State
 	out, stderr, err := runtime.Run("state", containerName)
 	if err != nil {
@@ -178,7 +266,7 @@ func getContainerState(runtime limavm.InstalledBin, containerName string) (specs
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string) error {
+func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
@@ -201,6 +289,7 @@ func generateBundle(targetDir string, remoteprocName string) error {
 		Annotations: map[string]string{
 			"remoteproc.name": remoteprocName,
 		},
+		Linux: &specs.Linux{Namespaces: namespaces},
 	}
 
 	specPath := filepath.Join(targetDir, "config.json")
