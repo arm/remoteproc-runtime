@@ -69,6 +69,10 @@ func (b InstalledBin) Run(args ...string) (stdout, stderr string, err error) {
 	return b.vm.RunCommand(b.pathToBin, args...)
 }
 
+func (b InstalledBin) Path() string {
+	return b.pathToBin
+}
+
 type Sudo struct {
 	vm        VM
 	pathToBin string

@@ -42,7 +42,7 @@ func TestPodman(t *testing.T) {
 		stdout, stderr, err := vm.RunCommand(
 			"podman",
 			"--cgroup-manager=cgroupfs",
-			fmt.Sprintf("--runtime=%s", installedRuntimeBin),
+			fmt.Sprintf("--runtime=%s", installedRuntimeBin.Path()),
 			"run", "-d",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
