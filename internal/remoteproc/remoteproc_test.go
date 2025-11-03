@@ -38,3 +38,22 @@ func TestStoreFirmware(t *testing.T) {
 		assert.Equal(t, wantContent, gotContent, "stored firmware file content mismatch")
 	})
 }
+
+func TestGetCustomFirmwarePath(t *testing.T) {
+	t.Run("reads custom firmware path from sysfs", func(t *testing.T) {
+		tempDir := t.TempDir()
+		t.Cleanup(func() {
+			_ = os.RemoveAll(tempDir)
+		})
+
+		customPathFile := filepath.Join(tempDir, "firmware_path")
+		wantPath := "/custom/firmware/path"
+		err := os.WriteFile(customPathFile, []byte(wantPath), 0o644)
+		assert.NoError(t, err, "failed to write custom firmware path file")
+
+		gotPath, err := remoteproc.GetCustomFirmwarePath(customPathFile)
+		assert.NoError(t, err, "GetCustomFirmwarePath returned unexpected error")
+
+		assert.Equal(t, wantPath, gotPath, "GetCustomFirmwarePath returned incorrect path")
+	})
+}

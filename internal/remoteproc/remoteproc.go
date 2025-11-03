@@ -23,8 +23,8 @@ var (
 	defaultFirmwarePath = rootpath.Join("lib", "firmware")
 )
 
-func getCustomFirmwarePath() (string, error) {
-	customPath, err := os.ReadFile(firmwareParamPath)
+func GetCustomFirmwarePath(customPathFile string) (string, error) {
+	customPath, err := os.ReadFile(customPathFile)
 	if err == nil {
 		if path := strings.TrimSpace(string(customPath)); path != "" {
 			return path, nil
@@ -32,11 +32,11 @@ func getCustomFirmwarePath() (string, error) {
 			return "", nil
 		}
 	}
-	return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
+	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
 }
 
 func GetSystemFirmwarePath() string {
-	customPath, err := getCustomFirmwarePath()
+	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
 	}
