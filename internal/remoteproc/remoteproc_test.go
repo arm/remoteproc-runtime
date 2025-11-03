@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/arm/remoteproc-runtime/internal/remoteproc"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,26 +16,17 @@ func TestStoreFirmware(t *testing.T) {
 			_ = os.RemoveAll(tempDir)
 		})
 
-		previousFirmwareParamPath := firmwareParamPath
-		firmwareParamPath = filepath.Join(tempDir, "firmware_path")
-		t.Cleanup(func() {
-			firmwareParamPath = previousFirmwareParamPath
-		})
-
-		customFirmwareDir := filepath.Join(tempDir, "custom_firmware")
-		err := os.WriteFile(firmwareParamPath, []byte(customFirmwareDir), 0o644)
-		assert.NoError(t, err, "failed to create custom firmware path hint")
-
+		customFirmwareDirDest := filepath.Join(tempDir, "custom_firmware")
 		sourcePath := filepath.Join(tempDir, "example.bin")
 		wantContent := []byte("test firmware data")
-		err = os.WriteFile(sourcePath, wantContent, 0o644)
+		err := os.WriteFile(sourcePath, wantContent, 0o644)
 		assert.NoError(t, err, "failed to write source firmware file")
 
-		gotDestPath, err := StoreFirmware(sourcePath)
+		gotDestPath, err := remoteproc.StoreFirmware(sourcePath, customFirmwareDirDest)
 		assert.NoError(t, err, "StoreFirmware returned unexpected error")
 
 		gotDirectory := filepath.Dir(gotDestPath)
-		wantDirectory := customFirmwareDir
+		wantDirectory := customFirmwareDirDest
 		assert.Equal(t, wantDirectory, gotDirectory, "StoreFirmware should write to custom firmware directory")
 
 		gotFileName := filepath.Base(gotDestPath)

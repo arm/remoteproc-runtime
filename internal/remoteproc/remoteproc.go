@@ -18,8 +18,9 @@ const (
 )
 
 var (
-	rprocClassPath    = rootpath.Join("sys", "class", "remoteproc")
-	firmwareParamPath = rootpath.Join("sys", "module", "firmware_class", "parameters", "path")
+	rprocClassPath      = rootpath.Join("sys", "class", "remoteproc")
+	firmwareParamPath   = rootpath.Join("sys", "module", "firmware_class", "parameters", "path")
+	defaultFirmwarePath = rootpath.Join("lib", "firmware")
 )
 
 func getCustomFirmwarePath() (string, error) {
@@ -34,7 +35,7 @@ func getCustomFirmwarePath() (string, error) {
 	return "", fmt.Errorf("failed to read custom firmware path /sys/module/firmware_class/parameters/path: %w", err)
 }
 
-func getSystemFirmwarePath() string {
+func GetSystemFirmwarePath() string {
 	customPath, err := getCustomFirmwarePath()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
@@ -42,7 +43,7 @@ func getSystemFirmwarePath() string {
 	if customPath != "" {
 		return customPath
 	} else {
-		return rootpath.Join("lib", "firmware")
+		return defaultFirmwarePath
 	}
 }
 
@@ -110,7 +111,7 @@ func GetState(devicePath string) (State, error) {
 
 // StoreFirmware copies a firmware file to kernel's firmware directory from sourcePath with a unique suffix
 // to prevent overwriting existing files. Returns the new file name.
-func StoreFirmware(sourcePath string) (string, error) {
+func StoreFirmware(sourcePath string, destDir string) (string, error) {
 	data, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return "", err
@@ -126,8 +127,7 @@ func StoreFirmware(sourcePath string) (string, error) {
 	}
 
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
-	rprocFirmwareStorePath := getSystemFirmwarePath()
-	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
+	destPath := filepath.Join(destDir, targetFileName)
 	err = os.MkdirAll(filepath.Dir(destPath), 0o755)
 	if err != nil {
 		return "", fmt.Errorf("failed to create firmware storage directory %s: %w", filepath.Dir(destPath), err)
