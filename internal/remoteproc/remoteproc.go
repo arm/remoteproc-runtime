@@ -36,6 +36,7 @@ func GetCustomFirmwarePath(customPathFile string) (string, error) {
 }
 
 func GetSystemFirmwarePath() string {
+	fmt.Fprintf(os.Stderr, "debug: reading custom firmware path from %s\n", firmwareParamPath)
 	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
