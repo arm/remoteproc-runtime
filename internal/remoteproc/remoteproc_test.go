@@ -1,4 +1,4 @@
-package remoteproc
+package remoteproc_test
 
 import (
 	"os"
