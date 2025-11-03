@@ -160,11 +160,8 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
 
 1. **Run the image**
 
-   ⚠️ Podman cgroup manager must be set to `--cgroup-manager=cgroupfs` to avoid using the unsupported `systemd` cgroup manager.
-
    ```sh
    podman \
-       --cgroup-manager=cgroupfs \
        --runtime=<path-to-remoteproc-runtime> \
        run \
            --annotation remoteproc.name="<target-processor-name>" \

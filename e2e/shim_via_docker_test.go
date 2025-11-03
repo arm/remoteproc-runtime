@@ -45,7 +45,6 @@ func TestDocker(t *testing.T) {
 
 		containerID, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
-			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
@@ -76,7 +75,6 @@ func TestDocker(t *testing.T) {
 
 		_, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
-			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
 			imageName)
@@ -94,7 +92,6 @@ func TestDocker(t *testing.T) {
 
 		containerID, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
-			"--network=host",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
