@@ -142,45 +142,6 @@ func TestRuntime(t *testing.T) {
 		assertFileContent(t, pidFile, fmt.Sprintf("%d", pid))
 	})
 
-	t.Run("When a custom path is set in /sys/module/firmware_class/parameters/path, the firmware will be stored there", func(t *testing.T) {
-		remoteprocName := "nice-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
-		if err := sim.Start(); err != nil {
-			t.Fatalf("failed to run simulator: %s", err)
-		}
-		defer func() { _ = sim.Stop() }()
-
-		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-
-		_, stderr, err := installedRuntime.Run(
-			"create",
-			"--bundle", bundlePath,
-			containerName)
-		require.NoError(t, err, "stderr: %s", stderr)
-
-		customFirmwareStorageDirectory := filepath.Join("my", "firmware", "path")
-
-		sim.UpdateCustomFirmwarePath(customFirmwareStorageDirectory)
-
-		_, stderr, err = installedRuntime.Run("start", containerName)
-		require.NoError(t, err, "stderr: %s", stderr)
-		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
-
-		wantFirmwareStorageDirectory := filepath.Join(rootpathPrefix, customFirmwareStorageDirectory)
-		assertFirmwareFileExists(t, wantFirmwareStorageDirectory)
-	})
-}
-
-func assertFirmwareFileExists(t *testing.T, firmwareStorageDirectory string) {
-	t.Helper()
-	entries, err := os.ReadDir(firmwareStorageDirectory)
-	require.NoError(t, err)
-	require.Greater(t, len(entries), 0, "expected at least one firmware file in %s", firmwareStorageDirectory)
-}
-
 	t.Run("proxy process namespacing", func(t *testing.T) {
 		installedRuntimeSudo := limavm.NewSudo(installedRuntime)
 
@@ -258,6 +219,44 @@ func assertFirmwareFileExists(t *testing.T, firmwareStorageDirectory string) {
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
 	})
+
+	t.Run("When a custom path is set in /sys/module/firmware_class/parameters/path, the firmware will be stored there", func(t *testing.T) {
+		remoteprocName := "nice-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+
+		_, stderr, err := installedRuntime.Run(
+			"create",
+			"--bundle", bundlePath,
+			containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+
+		customFirmwareStorageDirectory := filepath.Join("my", "firmware", "path")
+
+		sim.UpdateCustomFirmwarePath(customFirmwareStorageDirectory)
+
+		_, stderr, err = installedRuntime.Run("start", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
+
+		wantFirmwareStorageDirectory := filepath.Join(rootpathPrefix, customFirmwareStorageDirectory)
+		assertFirmwareFileExists(t, wantFirmwareStorageDirectory)
+	})
+}
+
+func assertFirmwareFileExists(t *testing.T, firmwareStorageDirectory string) {
+	t.Helper()
+	entries, err := os.ReadDir(firmwareStorageDirectory)
+	require.NoError(t, err)
+	require.Greater(t, len(entries), 0, "expected at least one firmware file in %s", firmwareStorageDirectory)
 }
 
 func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {
