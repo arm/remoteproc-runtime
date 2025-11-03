@@ -241,7 +241,8 @@ func TestRuntime(t *testing.T) {
 
 		customFirmwareStorageDirectory := filepath.Join("my", "firmware", "path")
 
-		sim.UpdateCustomFirmwarePath(customFirmwareStorageDirectory)
+		err = sim.UpdateCustomFirmwarePath(customFirmwareStorageDirectory)
+		require.NoError(t, err, "failed to update custom firmware path in simulator")
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
