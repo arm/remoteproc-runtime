@@ -101,8 +101,6 @@ Useful for development without access to hardware with Remoteproc support.
 
 #### Testing with Docker
 
-⚠️ Docker network must be set to 'Host' (`--network=host`), as the proxy runs in the host's network namespace.
-
 1. **Build and install the shim and runtime with custom root**
 
    ```bash
@@ -139,7 +137,6 @@ Useful for development without access to hardware with Remoteproc support.
    docker run \
        --runtime io.containerd.remoteproc.v1 \
        --annotation remoteproc.name="test-processor" \
-       --network=host \
        test-remoteproc-image
    ```
 

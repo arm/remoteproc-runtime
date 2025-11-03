@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func Create(containerID string, bundlePath string, pidFile string) error {
+func Create(logger *slog.Logger, containerID string, bundlePath string, pidFile string) error {
 	spec, err := oci.ReadSpec(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to read container specification: %w", err)
@@ -36,7 +37,12 @@ func Create(containerID string, bundlePath string, pidFile string) error {
 		return err
 	}
 
-	pid, err := proxy.NewProcess(devicePath)
+	var namespaces []specs.LinuxNamespace
+	if spec.Linux != nil {
+		namespaces = spec.Linux.Namespaces
+	}
+
+	pid, err := proxy.NewProcess(logger, namespaces, devicePath)
 	if err != nil {
 		return fmt.Errorf("failed to start proxy process: %w", err)
 	}

@@ -2,20 +2,31 @@ package proxy
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func NewProcess(devicePath string) (int, error) {
+func NewProcess(logger *slog.Logger, namespaces []specs.LinuxNamespace, devicePath string) (int, error) {
 	execPath, err := os.Executable()
 	if err != nil {
 		return -1, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
+	isRoot := os.Geteuid() == 0
+
+	namespaceFlags, err := LinuxCloneFlags(logger, isRoot, namespaces)
+	if err != nil {
+		return -1, err
+	}
+
 	cmd := exec.Command(execPath, "proxy", "--device-path", devicePath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
+		Setpgid:    true,
+		Cloneflags: namespaceFlags,
 	}
 
 	if err := cmd.Start(); err != nil {
