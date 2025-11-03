@@ -173,12 +173,7 @@ func TestRuntime(t *testing.T) {
 			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
-			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
-			require.NoError(t, err, "stderr: %s", stderr)
-
-			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
-			require.NoError(t, err, "stderr: %s", stderr)
-			assert.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+			requireDifferentMountNamespace(t, vm, pid)
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
@@ -215,12 +210,7 @@ func TestRuntime(t *testing.T) {
 			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
-			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
-			require.NoError(t, err, "stderr: %s", stderr)
-
-			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
-			require.NoError(t, err, "stderr: %s", stderr)
-			assert.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+			requireSameMountNamespace(t, vm, uint(pid))
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
@@ -231,18 +221,46 @@ func TestRuntime(t *testing.T) {
 	})
 }
 
-func testID(t testing.TB) string {
-	name := strings.ToLower(t.Name())
-	name = strings.ReplaceAll(name, "/", "-")
-	name = strings.ReplaceAll(name, " ", "-")
-	return name
-}
-
 func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(runtime, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
+}
+
+func assertFileContent(t *testing.T, path string, wantContent string) {
+	t.Helper()
+	gotContent, err := os.ReadFile(path)
+	if assert.NoError(t, err) {
+		assert.Equal(t, wantContent, string(gotContent))
+	}
+}
+
+func requireSameMountNamespace(t testing.TB, vm limavm.Debian, pid uint) {
+	t.Helper()
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+	pidMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	require.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(pidMountNS))
+}
+
+func requireDifferentMountNamespace(t testing.TB, vm limavm.Debian, pid int) {
+	t.Helper()
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+	pidMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	require.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(pidMountNS))
+}
+
+func testID(t testing.TB) string {
+	name := strings.ToLower(t.Name())
+	name = strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, " ", "-")
+	return name
 }
 
 func getContainerPid(runtime limavm.Runnable, containerName string) (int, error) {
@@ -301,12 +319,4 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 		return err
 	}
 	return nil
-}
-
-func assertFileContent(t *testing.T, path string, wantContent string) {
-	t.Helper()
-	gotContent, err := os.ReadFile(path)
-	if assert.NoError(t, err) {
-		assert.Equal(t, wantContent, string(gotContent))
-	}
 }
