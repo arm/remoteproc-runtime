@@ -173,12 +173,7 @@ func TestRuntime(t *testing.T) {
 			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
-			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
-			require.NoError(t, err, "stderr: %s", stderr)
-
-			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
-			require.NoError(t, err, "stderr: %s", stderr)
-			assert.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+			requireDifferentMountNamespace(t, vm, pid)
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
@@ -215,12 +210,7 @@ func TestRuntime(t *testing.T) {
 			pid, err := getContainerPid(installedRuntimeSudo, containerName)
 			require.NoError(t, err)
 
-			hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
-			require.NoError(t, err, "stderr: %s", stderr)
-
-			proxyMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
-			require.NoError(t, err, "stderr: %s", stderr)
-			assert.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(proxyMountNS))
+			requireSameMountNamespace(t, vm, uint(pid))
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
@@ -244,6 +234,26 @@ func assertFileContent(t *testing.T, path string, wantContent string) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, wantContent, string(gotContent))
 	}
+}
+
+func requireSameMountNamespace(t testing.TB, vm limavm.Debian, pid uint) {
+	t.Helper()
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+	pidMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	require.Equal(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(pidMountNS))
+}
+
+func requireDifferentMountNamespace(t testing.TB, vm limavm.Debian, pid int) {
+	t.Helper()
+	hostMountNS, stderr, err := vm.RunCommand("readlink", "/proc/self/ns/mnt")
+	require.NoError(t, err, "stderr: %s", stderr)
+	pidMountNS, stderr, err := vm.RunCommand("sudo", "readlink", fmt.Sprintf("/proc/%d/ns/mnt", pid))
+	require.NoError(t, err, "stderr: %s", stderr)
+
+	require.NotEqual(t, strings.TrimSpace(hostMountNS), strings.TrimSpace(pidMountNS))
 }
 
 func testID(t testing.TB) string {
