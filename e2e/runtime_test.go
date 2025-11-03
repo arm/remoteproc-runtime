@@ -231,18 +231,26 @@ func TestRuntime(t *testing.T) {
 	})
 }
 
-func testID(t testing.TB) string {
-	name := strings.ToLower(t.Name())
-	name = strings.ReplaceAll(name, "/", "-")
-	name = strings.ReplaceAll(name, " ", "-")
-	return name
-}
-
 func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {
 	t.Helper()
 	state, err := getContainerState(runtime, containerName)
 	require.NoError(t, err)
 	assert.Equal(t, wantStatus, state.Status)
+}
+
+func assertFileContent(t *testing.T, path string, wantContent string) {
+	t.Helper()
+	gotContent, err := os.ReadFile(path)
+	if assert.NoError(t, err) {
+		assert.Equal(t, wantContent, string(gotContent))
+	}
+}
+
+func testID(t testing.TB) string {
+	name := strings.ToLower(t.Name())
+	name = strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, " ", "-")
+	return name
 }
 
 func getContainerPid(runtime limavm.Runnable, containerName string) (int, error) {
@@ -301,12 +309,4 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 		return err
 	}
 	return nil
-}
-
-func assertFileContent(t *testing.T, path string, wantContent string) {
-	t.Helper()
-	gotContent, err := os.ReadFile(path)
-	if assert.NoError(t, err) {
-		assert.Equal(t, wantContent, string(gotContent))
-	}
 }
