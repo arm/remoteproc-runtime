@@ -1,41 +1,33 @@
 package remoteproc_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/arm/remoteproc-runtime/internal/remoteproc"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStoreFirmware(t *testing.T) {
 	t.Run("writes firmware into custom directory with unique suffix", func(t *testing.T) {
 		tempDir := t.TempDir()
-		t.Cleanup(func() {
-			_ = os.RemoveAll(tempDir)
-		})
-
+		sourceFirmwareFile, err := createFirmwareFile(tempDir)
+		require.NoError(t, err)
 		customFirmwareDestDir := filepath.Join(tempDir, "custom_firmware")
-		sourcePath := filepath.Join(tempDir, "example.bin")
-		wantContent := []byte("test firmware data")
-		err := os.WriteFile(sourcePath, wantContent, 0o644)
-		assert.NoError(t, err, "failed to write source firmware file")
 
-		gotDestPath, err := remoteproc.StoreFirmware(sourcePath, customFirmwareDestDir)
-		assert.NoError(t, err, "StoreFirmware returned unexpected error")
+		gotDestPath, err := remoteproc.StoreFirmware(sourceFirmwareFile.path, customFirmwareDestDir)
+		require.NoError(t, err)
 
 		gotDirectory := filepath.Dir(gotDestPath)
-		wantDirectory := customFirmwareDestDir
-		assert.Equal(t, wantDirectory, gotDirectory, "StoreFirmware should write to custom firmware directory")
-
+		assert.Equal(t, customFirmwareDestDir, gotDirectory, "firmware stored in incorrect directory")
 		gotFileName := filepath.Base(gotDestPath)
 		assert.Regexp(t, `^example_.+\.bin$`, gotFileName, "generated firmware file name should contain unique suffix")
-
 		gotContent, err := os.ReadFile(gotDestPath)
-		assert.NoError(t, err, "failed to read stored firmware file")
-
-		assert.Equal(t, wantContent, gotContent, "stored firmware file content mismatch")
+		require.NoError(t, err)
+		assert.Equal(t, string(sourceFirmwareFile.content), string(gotContent), "stored firmware content does not match source content")
 	})
 }
 
@@ -56,4 +48,21 @@ func TestGetCustomFirmwarePath(t *testing.T) {
 
 		assert.Equal(t, wantPath, gotPath, "GetCustomFirmwarePath returned incorrect path")
 	})
+}
+
+type FirmwareFile struct {
+	content []byte
+	path    string
+}
+
+func createFirmwareFile(targetDir string) (FirmwareFile, error) {
+	firmwareFilePath := filepath.Join(targetDir, "example.bin")
+	firmwareContent := []byte("test firmware data")
+	if err := os.WriteFile(firmwareFilePath, firmwareContent, 0o644); err != nil {
+		return FirmwareFile{}, fmt.Errorf("failed to create firmware file: %w", err)
+	}
+	return FirmwareFile{
+		content: []byte("yolo"),
+		path:    firmwareFilePath,
+	}, nil
 }
