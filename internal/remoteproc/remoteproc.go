@@ -26,11 +26,8 @@ var (
 func GetCustomFirmwarePath(customPathFile string) (string, error) {
 	customPath, err := os.ReadFile(customPathFile)
 	if err == nil {
-		if path := strings.TrimSpace(string(customPath)); path != "" {
-			return path, nil
-		} else {
-			return "", nil
-		}
+		path := strings.TrimSpace(string(customPath))
+		return path, nil
 	}
 	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
 }
