@@ -110,7 +110,7 @@ func GetState(devicePath string) (State, error) {
 }
 
 // StoreFirmware copies a firmware file to kernel's firmware directory from sourcePath with a unique suffix
-// to prevent overwriting existing files. Returns the new file name.
+// to prevent overwriting existing files. Returns the stored firmware file path.
 func StoreFirmware(sourcePath string, destDir string) (string, error) {
 	data, err := os.ReadFile(sourcePath)
 	if err != nil {
