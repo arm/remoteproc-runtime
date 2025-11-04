@@ -16,17 +16,17 @@ func TestStoreFirmware(t *testing.T) {
 			_ = os.RemoveAll(tempDir)
 		})
 
-		customFirmwareDirDest := filepath.Join(tempDir, "custom_firmware")
+		customFirmwareDestDir := filepath.Join(tempDir, "custom_firmware")
 		sourcePath := filepath.Join(tempDir, "example.bin")
 		wantContent := []byte("test firmware data")
 		err := os.WriteFile(sourcePath, wantContent, 0o644)
 		assert.NoError(t, err, "failed to write source firmware file")
 
-		gotDestPath, err := remoteproc.StoreFirmware(sourcePath, customFirmwareDirDest)
+		gotDestPath, err := remoteproc.StoreFirmware(sourcePath, customFirmwareDestDir)
 		assert.NoError(t, err, "StoreFirmware returned unexpected error")
 
 		gotDirectory := filepath.Dir(gotDestPath)
-		wantDirectory := customFirmwareDirDest
+		wantDirectory := customFirmwareDestDir
 		assert.Equal(t, wantDirectory, gotDirectory, "StoreFirmware should write to custom firmware directory")
 
 		gotFileName := filepath.Base(gotDestPath)
