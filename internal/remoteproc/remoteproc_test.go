@@ -34,9 +34,6 @@ func TestStoreFirmware(t *testing.T) {
 func TestGetCustomFirmwarePath(t *testing.T) {
 	t.Run("reads custom firmware path from sysfs", func(t *testing.T) {
 		tempDir := t.TempDir()
-		t.Cleanup(func() {
-			_ = os.RemoveAll(tempDir)
-		})
 
 		customPathFile := filepath.Join(tempDir, "firmware_path")
 		wantPath := "/custom/firmware/path"
@@ -62,7 +59,7 @@ func createFirmwareFile(targetDir string) (FirmwareFile, error) {
 		return FirmwareFile{}, fmt.Errorf("failed to create firmware file: %w", err)
 	}
 	return FirmwareFile{
-		content: []byte("yolo"),
+		content: []byte(firmwareContent),
 		path:    firmwareFilePath,
 	}, nil
 }
