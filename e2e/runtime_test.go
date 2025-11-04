@@ -252,7 +252,7 @@ func TestRuntime(t *testing.T) {
 				"path",
 			),
 		))
-		require.NoError(t, err, "failed to update custom firmware path in simulator")
+		require.NoError(t, err, "failed to update custom firmware path")
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
