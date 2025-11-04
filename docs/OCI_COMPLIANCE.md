@@ -225,7 +225,7 @@ The runtime maps remoteproc kernel states to OCI states:
 ### Firmware Storage
 
 Firmware is copied to the configured firmware directory with a unique name.
-It is either the path set in `/sys/.../parameters/path` or `/lib/firmware`.
+It is either the path set in `/sys/module/firmware_class/parameters/path` or `/lib/firmware`.
 
 ```
 <original-name>-<timestamp>-<random-suffix>
