@@ -40,7 +40,7 @@ func TestGetCustomFirmwarePath(t *testing.T) {
 		require.NoError(t, err, "failed to write custom firmware path file")
 
 		gotFirmwarePath, err := remoteproc.GetCustomFirmwarePath(fakeCustomPathFile)
-		require.NoError(t, err, "Retrieve custom firmware path failed")
+		require.NoError(t, err, "retrieve custom firmware path failed")
 
 		assert.Equal(t, wantFirmwarePath, gotFirmwarePath, "GetCustomFirmwarePath returned incorrect path")
 	})
