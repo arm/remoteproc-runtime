@@ -239,17 +239,26 @@ func TestRuntime(t *testing.T) {
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
-		customFirmwareStorageDirectory := filepath.Join("my", "firmware", "path")
+		customFirmwareStorageDirectory := filepath.Join(rootpathPrefix, "my", "firmware", "path")
 
-		err = sim.UpdateCustomFirmwarePath(customFirmwareStorageDirectory)
+		_, _, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
+			customFirmwareStorageDirectory,
+			filepath.Join(
+				rootpathPrefix,
+				"sys",
+				"module",
+				"firmware_class",
+				"parameters",
+				"path",
+			),
+		))
 		require.NoError(t, err, "failed to update custom firmware path in simulator")
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
 
-		wantFirmwareStorageDirectory := filepath.Join(rootpathPrefix, customFirmwareStorageDirectory)
-		assertFirmwareFileExists(t, wantFirmwareStorageDirectory)
+		assertFirmwareFileExists(t, customFirmwareStorageDirectory)
 	})
 }
 

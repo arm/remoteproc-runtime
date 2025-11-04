@@ -2,7 +2,6 @@ package remoteproc
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -54,14 +53,5 @@ func (r *Simulator) Stop() error {
 func (r *Simulator) DeviceDir() string {
 	return filepath.Join(
 		r.rootDir, "sys", "class", "remoteproc", fmt.Sprintf("remoteproc%d", r.index),
-	)
-}
-
-func (r *Simulator) UpdateCustomFirmwarePath(newCustomFirmwarePath string) error {
-	newCustomFirmwarePath = filepath.Join(r.rootDir, newCustomFirmwarePath)
-	return os.WriteFile(
-		filepath.Join(r.rootDir, "sys", "module", "firmware_class", "parameters", "path"),
-		[]byte(newCustomFirmwarePath),
-		0o644,
 	)
 }
