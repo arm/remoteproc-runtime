@@ -321,6 +321,7 @@ func getContainerPid(runtime limavm.Runnable, containerName string) (int, error)
 
 func getContainerState(runtime limavm.Runnable, containerName string) (specs.State, error) {
 	var state specs.State
+	//this also needs to be non root
 	out, stderr, err := runtime.Run("state", containerName)
 	if err != nil {
 		return state, fmt.Errorf("command failed: %w\n<stderr>\n%s\n</stderr>", err, stderr)
