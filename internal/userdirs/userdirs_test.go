@@ -1,10 +1,12 @@
 package userdirs_test
 
 import (
+	"log/slog"
 	"os/user"
 	"path/filepath"
 	"testing"
 
+	"github.com/arm/remoteproc-runtime/internal/log"
 	"github.com/arm/remoteproc-runtime/internal/userdirs"
 	"github.com/stretchr/testify/require"
 )
@@ -14,8 +16,9 @@ func TestRuntimeDir(t *testing.T) {
 		testDir := "/tmp/xdg_runtime_test"
 		t.Setenv("XDG_RUNTIME_DIR", testDir)
 		want := filepath.Join(testDir, ".remoteproc-runtime")
+		logger := log.NewLogger(slog.LevelDebug)
 
-		got, err := userdirs.RuntimeDir()
+		got, err := userdirs.RuntimeDir(logger)
 
 		require.NoError(t, err)
 		require.Equal(t, want, got)
@@ -26,8 +29,9 @@ func TestRuntimeDir(t *testing.T) {
 		home := user.HomeDir
 		require.NoError(t, err)
 		want := filepath.Join(home, ".remoteproc-runtime")
+		logger := log.NewLogger(slog.LevelDebug)
 
-		got, err := userdirs.RuntimeDir()
+		got, err := userdirs.RuntimeDir(logger)
 
 		require.NoError(t, err)
 		require.Equal(t, want, got)
