@@ -12,7 +12,7 @@ var startCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 		containerID := args[0]
-		return runtime.Start(containerID)
+		return runtime.Start(logger, containerID)
 	},
 }
 

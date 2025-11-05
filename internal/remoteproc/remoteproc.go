@@ -3,6 +3,7 @@ package remoteproc
 import (
 	"crypto/rand"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,21 +28,21 @@ func GetCustomFirmwarePath(customPathFile string) (string, error) {
 	customPath, err := os.ReadFile(customPathFile)
 	if err == nil {
 		path := strings.TrimSpace(string(customPath))
+		if path == "" {
+			return "", fmt.Errorf("custom firmware path is empty in %s", customPathFile)
+		}
 		return path, nil
 	}
 	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
 }
 
-func GetSystemFirmwarePath() string {
+func GetSystemFirmwarePath(logger *slog.Logger) string {
 	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: failed to read custom firmware path, will use default: %v\n", err)
-	}
-	if customPath != "" {
-		return customPath
-	} else {
+		logger.Warn("failed to read custom firmware path, will use default", "error", err)
 		return defaultFirmwarePath
 	}
+	return customPath
 }
 
 func FindDevicePath(name string) (string, error) {
