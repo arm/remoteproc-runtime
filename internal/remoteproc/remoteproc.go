@@ -38,8 +38,8 @@ func GetCustomFirmwarePath(customPathFile string) (string, error) {
 
 func GetSystemFirmwarePath(logger *slog.Logger) string {
 	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
+	logger.Debug("custom firmware path lookup", "path", customPath, "error", err)
 	if err != nil {
-		logger.Warn("failed to read custom firmware path, will use default", "error", err)
 		return defaultFirmwarePath
 	}
 	return customPath
