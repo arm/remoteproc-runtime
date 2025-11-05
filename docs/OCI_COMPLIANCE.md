@@ -91,7 +91,7 @@ Container configuration via `config.json` supports:
 **Remoteproc Runtime**: **Limited filesystem usage**:
 
 - Rootfs is read to extract firmware binary during create phase
-- Firmware copied to `/lib/firmware/` with unique timestamped name
+- Firmware copied to configured firmware directory with unique timestamped name
 - Proxy process does **not** chroot or mount the rootfs
 - No bind mounts, no mount propagation, no mount options
 
@@ -224,7 +224,8 @@ The runtime maps remoteproc kernel states to OCI states:
 
 ### Firmware Storage
 
-Firmware is copied to `/lib/firmware/` with a unique name:
+Firmware is copied to the configured firmware directory with a unique name.
+It is either the path set in `/sys/module/firmware_class/parameters/path` or `/lib/firmware`.
 
 ```
 <original-name>-<timestamp>-<random-suffix>

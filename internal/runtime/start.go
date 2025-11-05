@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/arm/remoteproc-runtime/internal/oci"
@@ -10,15 +11,16 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func Start(containerID string) error {
+func Start(logger *slog.Logger, containerID string) error {
 	state, err := oci.ReadState(containerID)
 	if err != nil {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
-	firmwarePath := state.Annotations[oci.StateFirmwarePath]
-	storedFirmwarePath, err := remoteproc.StoreFirmware(firmwarePath)
+	sourceFirmwarePath := state.Annotations[oci.StateFirmwarePath]
+	destFirmwareDir := remoteproc.GetSystemFirmwarePath(logger)
+	storedFirmwarePath, err := remoteproc.StoreFirmware(sourceFirmwarePath, destFirmwareDir)
 	if err != nil {
-		return fmt.Errorf("failed to store firmware file %s: %w", firmwarePath, err)
+		return fmt.Errorf("failed to store firmware file %s to %s: %w", sourceFirmwarePath, destFirmwareDir, err)
 	}
 	state.Annotations[oci.OptionalStateStoredFirmwarePath] = storedFirmwarePath
 	needCleanup := true

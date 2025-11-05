@@ -3,6 +3,7 @@ package remoteproc
 import (
 	"crypto/rand"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,9 +19,31 @@ const (
 )
 
 var (
-	rprocFirmwareStorePath = rootpath.Join("lib", "firmware")
-	rprocClassPath         = rootpath.Join("sys", "class", "remoteproc")
+	rprocClassPath      = rootpath.Join("sys", "class", "remoteproc")
+	firmwareParamPath   = rootpath.Join("sys", "module", "firmware_class", "parameters", "path")
+	defaultFirmwarePath = rootpath.Join("lib", "firmware")
 )
+
+func GetCustomFirmwarePath(customPathFile string) (string, error) {
+	customPath, err := os.ReadFile(customPathFile)
+	if err == nil {
+		path := strings.TrimSpace(string(customPath))
+		if path == "" {
+			return "", fmt.Errorf("custom firmware path is empty in %s", customPathFile)
+		}
+		return path, nil
+	}
+	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
+}
+
+func GetSystemFirmwarePath(logger *slog.Logger) string {
+	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
+	logger.Debug("custom firmware path lookup", "path", customPath, "error", err)
+	if err != nil {
+		return defaultFirmwarePath
+	}
+	return customPath
+}
 
 func FindDevicePath(name string) (string, error) {
 	files, err := os.ReadDir(rprocClassPath)
@@ -84,9 +107,9 @@ func GetState(devicePath string) (State, error) {
 	return state, nil
 }
 
-// StoreFirmware copies a firmware file to /lib/firmware with a unique suffix
-// to prevent overwriting existing files. Returns the new file name.
-func StoreFirmware(sourcePath string) (string, error) {
+// StoreFirmware copies a firmware file to kernel's firmware directory from sourcePath with a unique suffix
+// to prevent overwriting existing files. Returns the stored firmware file path.
+func StoreFirmware(sourcePath string, destDir string) (string, error) {
 	data, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return "", err
@@ -102,8 +125,11 @@ func StoreFirmware(sourcePath string) (string, error) {
 	}
 
 	targetFileName := fmt.Sprintf("%s%s%s", nameWithoutExt, suffix, ext)
-
-	destPath := filepath.Join(rprocFirmwareStorePath, targetFileName)
+	destPath := filepath.Join(destDir, targetFileName)
+	err = os.MkdirAll(filepath.Dir(destPath), 0o755)
+	if err != nil {
+		return "", fmt.Errorf("failed to create firmware storage directory %s: %w", filepath.Dir(destPath), err)
+	}
 	if err := os.WriteFile(destPath, data, 0o644); err != nil {
 		return "", fmt.Errorf("failed to write firmware file %s: %w", destPath, err)
 	}
