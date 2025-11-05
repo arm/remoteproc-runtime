@@ -26,8 +26,8 @@ func TestRuntimeDir(t *testing.T) {
 	t.Run("when XDG_RUNTIME_DIR is not set, defaults to $HOME/.remoteproc-runtime", func(t *testing.T) {
 		t.Setenv("XDG_RUNTIME_DIR", "")
 		user, err := user.Current()
-		home := user.HomeDir
 		require.NoError(t, err)
+		home := user.HomeDir
 		want := filepath.Join(home, ".remoteproc-runtime")
 		logger := log.NewLogger(slog.LevelDebug)
 
