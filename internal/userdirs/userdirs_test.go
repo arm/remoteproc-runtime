@@ -15,11 +15,11 @@ func TestRuntimeDir(t *testing.T) {
 	t.Run("when XDG_RUNTIME_DIR is set, returns its value", func(t *testing.T) {
 		testDir := "/tmp/xdg_runtime_test"
 		t.Setenv("XDG_RUNTIME_DIR", testDir)
-		want := filepath.Join(testDir, ".remoteproc-runtime")
 		logger := log.NewLogger(slog.LevelDebug)
 
 		got, err := userdirs.RuntimeDir(logger)
 
+		want := filepath.Join(testDir, ".remoteproc-runtime")
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	})
@@ -28,11 +28,11 @@ func TestRuntimeDir(t *testing.T) {
 		user, err := user.Current()
 		require.NoError(t, err)
 		home := user.HomeDir
-		want := filepath.Join(home, ".remoteproc-runtime")
 		logger := log.NewLogger(slog.LevelDebug)
 
 		got, err := userdirs.RuntimeDir(logger)
 
+		want := filepath.Join(home, ".remoteproc-runtime")
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	})
