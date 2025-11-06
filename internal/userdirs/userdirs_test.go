@@ -23,6 +23,7 @@ func TestRuntimeDir(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	})
+
 	t.Run("when XDG_RUNTIME_DIR is not set, defaults to $HOME/.remoteproc-runtime", func(t *testing.T) {
 		t.Setenv("XDG_RUNTIME_DIR", "")
 		user, err := user.Current()
