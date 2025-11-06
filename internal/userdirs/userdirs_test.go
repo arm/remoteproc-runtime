@@ -16,7 +16,7 @@ func TestRuntimeDir(t *testing.T) {
 
 		got, err := userdirs.RuntimeDir()
 
-		want := filepath.Join(testDir, ".remoteproc-runtime")
+		want := filepath.Join(testDir, "remoteproc-runtime")
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	})
@@ -29,7 +29,7 @@ func TestRuntimeDir(t *testing.T) {
 
 		got, err := userdirs.RuntimeDir()
 
-		want := filepath.Join(home, ".remoteproc-runtime")
+		want := filepath.Join(home, ".local", "run", "remoteproc-runtime")
 		require.NoError(t, err)
 		require.Equal(t, want, got)
 	})
