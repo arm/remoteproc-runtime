@@ -1,7 +1,6 @@
 package userdirs
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -21,7 +20,6 @@ func RuntimeDir() (string, error) {
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
 	} else {
-		fmt.Println("XDG_RUNTIME_DIR is not set, falling back to home directory")
+		return joinHomeDir(".local", "run", "remoteproc-runtime")
 	}
-	return joinHomeDir(".local", "run", "remoteproc-runtime")
 }
