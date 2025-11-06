@@ -19,9 +19,9 @@ func joinHomeDir(elem ...string) (string, error) {
 func RuntimeDir() (string, error) {
 	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntimeDir != "" {
-		return filepath.Join(xdgRuntimeDir, ".remoteproc-runtime"), nil
+		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
 	} else {
 		fmt.Println("XDG_RUNTIME_DIR is not set, falling back to home directory")
 	}
-	return joinHomeDir(".remoteproc-runtime")
+	return joinHomeDir(".local", "run", "remoteproc-runtime")
 }
