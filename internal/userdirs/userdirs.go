@@ -10,7 +10,6 @@ func joinHomeDir(elem ...string) (string, error) {
 	/*
 		Cannot use os.UserHomeDir() as it's dependent on environment variable $HOME.
 		When runnining with podman, environment variables are sanitized and $HOME would be missing.
-		The only environement variable guaranteed after podman sanitization is $XDG_RUNTIME_DIR and $PATH.
 	*/
 	user, err := user.Current()
 	if err != nil {
@@ -21,6 +20,10 @@ func joinHomeDir(elem ...string) (string, error) {
 }
 
 func RuntimeDir() (string, error) {
+	/*
+		When running with podman, environment variables are sanitized.
+		The only environement variable guaranteed after podman sanitization is $XDG_RUNTIME_DIR and $PATH.
+	*/
 	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
