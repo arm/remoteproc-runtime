@@ -22,6 +22,8 @@ func RuntimeDir() (string, error) {
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
 	} else {
+		// When podman runs as root, $XDG_RUNTIME_DIR and $HOME are both unset
+		// Therefore, HomeDir must be read from UserDB
 		userHomeDir, err := getHomeDirFromUserDB()
 		if err != nil {
 			return "", fmt.Errorf("failed to get user home directory: %w", err)
