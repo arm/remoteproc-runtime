@@ -204,17 +204,17 @@ func TestRuntime(t *testing.T) {
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
-				_, _, _ = installedRuntimeSudo.Run("delete", containerName)
+				_, _, _ = installedRuntime.Run("delete", containerName)
 			})
 
-			pid, err := getContainerPid(installedRuntimeSudo, containerName)
+			pid, err := getContainerPid(installedRuntime, containerName)
 			require.NoError(t, err)
 
 			requireSameMountNamespace(t, vm, uint(pid))
 
 			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
-			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
+			_, stderr, err = installedRuntime.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			remoteproc.AssertState(t, sim.DeviceDir(), "running")
 		})
