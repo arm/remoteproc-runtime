@@ -18,10 +18,8 @@ func getHomeDirFromUserDB() (string, error) {
 
 func RuntimeDir() (string, error) {
 	/*
-		When running with podman, environment variables are sanitized.
-		The only environement variable guaranteed after podman sanitization is $XDG_RUNTIME_DIR and $PATH.
-		$XDG_RUNTIME_DIR will be set to an empty string in case of podman root run,
-		resolving the directory to an area in home directory.
+		Podman sanitizes environment variables, leaving only $XDG_RUNTIME_DIR and $PATH.
+		Fall back to home directory when $XDG_RUNTIME_DIR is empty (e.g., podman root run).
 	*/
 	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntimeDir != "" {
