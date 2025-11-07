@@ -17,10 +17,7 @@ func getHomeDirFromUserDB() (string, error) {
 }
 
 func RuntimeDir() (string, error) {
-	/*
-		Podman sanitizes environment variables, leaving only $XDG_RUNTIME_DIR and $PATH.
-		Fall back to home directory when $XDG_RUNTIME_DIR is empty (e.g., podman root run).
-	*/
+	// Podman sanitizes environment variables, leaving only $XDG_RUNTIME_DIR and $PATH.
 	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
