@@ -10,7 +10,7 @@ import (
 )
 
 func TestRuntimeDir(t *testing.T) {
-	t.Run("roots remoteproc runtime folder in XDG_RUNTIME if it's set", func(t *testing.T) {
+	t.Run("when XDG_RUNTIME_DIR is set, it returns $XDG_RUNTIME_DIR/remoteproc-runtime", func(t *testing.T) {
 		testDir := "/tmp/xdg_runtime_test"
 		t.Setenv("XDG_RUNTIME_DIR", testDir)
 
@@ -21,7 +21,7 @@ func TestRuntimeDir(t *testing.T) {
 		require.Equal(t, want, got)
 	})
 
-	t.Run("defaults to $HOME/local/run/remoteproc-runtime", func(t *testing.T) {
+	t.Run("defaults to <home from user database>/local/run/remoteproc-runtime", func(t *testing.T) {
 		t.Setenv("XDG_RUNTIME_DIR", "")
 		user, err := user.Current()
 		require.NoError(t, err)
