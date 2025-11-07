@@ -1,12 +1,13 @@
 package userdirs
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 )
 
-func joinHomeDir(elem ...string) (string, error) {
+func getUserHomeDirFromSystem() (string, error) {
 	/*
 		Cannot use os.UserHomeDir() as it's dependent on environment variable $HOME.
 		When running with podman, environment variables are sanitized and $HOME would be missing.
@@ -15,8 +16,7 @@ func joinHomeDir(elem ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	chunks := append([]string{user.HomeDir}, elem...)
-	return filepath.Join(chunks...), nil
+	return user.HomeDir, nil
 }
 
 func RuntimeDir() (string, error) {
@@ -30,6 +30,10 @@ func RuntimeDir() (string, error) {
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
 	} else {
-		return joinHomeDir(".local", "run", "remoteproc-runtime")
+		userHomeDir, err := getUserHomeDirFromSystem()
+		if err != nil {
+			return "", fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		return filepath.Join(userHomeDir, ".local", "run", "remoteproc-runtime"), nil
 	}
 }
