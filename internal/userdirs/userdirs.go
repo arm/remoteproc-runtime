@@ -25,7 +25,7 @@ func RuntimeDir() (string, error) {
 	if xdgRuntimeDir != "" {
 		return filepath.Join(xdgRuntimeDir, "remoteproc-runtime"), nil
 	} else {
-		userHomeDir, err := getUserHomeDirFromSystem()
+		userHomeDir, err := getHomeDirFromUserDB()
 		if err != nil {
 			return "", fmt.Errorf("failed to get user home directory: %w", err)
 		}
