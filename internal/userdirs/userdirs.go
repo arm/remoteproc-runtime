@@ -7,11 +7,8 @@ import (
 	"path/filepath"
 )
 
-func getUserHomeDirFromSystem() (string, error) {
-	/*
-		Cannot use os.UserHomeDir() as it's dependent on environment variable $HOME.
-		When running with podman, environment variables are sanitized and $HOME would be missing.
-	*/
+func getHomeDirFromUserDB() (string, error) {
+	// Gets home directory from system user database instead of environment variables.
 	user, err := user.Current()
 	if err != nil {
 		return "", err
