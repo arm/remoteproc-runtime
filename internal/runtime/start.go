@@ -17,7 +17,7 @@ func Start(logger *slog.Logger, containerID string) error {
 		return fmt.Errorf("failed to read state: %w", err)
 	}
 	sourceFirmwarePath := state.Annotations[oci.StateFirmwarePath]
-	destFirmwareDir := remoteproc.GetSystemFirmwarePath()
+	destFirmwareDir := remoteproc.GetSystemFirmwarePath(logger)
 	storedFirmwarePath, err := remoteproc.StoreFirmware(sourceFirmwarePath, destFirmwareDir)
 	if err != nil {
 		return fmt.Errorf("failed to store firmware file %s to %s: %w", sourceFirmwarePath, destFirmwareDir, err)
