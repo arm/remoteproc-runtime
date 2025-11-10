@@ -23,25 +23,25 @@ var (
 	defaultFirmwarePath = rootpath.Join("lib", "firmware")
 )
 
-func GetCustomFirmwarePath(customPathFile string) (string, error) {
+func GetCustomFirmwarePath(customPathFile string) string {
 	customPath, err := os.ReadFile(customPathFile)
 	if err == nil {
 		path := strings.TrimSpace(string(customPath))
 		if path == "" {
-			return "", fmt.Errorf("custom firmware path is empty in %s", customPathFile)
+			return ""
 		}
-		return path, nil
+		return path
 	}
-	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
+	return ""
 }
 
-func GetSystemFirmwarePath() (string, error) {
-	customPath, _ := GetCustomFirmwarePath(firmwareParamPath)
+func GetSystemFirmwarePath() string {
+	customPath := GetCustomFirmwarePath(firmwareParamPath)
 	if customPath == "" {
-		return defaultFirmwarePath, fmt.Errorf("current user is root")
+		return defaultFirmwarePath
 	}
 
-	return customPath, nil
+	return customPath
 }
 
 func FindDevicePath(name string) (string, error) {
