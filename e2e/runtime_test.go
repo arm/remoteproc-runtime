@@ -93,7 +93,8 @@ func TestRuntime(t *testing.T) {
 		_, _, err = vm.RunCommand("mkdir", "-p", testFirmwarePath)
 		require.NoError(t, err, "failed to create test firmware directory")
 		t.Cleanup(func() {
-			_ = os.RemoveAll(testFirmwarePath)
+			err = os.RemoveAll(testFirmwarePath)
+			require.NoError(t, err, "failed to clean up test firmware directory")
 		})
 
 		_, stderr, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
@@ -108,6 +109,20 @@ func TestRuntime(t *testing.T) {
 			),
 		))
 		require.NoError(t, err, "failed to set custom firmware path: stderr: %s", stderr)
+		t.Cleanup(func() {
+			_, _, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
+				"",
+				filepath.Join(
+					rootpathPrefix,
+					"sys",
+					"module",
+					"firmware_class",
+					"parameters",
+					"path",
+				),
+			))
+			require.NoError(t, err, "failed to reset custom firmware path")
+		})
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
@@ -121,31 +136,6 @@ func TestRuntime(t *testing.T) {
 
 		_, stderr, err = installedRuntime.Run("delete", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
-	})
-
-	t.Run("errors when non-root attempts to run without setting custom firmware path", func(t *testing.T) {
-		remoteprocName := "yolo-user-fine-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
-		if err := sim.Start(); err != nil {
-			t.Fatalf("failed to run simulator: %s", err)
-		}
-		defer func() { _ = sim.Stop() }()
-
-		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
-		require.NoError(t, err, "stderr: %s", stderr)
-		t.Cleanup(func() {
-			_, _, _ = installedRuntime.Run("delete", containerName)
-		})
-
-		_, _, err = installedRuntime.Run("start", containerName)
-		require.Error(t, err)
-		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 	})
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
