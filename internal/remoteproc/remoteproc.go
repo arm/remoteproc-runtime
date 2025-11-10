@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -38,17 +37,8 @@ func GetCustomFirmwarePath(customPathFile string) (string, error) {
 
 func GetSystemFirmwarePath() (string, error) {
 	customPath, _ := GetCustomFirmwarePath(firmwareParamPath)
-
-	currentUser, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current user: %w", err)
-	}
-	isRoot := currentUser.Uid == "0"
 	if customPath == "" {
-		if isRoot {
-			return defaultFirmwarePath, nil
-		}
-		return "", fmt.Errorf("custom firmware path should be set to user-accessible area for non-root user, Current user: %s (uid: %s)", currentUser.Username, currentUser.Uid)
+		return defaultFirmwarePath, fmt.Errorf("current user is root")
 	}
 
 	return customPath, nil
