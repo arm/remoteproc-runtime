@@ -3,7 +3,7 @@ module github.com/arm/remoteproc-runtime
 go 1.25.0
 
 require (
-	github.com/containerd/containerd/api v1.9.0
+	github.com/containerd/containerd/api v1.10.0
 	github.com/containerd/containerd/v2 v2.1.4
 	github.com/containerd/errdefs v1.0.0
 	github.com/containerd/log v0.1.0
