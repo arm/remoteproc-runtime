@@ -3,8 +3,8 @@ package remoteproc
 import (
 	"crypto/rand"
 	"fmt"
-	"log/slog"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -36,13 +36,22 @@ func GetCustomFirmwarePath(customPathFile string) (string, error) {
 	return "", fmt.Errorf("failed to read custom firmware path %s: %w", customPathFile, err)
 }
 
-func GetSystemFirmwarePath(logger *slog.Logger) string {
-	customPath, err := GetCustomFirmwarePath(firmwareParamPath)
-	logger.Debug("custom firmware path lookup", "path", customPath, "error", err)
+func GetSystemFirmwarePath() (string, error) {
+	customPath, _ := GetCustomFirmwarePath(firmwareParamPath)
+
+	currentUser, err := user.Current()
 	if err != nil {
-		return defaultFirmwarePath
+		return "", fmt.Errorf("failed to get current user: %w", err)
 	}
-	return customPath
+	isRoot := currentUser.Uid == "0"
+	if customPath == "" {
+		if isRoot {
+			return defaultFirmwarePath, nil
+		}
+		return "", fmt.Errorf("custom firmware path should be set to user-accessible area for non-root user, Current user: %s (uid: %s)", currentUser.Username, currentUser.Uid)
+	}
+
+	return customPath, nil
 }
 
 func FindDevicePath(name string) (string, error) {

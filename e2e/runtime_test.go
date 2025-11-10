@@ -32,8 +32,44 @@ func TestRuntime(t *testing.T) {
 	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
-	t.Run("basic container lifecycle", func(t *testing.T) {
+	t.Run("basic container lifecycle as root", func(t *testing.T) {
+		installedRuntimeSudo := limavm.NewSudo(installedRuntime)
 		remoteprocName := "yolo-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+
+		_, stderr, err := installedRuntimeSudo.Run(
+			"create",
+			"--bundle", bundlePath,
+			containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntimeSudo, containerName, specs.StateCreated)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+		_, stderr, err = installedRuntimeSudo.Run("start", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntimeSudo, containerName, specs.StateRunning)
+		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+
+		_, stderr, err = installedRuntimeSudo.Run("kill", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		assertContainerStatus(t, installedRuntimeSudo, containerName, specs.StateStopped)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+
+		_, stderr, err = installedRuntimeSudo.Run("delete", containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+	})
+
+	t.Run("basic container lifecycle as non root user", func(t *testing.T) {
+		remoteprocName := "yolo-user-device"
 		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
@@ -53,6 +89,26 @@ func TestRuntime(t *testing.T) {
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
 		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 
+		testFirmwarePath := filepath.Join(rootpathPrefix, "fake_user_area", "test_firmware_dir")
+		_, _, err = vm.RunCommand("mkdir", "-p", testFirmwarePath)
+		require.NoError(t, err, "failed to create test firmware directory")
+		t.Cleanup(func() {
+			os.RemoveAll(testFirmwarePath)
+		})
+
+		_, stderr, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
+			testFirmwarePath,
+			filepath.Join(
+				rootpathPrefix,
+				"sys",
+				"module",
+				"firmware_class",
+				"parameters",
+				"path",
+			),
+		))
+		require.NoError(t, err, "failed to set custom firmware path: stderr: %s", stderr)
+
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
@@ -65,6 +121,31 @@ func TestRuntime(t *testing.T) {
 
 		_, stderr, err = installedRuntime.Run("delete", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
+	})
+
+	t.Run("errors when non-root attempts to run without setting custom firmware path", func(t *testing.T) {
+		remoteprocName := "yolo-user-fine-device"
+		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		if err := sim.Start(); err != nil {
+			t.Fatalf("failed to run simulator: %s", err)
+		}
+		defer func() { _ = sim.Stop() }()
+
+		uniqueID := testID(t)
+		containerName := uniqueID
+		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		require.NoError(t, err, "stderr: %s", stderr)
+		t.Cleanup(func() {
+			_, _, _ = installedRuntime.Run("delete", containerName)
+		})
+
+		_, _, err = installedRuntime.Run("start", containerName)
+		require.Error(t, err)
+		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
+		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
 	})
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
