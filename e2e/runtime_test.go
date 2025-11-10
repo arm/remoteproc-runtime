@@ -93,7 +93,7 @@ func TestRuntime(t *testing.T) {
 		_, _, err = vm.RunCommand("mkdir", "-p", testFirmwarePath)
 		require.NoError(t, err, "failed to create test firmware directory")
 		t.Cleanup(func() {
-			os.RemoveAll(testFirmwarePath)
+			_ = os.RemoveAll(testFirmwarePath)
 		})
 
 		_, stderr, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
