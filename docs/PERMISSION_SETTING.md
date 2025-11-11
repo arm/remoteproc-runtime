@@ -19,7 +19,8 @@ By default, the remoteproc device can only be accessible by root.
 
 2. Use systemd-tmpfiles to set mode/owner on every boot (and re-apply easily):
 
-   Create /etc/tmpfiles.d/remoteproc.conf with following:
+   Create /etc/tmpfiles.d/remoteproc.conf and add relevant remoteproc driver filesystem.
+   Check the remoteproc name and make sure the correct remote processor is revealed to the group:
 
    ```
    f /sys/class/remoteproc/remoteproc0/state                0664  root remoteproc -   -
@@ -27,7 +28,7 @@ By default, the remoteproc device can only be accessible by root.
    f /sys/class/remoteproc/remoteproc0/name                 0664  root remoteproc -   -
    ```
 
-   Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed.
+   Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed. The remoteproc processor number may be different depending on the driver probe order.
 
 3. Apply the change in remoteproc.conf. This needs to be done on each boot:
    ```sh
