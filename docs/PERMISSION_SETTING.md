@@ -8,7 +8,7 @@ For non-root users to use Remoteproc Runtime, the remoteproc driver and the cont
 
 By default, the remoteproc device can only be accessible by root. 
 
-1. Create a group and add your user:
+1. Create a group and add the user:
 
    ```sh
    sudo groupadd remoteproc
