@@ -6,7 +6,7 @@ For non-root users to use Remoteproc Runtime, the remoteproc driver and the cont
 
 ### 1. Make remoteproc driver accessible to the user
 
-By default, the remoteproc device can only be accessible by root. 
+By default, the remoteproc device can only be accessible by root.
 
 1. Create a group and add the user:
 
