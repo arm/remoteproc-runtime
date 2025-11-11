@@ -46,5 +46,5 @@ Usually, remoteproc driver can only be accessible to root. To change this settin
 
 1. Ensure that the path of the folder that contains your firmware is written to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
    ```sh
-   sudo echo <your firmware folder path> > /sys/module/firmware_class/parameters/path
+   echo <your firmware folder path> | sudo tee /sys/module/firmware_class/parameters/path
    ```
