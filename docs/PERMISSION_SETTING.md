@@ -29,7 +29,7 @@ By default, the remoteproc device can only be accessible by root.
 
    Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed.
 
-3. Apply the change in remoteproc.conf using root permission. This needs to be done on each boot:
+3. Apply the change in remoteproc.conf. This needs to be done on each boot:
    ```sh
    sudo systemd-tmpfiles --create /etc/tmpfiles.d/remoteproc.conf
    ```
