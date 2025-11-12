@@ -1,8 +1,4 @@
-# Permission setting for non-root users' usage of Remoteproc Runtime
-
-For non-root users to use Remoteproc Runtime, the remoteproc driver and the container engine must be accessible for this user.
-
-## How to set Remoteproc Runtime to be accessible by non-root users
+# Permission setting for non-root usage of Remoteproc Runtime
 
 ### 1. Make remoteproc driver accessible to the user
 
