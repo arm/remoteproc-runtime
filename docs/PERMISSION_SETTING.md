@@ -39,9 +39,11 @@ By default, the remoteproc device can only be accessible by root.
    echo stop  | tee /sys/class/remoteproc/remoteproc0/state
    ```
 
-### 2. Set the firmware path to somewhere accessible by the user
+### 2. Set the firmware path to somewhere user accessible
 
-1. Ensure that the path of the folder that contains your firmware is written to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
+Remoteproc loads firmware by name from the [Linux Firmware Search Path](https://docs.kernel.org/driver-api/firmware/fw_search_path.html). By default, this will not be user accessible.
+
+1. Override the firmware search path to somewhere user accessible by writing to  `/sys/module/firmware_class/parameters/path`. You need root permission for this.
    ```sh
    echo <your firmware folder path> | sudo tee /sys/module/firmware_class/parameters/path
    ```
