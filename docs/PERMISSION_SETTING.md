@@ -30,7 +30,7 @@ By default, the remoteproc device can only be accessible by root.
    ```sh
    sudo systemd-tmpfiles --create /etc/tmpfiles.d/remoteproc.conf
    ```
-4. Log in as a user in the remoteproc group and try the following commands to make sure that you can access the remoteproc driver as this user:
+4. Log in as a user in the remoteproc group and test access to the remoteproc driver:
    ```sh
    # read state
    cat /sys/class/remoteproc/remoteproc0/state
