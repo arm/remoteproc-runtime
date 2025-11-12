@@ -24,7 +24,7 @@ By default, the remoteproc device can only be accessible by root.
    f /sys/class/remoteproc/remoteproc0/name                 0664  root remoteproc -   -
    ```
 
-   Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed. On each new boot, the remoteproc processor number may be different depending on the driver probe order. It is recommended that this file is checked on each boot to reveal correct processor to correct boot before applying the configuration.
+   Add similar lines for each additional remoteproc device (e.g., remoteproc1, remoteproc2, etc.) as needed. On each new boot, the remoteproc processor number may be different depending on the driver probe order. It is recommended that this file is checked on each boot to reveal correct processor to correct group of users before applying the configuration.
 
 3. Apply the change in remoteproc.conf. This needs to be done on each boot:
    ```sh
