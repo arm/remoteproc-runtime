@@ -43,7 +43,7 @@ By default, the remoteproc device can only be accessible by root.
 
 Remoteproc loads firmware by name from the [Linux Firmware Search Path](https://docs.kernel.org/driver-api/firmware/fw_search_path.html). By default, this will not be user accessible.
 
-1. Override the firmware search path to somewhere user accessible by writing to  `/sys/module/firmware_class/parameters/path`. You need root permission for this.
+1. Override the firmware search path to somewhere user accessible by writing to `/sys/module/firmware_class/parameters/path`. You need root permission for this.
    ```sh
    echo <your firmware folder path> | sudo tee /sys/module/firmware_class/parameters/path
    ```
