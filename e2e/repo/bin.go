@@ -72,3 +72,23 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 
 	return []string{runtime, shim}, nil
 }
+
+func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
+	const modulePath = "github.com/arm/remoteproc-simulator/cmd/remoteproc-simulator"
+	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
+
+	build := exec.Command(
+		"go", "build",
+		"-o", binOut,
+		modulePath,
+	)
+	build.Env = os.Environ()
+	for k, v := range env {
+		build.Env = append(build.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	if out, err := build.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("failed to build remoteproc simulator: %s\n%s", err, out)
+	}
+	return binOut, nil
+}
