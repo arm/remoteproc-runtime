@@ -54,6 +54,8 @@ main() {
     installed_path=$(install_binary "$BINARY_TO_INSTALL" "$binary_name")
 
     echo "Binary installed successfully" >&2
+    echo "$installed_path" >&2
+    echo "$PATH" >&2
     echo "$installed_path"
 }
 
