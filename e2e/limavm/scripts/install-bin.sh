@@ -55,7 +55,6 @@ main() {
 
     echo "Binary installed successfully" >&2
     echo "$installed_path" >&2
-    echo "$PATH" >&2
     echo "$installed_path"
 }
 
