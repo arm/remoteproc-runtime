@@ -33,18 +33,32 @@ func (r *Simulator) WithName(name string) *Simulator {
 	return r
 }
 
+func (r *Simulator) WithIndex(index uint) *Simulator {
+	r.index = index
+	return r
+}
+
 func (r *Simulator) Start() error {
 	cmd := r.installedVM.Command(
 		"--root-dir", r.rootDir,
 		"--index", fmt.Sprintf("%d", r.index),
 		"--name", r.name,
 	)
-	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator")
+	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator: " + r.name + ": ")
 	if err := streamer.Start(); err != nil {
 		return fmt.Errorf("failed to start simulator: %w", err)
 	}
 	r.cmd = streamer
 
+	if err := r.waitForBoot(15 * time.Second); err != nil {
+		_ = r.Stop()
+		return fmt.Errorf("simulator failed to create remoteproc device: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Simulator) waitForBoot(waitingTime time.Duration) error {
 	deviceDir := r.DeviceDir()
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -53,13 +67,12 @@ func (r *Simulator) Start() error {
 	defer watcher.Close()
 
 	if err := watcher.Add(r.rootDir); err != nil {
-		return fmt.Errorf("failed to watch remoteproc device directory %q: %w", deviceDir, err)
+		return fmt.Errorf("failed to watch root directory %q: %w", r.rootDir, err)
 	}
 
-	timer := time.NewTimer(15 * time.Second)
+	timer := time.NewTimer(waitingTime)
 	defer timer.Stop()
 
-	// Wait for the remoteproc device directory to appear before returning.
 	for {
 		select {
 		case event, ok := <-watcher.Events:
@@ -96,4 +109,13 @@ func (r *Simulator) DeviceDir() string {
 	return filepath.Join(
 		r.rootDir, "sys", "class", "remoteproc", fmt.Sprintf("remoteproc%d", r.index),
 	)
+}
+
+func (r *Simulator) readDeviceName() string {
+	nameFilePath := filepath.Join(r.DeviceDir(), "name")
+	content, err := os.ReadFile(nameFilePath)
+	if err != nil {
+		return ""
+	}
+	return string(content)
 }
