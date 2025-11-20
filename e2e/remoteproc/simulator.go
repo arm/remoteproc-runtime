@@ -1,14 +1,15 @@
 package remoteproc
 
 import (
+	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/runner"
-	"github.com/fsnotify/fsnotify"
 )
 
 type Simulator struct {
@@ -33,56 +34,45 @@ func (r *Simulator) WithName(name string) *Simulator {
 	return r
 }
 
+func (r *Simulator) WithIndex(index uint) *Simulator {
+	r.index = index
+	return r
+}
+
 func (r *Simulator) Start() error {
 	cmd := r.installedVM.Command(
 		"--root-dir", r.rootDir,
 		"--index", fmt.Sprintf("%d", r.index),
 		"--name", r.name,
 	)
-	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator")
-	if err := streamer.Start(); err != nil {
+	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator: " + r.name + ": ")
+	reader, writer := io.Pipe()
+	if err := streamer.Start(writer); err != nil {
 		return fmt.Errorf("failed to start simulator: %w", err)
 	}
 	r.cmd = streamer
 
-	deviceDir := r.DeviceDir()
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return fmt.Errorf("failed to create watcher for remoteproc directory: %w", err)
-	}
-	defer watcher.Close()
-
-	if err := watcher.Add(r.rootDir); err != nil {
-		return fmt.Errorf("failed to watch remoteproc device directory %q: %w", deviceDir, err)
+	if err := r.waitForBoot(15*time.Second, reader); err != nil {
+		_ = r.Stop()
+		return fmt.Errorf("simulator failed to create remoteproc device: %w", err)
 	}
 
-	timer := time.NewTimer(15 * time.Second)
-	defer timer.Stop()
+	return nil
+}
 
-	// Wait for the remoteproc device directory to appear before returning.
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				return fmt.Errorf("remoteproc parent directory watcher closed")
-			}
-			fmt.Printf("Received fsnotify event: %s\n", event.Name)
-			rel, err := filepath.Rel(event.Name, deviceDir)
-			if err == nil && rel != "" && rel != "." {
-				info, err := os.Stat(deviceDir)
-				if err == nil && info.IsDir() {
-					return nil
-				}
-				if err != nil && !os.IsNotExist(err) {
-					return fmt.Errorf("failed to stat remoteproc directory %q: %w", deviceDir, err)
-				}
-			}
-		case err := <-watcher.Errors:
-			return fmt.Errorf("remoteproc directory watcher error: %w", err)
-		case <-timer.C:
-			return fmt.Errorf("remoteproc directory %q not created within 15s", deviceDir)
+func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf io.Reader) error {
+	deadline := time.Now().Add(waitingTime)
+	scanner := bufio.NewScanner(outputBuf)
+	for scanner.Scan() {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout waiting for simulator to create remoteproc device. Output:\n%s", outputBuf)
+		}
+		line := scanner.Text()
+		if strings.Contains(line, "Remoteproc initialized at") {
+			return nil
 		}
 	}
+	panic("unreachable")
 }
 
 func (r *Simulator) Stop() error {
