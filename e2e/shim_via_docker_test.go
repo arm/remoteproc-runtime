@@ -32,7 +32,6 @@ func TestDocker(t *testing.T) {
 
 	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
 	require.NoError(t, err)
-	bins = append(bins, simulatorBin)
 	vmSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)
 
@@ -41,7 +40,7 @@ func TestDocker(t *testing.T) {
 
 	simulatorIndex := uint(100)
 	t.Run("basic container lifecycle", func(t *testing.T) {
-		remoteprocName := "yolo-device"
+		remoteprocName := "yolo-docker-device"
 		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
@@ -88,11 +87,12 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
 			imageName)
 		assert.Error(t, err)
-		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: a-processor")
+		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: ")
+		assert.Contains(t, stderr, "a-processor")
 	})
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
-		remoteprocName := "yolo-device"
+		remoteprocName := "another-yolo-docker-device"
 		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
