@@ -30,8 +30,12 @@ func TestRuntime(t *testing.T) {
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
-	vm.RunCommand("mkdir", "-p", filepath.Join(rootpathPrefix))
-	defer vm.RunCommand("rm", "-rf", filepath.Join(rootpathPrefix))
+	_, _, err = vm.RunCommand("mkdir", "-p", filepath.Join(rootpathPrefix))
+	require.NoError(t, err)
+	defer func() {
+		_, _, err := vm.RunCommand("rm", "-rf", filepath.Join(rootpathPrefix))
+		require.NoError(t, err)
+	}()
 
 	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
@@ -102,7 +106,6 @@ func TestRuntime(t *testing.T) {
 		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
 		assert.ErrorContains(t, err, expectedErrorSubstring, "error doesn't contain: %s: stderr: %s", expectedErrorSubstring, stderr)
 		assert.ErrorContains(t, err, processorName, "error doesn't contain expected processor name: %s: stderr: %s", processorName, stderr)
-
 	})
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {

@@ -65,16 +65,22 @@ func (s *StreamingCmd) streamOutput(reader io.Reader, output io.Writer) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		text := scanner.Text()
+		var writable string
 		if s.prefix != "" {
-			if output != nil {
-				fmt.Fprintf(output, "%s: %s\n", s.prefix, text)
-			}
-			fmt.Printf("%s: %s\n", s.prefix, text)
+			writable = fmt.Sprintf("%s: %s", s.prefix, text)
 		} else {
-			if output != nil {
-				fmt.Fprintln(output, text)
-			}
-			fmt.Println(text)
+			writable = text
+		}
+		s.writeOutput(writable, output)
+		fmt.Println(writable)
+	}
+}
+
+func (s *StreamingCmd) writeOutput(line string, output io.Writer) {
+	if output != nil {
+		_, err := fmt.Fprintf(output, "%s\n", line)
+		if err != nil {
+			fmt.Printf("failed to write to output: %v\n", err)
 		}
 	}
 }
