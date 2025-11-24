@@ -37,7 +37,7 @@ func TestPodman(t *testing.T) {
 	simulatorIndex := uint(10)
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
-		remoteprocName := "yolo-device"
+		remoteprocName := "yolo-podman-device"
 		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
