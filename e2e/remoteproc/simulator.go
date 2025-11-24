@@ -60,15 +60,19 @@ func (r *Simulator) Start() error {
 	return nil
 }
 
-func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf io.Reader) error {
+func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeReader) error {
 	deadline := time.Now().Add(waitingTime)
 	scanner := bufio.NewScanner(outputBuf)
 	for scanner.Scan() {
 		if time.Now().After(deadline) {
-			return fmt.Errorf("timeout waiting for simulator to create remoteproc device. Output:\n%s", outputBuf)
+			return fmt.Errorf("timeout waiting for simulator to create remoteproc device")
 		}
 		line := scanner.Text()
 		if strings.Contains(line, "Remoteproc initialized at") {
+			err := outputBuf.Close()
+			if err != nil {
+				return fmt.Errorf("failed to close output buffer: %w", err)
+			}
 			return nil
 		}
 	}

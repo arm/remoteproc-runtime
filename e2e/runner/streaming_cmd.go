@@ -71,16 +71,13 @@ func (s *StreamingCmd) streamOutput(reader io.Reader, output io.Writer) {
 		} else {
 			writable = text
 		}
-		s.writeOutput(writable, output)
 		fmt.Println(writable)
+		s.writeOutput(writable, output)
 	}
 }
 
 func (s *StreamingCmd) writeOutput(line string, output io.Writer) {
 	if output != nil {
-		_, err := fmt.Fprintf(output, "%s\n", line)
-		if err != nil {
-			fmt.Printf("failed to write to output: %v\n", err)
-		}
+		_, _ = fmt.Fprintf(output, "%s\n", line)
 	}
 }
