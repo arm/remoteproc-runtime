@@ -55,7 +55,7 @@ func TestPodman(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		time.Sleep(500 * time.Millisecond) // Give some time for the container to start
+		time.Sleep(10 * time.Second) // Give some time for the container to start
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
 		containerID := strings.TrimSpace(stdout)
