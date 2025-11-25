@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,7 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := t.TempDir() + "fake_root_podman"
+	rootpathPrefix := filepath.Join(t.TempDir(), "fake_root_podman")
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
