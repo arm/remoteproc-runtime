@@ -16,7 +16,7 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := t.TempDir()
+	rootpathPrefix := t.TempDir() + "fake_root_podman"
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
