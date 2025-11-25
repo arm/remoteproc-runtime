@@ -74,7 +74,7 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 }
 
 func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
-	const modulePath = "github.com/arm/remoteproc-simulator/cmd/remoteproc-simulator"
+	const modulePath = "github.com/arm/remoteproc-simulator/cmd/remoteproc-simulator@yejseo01:debug"
 	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
 
 	build := exec.Command(
