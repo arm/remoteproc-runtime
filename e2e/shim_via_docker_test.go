@@ -54,6 +54,7 @@ func TestDocker(t *testing.T) {
 			"docker", "run", "-d",
 			"--runtime", "io.containerd.remoteproc.v1",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
+			"-v", rootpathPrefix+":"+rootpathPrefix,
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
