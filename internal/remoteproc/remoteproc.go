@@ -102,7 +102,7 @@ func GetState(devicePath string) (State, error) {
 	}
 	state, err := newState(string(rawState))
 	if err != nil {
-		return "", fmt.Errorf("can't parse state from %s: %w", stateFilePath, err)
+		return "", fmt.Errorf("can't parse state %s from %s: %w", string(rawState), stateFilePath, err)
 	}
 	return state, nil
 }

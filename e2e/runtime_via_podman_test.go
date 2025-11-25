@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/remoteproc"
@@ -54,6 +55,7 @@ func TestPodman(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
+		time.Sleep(500 * time.Millisecond) // Give some time for the container to start
 		remoteproc.AssertState(t, sim.DeviceDir(), "running")
 
 		containerID := strings.TrimSpace(stdout)
