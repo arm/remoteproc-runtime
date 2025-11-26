@@ -26,7 +26,8 @@ func TestPodman(t *testing.T) {
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
-	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	simulatorArea := t.TempDir()
+	simulatorBin, err := repo.BuildRemoteprocSimulator(simulatorArea, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
 	vmSimulator, err := vm.InstallBin(simulatorBin)
@@ -38,7 +39,7 @@ func TestPodman(t *testing.T) {
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-podman-device"
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
+		sim := remoteproc.NewSimulator(vmSimulator, simulatorArea).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)

@@ -29,8 +29,8 @@ func TestDocker(t *testing.T) {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
-
-	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	simulatorArea := t.TempDir()
+	simulatorBin, err := repo.BuildRemoteprocSimulator(simulatorArea, limavm.BinBuildEnv)
 	require.NoError(t, err)
 	vmSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestDocker(t *testing.T) {
 	simulatorIndex := uint(100)
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-docker-device"
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
+		sim := remoteproc.NewSimulator(vmSimulator, simulatorArea).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
@@ -74,7 +74,7 @@ func TestDocker(t *testing.T) {
 	})
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName("a-processor").WithIndex(simulatorIndex)
+		sim := remoteproc.NewSimulator(vmSimulator, simulatorArea).WithName("a-processor").WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
@@ -93,7 +93,7 @@ func TestDocker(t *testing.T) {
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
 		remoteprocName := "another-yolo-docker-device"
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
+		sim := remoteproc.NewSimulator(vmSimulator, simulatorArea).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
