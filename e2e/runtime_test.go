@@ -382,16 +382,23 @@ func generateBundle(t *testing.T, targetDir string, remoteprocName string, names
 	return nil
 }
 
-func copyToVM(vm limavm.VM, sourcePath string) error {
-	shortEnoughPath := "/tmp/shorter-path-for-vm"
+func copyToVM(t *testing.T, vm limavm.VM, sourcePath string) (string, error) {
+	t.Helper()
+	shortEnoughPath := filepath.Join("/tmp", filepath.Base(sourcePath))
 	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
 	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
+		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
 	}
+	t.Cleanup(func() { _ = os.RemoveAll(shortEnoughPath) })
 
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(sourcePath))
-	if copyOutput, err := limaCopyCommand.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+shortEnoughPath)
+	copyOutput, err := limaCopyCommand.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
 	}
-	return nil
+	t.Cleanup(func() {
+		limaCleanupCommand := exec.Command("limactl", "shell", vm.Name(), "rm", "-rf", shortEnoughPath)
+		_ = limaCleanupCommand.Run()
+	})
+	return shortEnoughPath, nil
 }
