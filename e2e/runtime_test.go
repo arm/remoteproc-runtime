@@ -67,17 +67,17 @@ func TestRuntime(t *testing.T) {
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 
 		_, stderr, err = installedRuntime.Run("kill", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateStopped)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 		_, stderr, err = installedRuntime.Run("delete", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
@@ -126,11 +126,11 @@ func TestRuntime(t *testing.T) {
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 
 		_, stderr, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 	})
 
 	t.Run("writes pid to file specified by --pid-file", func(t *testing.T) {
@@ -198,11 +198,11 @@ func TestRuntime(t *testing.T) {
 
 			requireDifferentMountNamespace(t, vm, pid)
 
-			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
-			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 		})
 
 		t.Run("creates process in user's namespace when not root", func(t *testing.T) {
@@ -236,11 +236,11 @@ func TestRuntime(t *testing.T) {
 
 			requireSameMountNamespace(t, vm, uint(pid))
 
-			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 			_, stderr, err = installedRuntime.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
-			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 		})
 	})
 
