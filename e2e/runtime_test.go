@@ -44,7 +44,7 @@ func TestRuntime(t *testing.T) {
 		uniqueID := testID(t)
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
 		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run(
@@ -79,7 +79,7 @@ func TestRuntime(t *testing.T) {
 		uniqueID := testID(t)
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, "other-processor"))
+		require.NoError(t, generateBundle(t, bundlePath, "other-processor"))
 		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
@@ -97,7 +97,7 @@ func TestRuntime(t *testing.T) {
 		uniqueID := testID(t)
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
 		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
@@ -127,7 +127,7 @@ func TestRuntime(t *testing.T) {
 		uniqueID := testID(t)
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
 		require.NoError(t, copyToVM(vm.VM, bundlePath))
 		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
 
@@ -162,6 +162,7 @@ func TestRuntime(t *testing.T) {
 			containerName := uniqueID
 			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 			require.NoError(t, generateBundle(
+				t,
 				bundlePath,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
@@ -200,6 +201,7 @@ func TestRuntime(t *testing.T) {
 			containerName := uniqueID
 			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 			require.NoError(t, generateBundle(
+				t,
 				bundlePath,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
@@ -238,7 +240,7 @@ func TestRuntime(t *testing.T) {
 		uniqueID := testID(t)
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
 		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run(
@@ -340,13 +342,16 @@ func getContainerState(runtime limavm.Runnable, containerName string) (specs.Sta
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+func generateBundle(t *testing.T, targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+	t.Helper()
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
 	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0o755); err != nil {
 		return err
 	}
+	t.Cleanup(func() { _ = os.RemoveAll(targetDir) })
+
 	firmwarePath := filepath.Join(targetDir, bundleRoot, firmwareName)
 	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0o644); err != nil {
 		return err
