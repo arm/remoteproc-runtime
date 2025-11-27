@@ -22,7 +22,7 @@ func TestDocker(t *testing.T) {
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewDocker(rootpathPrefix)
+	vm, err := limavm.NewDocker(t.TempDir())
 	require.NoError(t, err)
 	defer vm.Cleanup()
 

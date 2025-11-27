@@ -20,7 +20,7 @@ func TestPodman(t *testing.T) {
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewPodman(rootpathPrefix)
+	vm, err := limavm.NewPodman(t.TempDir())
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
