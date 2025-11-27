@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,7 +16,7 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := t.TempDir()
+	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root")
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
@@ -25,9 +26,7 @@ func TestPodman(t *testing.T) {
 
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
-
-	simulatorArea := t.TempDir()
-	simulatorBin, err := repo.BuildRemoteprocSimulator(simulatorArea, limavm.BinBuildEnv)
+	simulatorBin, err := repo.BuildRemoteprocSimulator(rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
 	vmSimulator, err := vm.InstallBin(simulatorBin)
@@ -39,7 +38,7 @@ func TestPodman(t *testing.T) {
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-podman-device"
-		sim := remoteproc.NewSimulator(vmSimulator, simulatorArea).WithName(remoteprocName).WithIndex(simulatorIndex)
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
 		simulatorIndex++
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
