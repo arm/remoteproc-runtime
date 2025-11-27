@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -60,6 +61,7 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
@@ -96,6 +98,7 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(bundlePath, "other-processor"))
+		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		expectedErrorSubstring := "remote processor other-processor does not exist, available remote processors: "
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
@@ -116,6 +119,7 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
@@ -146,6 +150,7 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, copyToVM(vm.VM, bundlePath))
 		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
@@ -184,6 +189,7 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
+			require.NoError(t, copyToVM(vm.VM, bundlePath))
 			_, stderr, err := installedRuntimeSudo.Run(
 				"create",
 				"--bundle", bundlePath,
@@ -222,6 +228,7 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
+			require.NoError(t, copyToVM(vm.VM, bundlePath))
 			_, stderr, err := installedRuntime.Run(
 				"create",
 				"--bundle", bundlePath,
@@ -257,6 +264,7 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		require.NoError(t, copyToVM(vm.VM, bundlePath))
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
@@ -390,6 +398,20 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 	}
 	if err := os.WriteFile(specPath, specData, 0o644); err != nil {
 		return err
+	}
+	return nil
+}
+
+func copyToVM(vm limavm.VM, sourcePath string) error {
+	shortEnoughPath := "/tmp/shorter-path-for-vm"
+	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
+	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
+	}
+
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(sourcePath))
+	if copyOutput, err := limaCopyCommand.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
 	}
 	return nil
 }
