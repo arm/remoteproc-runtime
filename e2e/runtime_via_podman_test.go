@@ -34,12 +34,10 @@ func TestPodman(t *testing.T) {
 
 	imageName := "fancy-image"
 	require.NoError(t, vm.BuildImage("../testdata", imageName))
-	simulatorIndex := uint(10)
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-podman-device"
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(simulatorIndex)
-		simulatorIndex++
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
