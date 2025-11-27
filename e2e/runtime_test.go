@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -376,18 +375,4 @@ func generateBundleInVM(t *testing.T, vm limavm.Debian, remoteprocName string, n
 	t.Cleanup(func() { _ = vm.RemoveFile(bundlePathInVM) })
 
 	return bundlePathInVM, nil
-}
-
-func copyToVM(vm limavm.VM, sourcePath string) error {
-	shortEnoughPath := "/tmp/shorter-path-for-vm"
-	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
-	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
-	}
-
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(sourcePath))
-	if copyOutput, err := limaCopyCommand.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
-	}
-	return nil
 }
