@@ -131,7 +131,7 @@ func TestRuntime(t *testing.T) {
 		containerName := testID(t)
 		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
 		require.NoError(t, err)
-		pidFile := filepath.Join(dirMountedInVM, "container.pid")
+		pidFile := filepath.Join(bundlePathInVM, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
