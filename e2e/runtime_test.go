@@ -45,11 +45,12 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
-		require.NoError(t, copyToVM(vm.VM, bundlePath))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
@@ -80,9 +81,10 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(t, bundlePath, "other-processor"))
-		require.NoError(t, copyToVM(vm.VM, bundlePath))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
 		assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor", "stderr: %s", stderr)
 	})
 
@@ -98,9 +100,10 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
-		require.NoError(t, copyToVM(vm.VM, bundlePath))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
 		pid, err := getContainerPid(installedRuntime, containerName)
@@ -128,12 +131,13 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
-		require.NoError(t, copyToVM(vm.VM, bundlePath))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			"--pid-file", pidFile,
 			containerName,
 		)
@@ -167,10 +171,11 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
-			require.NoError(t, copyToVM(vm.VM, bundlePath))
+			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntimeSudo.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", copiedBundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -206,10 +211,11 @@ func TestRuntime(t *testing.T) {
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
-			require.NoError(t, copyToVM(vm.VM, bundlePath))
+			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntime.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", copiedBundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -241,11 +247,12 @@ func TestRuntime(t *testing.T) {
 		containerName := uniqueID
 		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
 		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
-		require.NoError(t, copyToVM(vm.VM, bundlePath))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
