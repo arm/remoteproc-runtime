@@ -16,11 +16,11 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root")
+	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-podman")
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewPodman(t.TempDir())
+	vm, err := limavm.NewPodman()
 	require.NoError(t, err)
 	defer vm.Cleanup()
 

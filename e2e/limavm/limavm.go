@@ -19,8 +19,8 @@ var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func newVM(template string, mountDir string) (VM, error) {
-	vmName, err := scripts.PrepareLimaVM(template, mountDir)
+func newVM(template string) (VM, error) {
+	vmName, err := scripts.PrepareLimaVM(template)
 	return VM{name: vmName}, err
 }
 

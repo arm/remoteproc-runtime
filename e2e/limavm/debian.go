@@ -4,8 +4,8 @@ type Debian struct {
 	VM
 }
 
-func NewDebian(mountDir string) (Debian, error) {
-	vm, err := newVM("debian", mountDir)
+func NewDebian() (Debian, error) {
+	vm, err := newVM("debian")
 	if err != nil {
 		return Debian{}, err
 	}

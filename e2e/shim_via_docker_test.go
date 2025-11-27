@@ -18,11 +18,11 @@ import (
 func TestDocker(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root")
+	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-docker")
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewDocker(t.TempDir())
+	vm, err := limavm.NewDocker()
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
