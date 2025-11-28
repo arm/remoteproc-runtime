@@ -42,7 +42,7 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
@@ -76,7 +76,7 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePathInVM, err := generateBundleInVM(t, vm.VM, "other-processor")
+		bundlePathInVM, err := generateBundleInVM(t, vm, "other-processor")
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
@@ -93,7 +93,7 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
@@ -121,7 +121,7 @@ func TestRuntime(t *testing.T) {
 		defer func() { _ = sim.Stop() }()
 
 		containerName := testID(t)
-		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
 		require.NoError(t, err)
 		pidFile := filepath.Join(dirMountedInVM, "container.pid")
 
@@ -156,7 +156,7 @@ func TestRuntime(t *testing.T) {
 			containerName := uniqueID
 			bundlePathInVM, err := generateBundleInVM(
 				t,
-				vm.VM,
+				vm,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			)
@@ -193,7 +193,7 @@ func TestRuntime(t *testing.T) {
 			containerName := testID(t)
 			bundlePathInVM, err := generateBundleInVM(
 				t,
-				vm.VM,
+				vm,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			)
@@ -229,7 +229,7 @@ func TestRuntime(t *testing.T) {
 		defer func() { _ = sim.Stop() }()
 
 		containerName := testID(t)
-		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
@@ -331,7 +331,7 @@ func getContainerState(runtime limavm.Runnable, containerName string) (specs.Sta
 	return state, nil
 }
 
-func generateBundleInVM(t *testing.T, vm limavm.VM, remoteprocName string, namespaces ...specs.LinuxNamespace) (string, error) {
+func generateBundleInVM(t *testing.T, vm limavm.Debian, remoteprocName string, namespaces ...specs.LinuxNamespace) (string, error) {
 	bundlePathOnHost := t.TempDir()
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"

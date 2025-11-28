@@ -24,10 +24,6 @@ func newVM(template string, mountDir string) (VM, error) {
 	return VM{name: vmName}, err
 }
 
-func (vm VM) Name() string {
-	return vm.name
-}
-
 func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
 	installPath, err := scripts.InstallBin(vm.name, binToInstall)
 	if err != nil {
@@ -45,7 +41,7 @@ func (vm VM) Copy(sourcePathInHost string, destPathInVM string) (string, error) 
 		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, destPathInVM)
 	}
 
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", destPathInVM, vm.Name()+":"+filepath.Dir(destPathInVM)+"/")
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", destPathInVM, vm.name+":"+filepath.Dir(destPathInVM)+"/")
 	copyOutput, err := limaCopyCommand.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
