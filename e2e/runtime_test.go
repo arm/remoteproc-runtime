@@ -368,7 +368,7 @@ func generateBundleInVM(t *testing.T, vm limavm.VM, remoteprocName string, names
 		return "", err
 	}
 
-	bundlePathInVM, err := vm.Copy(bundlePathOnHost)
+	bundlePathInVM, err := vm.Copy(bundlePathOnHost, filepath.Join("/tmp", testID(t)))
 	if err != nil {
 		return "", err
 	}

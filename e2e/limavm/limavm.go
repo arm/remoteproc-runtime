@@ -40,23 +40,22 @@ func (vm VM) Cleanup() {
 	_ = scripts.TeardownLimaVM(vm.name)
 }
 
-func (vm VM) Copy(sourcePathInHost string) (string, error) {
-	shortEnoughPath := filepath.Join("/tmp", filepath.Base(filepath.Dir(sourcePathInHost)))
-	if err := os.CopyFS(shortEnoughPath, os.DirFS(sourcePathInHost)); err != nil {
-		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, shortEnoughPath)
+func (vm VM) Copy(sourcePathInHost string, destPathInVM string) (string, error) {
+	if err := os.CopyFS(destPathInVM, os.DirFS(sourcePathInHost)); err != nil {
+		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, destPathInVM)
 	}
 
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(shortEnoughPath)+"/")
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", destPathInVM, vm.Name()+":"+filepath.Dir(destPathInVM)+"/")
 	copyOutput, err := limaCopyCommand.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
 	}
 
-	err = os.RemoveAll(shortEnoughPath)
+	err = os.RemoveAll(destPathInVM)
 	if err != nil {
-		return "", fmt.Errorf("failed to remove temporary copied files: %w: %s", err, shortEnoughPath)
+		return "", fmt.Errorf("failed to remove temporary copied files: %w: %s", err, destPathInVM)
 	}
-	return shortEnoughPath, nil
+	return destPathInVM, nil
 }
 
 func (vm VM) RemoveFile(pathInVM string) error {
