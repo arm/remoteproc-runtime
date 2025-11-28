@@ -133,7 +133,7 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, generateBundle(bundlePath, remoteprocName))
 		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
 		require.NoError(t, err)
-		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
+		pidFile := filepath.Join(dirMountedInVM, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
@@ -387,21 +387,22 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 
 func copyToVM(t *testing.T, vm limavm.VM, sourcePath string) (string, error) {
 	t.Helper()
-	shortEnoughPath := filepath.Join("/tmp", filepath.Base(sourcePath))
+	shortEnoughPath := filepath.Join("/tmp", filepath.Base(filepath.Dir(sourcePath)))
+	fmt.Printf("Copying %s to VM at %s\n", sourcePath, shortEnoughPath)
 	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
 	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(shortEnoughPath) })
 
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+sourcePath)
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(shortEnoughPath)+"/")
 	copyOutput, err := limaCopyCommand.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
 	}
 	t.Cleanup(func() {
-		limaCleanupCommand := exec.Command("limactl", "shell", vm.Name(), "rm", "-rf", sourcePath)
+		limaCleanupCommand := exec.Command("limactl", "shell", vm.Name(), "rm", "-rf", shortEnoughPath)
 		_ = limaCleanupCommand.Run()
 	})
-	return sourcePath, nil
+	return shortEnoughPath, nil
 }
