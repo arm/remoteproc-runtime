@@ -120,11 +120,10 @@ func TestRuntime(t *testing.T) {
 		}
 		defer func() { _ = sim.Stop() }()
 
-		uniqueID := testID(t)
-		containerName := uniqueID
+		containerName := testID(t)
 		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
 		require.NoError(t, err)
-		pidFile := filepath.Join(dirMountedInVM, "container.pid")
+		pidFile := filepath.Join(dirMountedInVM, containerName, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
