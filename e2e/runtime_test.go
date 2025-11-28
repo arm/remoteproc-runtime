@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,84 +20,98 @@ import (
 func TestRuntime(t *testing.T) {
 	limavm.Require(t)
 
-	dirMountedInVM := t.TempDir()
-
-	rootpathPrefix := filepath.Join(dirMountedInVM, "fake-root")
-	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
+	rootpathPrefixInVM := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-standalone-runtime")
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewDebian(dirMountedInVM)
+	vm, err := limavm.NewDebian()
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
 	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
+	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	require.NoError(t, err)
+
+	installedSimulator, err := vm.InstallBin(simulatorBin)
+	require.NoError(t, err)
+
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		bundlePath := filepath.Join(t.TempDir(), uniqueID)
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 
 		_, stderr, err = installedRuntime.Run("kill", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateStopped)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 		_, stderr, err = installedRuntime.Run("delete", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 	})
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName("some-processor")
+		processorName := "some-processor"
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(processorName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, "other-processor"))
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
-		assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor", "stderr: %s", stderr)
+		containerName := uniqueID
+		bundlePath := filepath.Join(t.TempDir(), uniqueID)
+		require.NoError(t, generateBundle(t, bundlePath, "other-processor"))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
+
+		expectedErrorSubstring := "remote processor other-processor does not exist, available remote processors: "
+		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
+		assert.ErrorContains(t, err, expectedErrorSubstring, "error doesn't contain: %s: stderr: %s", expectedErrorSubstring, stderr)
+		assert.ErrorContains(t, err, processorName, "error doesn't contain expected processor name: %s: stderr: %s", processorName, stderr)
 	})
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
 		remoteprocName := "nice-processor"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		bundlePath := filepath.Join(t.TempDir(), uniqueID)
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
 		pid, err := getContainerPid(installedRuntime, containerName)
@@ -105,30 +120,32 @@ func TestRuntime(t *testing.T) {
 
 		_, stderr, err = installedRuntime.Run("start", containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 
 		_, stderr, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 	})
 
 	t.Run("writes pid to file specified by --pid-file", func(t *testing.T) {
 		remoteprocName := "oh-what-a-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
+		bundlePath := filepath.Join(t.TempDir(), uniqueID)
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
+		pidFile := filepath.Join(copiedBundlePathInVM, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			"--pid-file", pidFile,
 			containerName,
 		)
@@ -137,9 +154,8 @@ func TestRuntime(t *testing.T) {
 		pid, err := getContainerPid(installedRuntime, containerName)
 		require.NoError(t, err)
 		require.Greater(t, pid, 0)
-
-		require.FileExists(t, pidFile)
-		assertFileContent(t, pidFile, fmt.Sprintf("%d", pid))
+		requireFileExistsInVM(t, vm.VM, pidFile)
+		assertFileContentInVM(t, vm.VM, pidFile, fmt.Sprintf("%d", pid))
 	})
 
 	t.Run("proxy process namespacing", func(t *testing.T) {
@@ -147,23 +163,26 @@ func TestRuntime(t *testing.T) {
 
 		t.Run("creates process in requested namespace when root", func(t *testing.T) {
 			remoteprocName := "lovely-blue-device"
-			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
-			defer func() { _ = sim.Stop() }()
+			t.Cleanup(func() { _ = sim.Stop() })
 
 			uniqueID := testID(t)
 			containerName := uniqueID
-			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+			bundlePath := filepath.Join(t.TempDir(), uniqueID)
 			require.NoError(t, generateBundle(
+				t,
 				bundlePath,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
+			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntimeSudo.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", copiedBundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -175,32 +194,35 @@ func TestRuntime(t *testing.T) {
 
 			requireDifferentMountNamespace(t, vm, pid)
 
-			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 			_, stderr, err = installedRuntimeSudo.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
-			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 		})
 
 		t.Run("creates process in user's namespace when not root", func(t *testing.T) {
-			remoteprocName := "lovely-blue-device"
-			sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+			remoteprocName := "lovely-green-device"
+			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
-			defer func() { _ = sim.Stop() }()
+			t.Cleanup(func() { _ = sim.Stop() })
 
 			uniqueID := testID(t)
 			containerName := uniqueID
-			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
+			bundlePath := filepath.Join(t.TempDir(), uniqueID)
 			require.NoError(t, generateBundle(
+				t,
 				bundlePath,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
 			))
+			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntime.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", copiedBundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -212,39 +234,41 @@ func TestRuntime(t *testing.T) {
 
 			requireSameMountNamespace(t, vm, uint(pid))
 
-			remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
 
 			_, stderr, err = installedRuntime.Run("start", containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
-			remoteproc.AssertState(t, sim.DeviceDir(), "running")
+			remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
 		})
 	})
 
 	t.Run("When a custom path is set in /sys/module/firmware_class/parameters/path, the firmware will be stored there", func(t *testing.T) {
 		remoteprocName := "nice-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		bundlePath := filepath.Join(t.TempDir(), uniqueID)
+		require.NoError(t, generateBundle(t, bundlePath, remoteprocName))
+		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", copiedBundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
-		customFirmwareStorageDirectory := filepath.Join(rootpathPrefix, "my", "firmware", "path")
+		customFirmwareStorageDirectory := filepath.Join(rootpathPrefixInVM, "my", "firmware", "path")
 
 		_, _, err = vm.RunCommand("sh", "-c", fmt.Sprintf("echo -n %s > %s",
 			customFirmwareStorageDirectory,
 			filepath.Join(
-				rootpathPrefix,
+				rootpathPrefixInVM,
 				"sys",
 				"module",
 				"firmware_class",
@@ -258,14 +282,15 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
 
-		assertFirmwareFileExists(t, customFirmwareStorageDirectory)
+		assertFirmwareFileExistsInVM(t, vm.VM, customFirmwareStorageDirectory)
 	})
 }
 
-func assertFirmwareFileExists(t *testing.T, firmwareStorageDirectory string) {
+func assertFirmwareFileExistsInVM(t *testing.T, vm limavm.VM, firmwareStorageDirectory string) {
 	t.Helper()
-	entries, err := os.ReadDir(firmwareStorageDirectory)
+	entriesInString, _, err := vm.RunCommand("ls", firmwareStorageDirectory)
 	require.NoError(t, err)
+	entries := strings.Split(entriesInString, "\n")
 	require.Greater(t, len(entries), 0, "expected at least one firmware file in %s", firmwareStorageDirectory)
 }
 
@@ -276,12 +301,18 @@ func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName 
 	assert.Equal(t, wantStatus, state.Status)
 }
 
-func assertFileContent(t *testing.T, path string, wantContent string) {
+func assertFileContentInVM(t *testing.T, vm limavm.VM, path string, wantContent string) {
 	t.Helper()
-	gotContent, err := os.ReadFile(path)
+	gotContent, err := vm.ReadFile(path)
 	if assert.NoError(t, err) {
-		assert.Equal(t, wantContent, string(gotContent))
+		assert.Equal(t, wantContent, gotContent)
 	}
+}
+
+func requireFileExistsInVM(t *testing.T, vm limavm.VM, path string) {
+	t.Helper()
+	_, stderr, err := vm.RunCommand("test", "-e", path)
+	require.NoError(t, err, "failed to check file existence %s in VM: stderr: %s", path, stderr)
 }
 
 func requireSameMountNamespace(t testing.TB, vm limavm.Debian, pid uint) {
@@ -332,13 +363,16 @@ func getContainerState(runtime limavm.Runnable, containerName string) (specs.Sta
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+func generateBundle(t *testing.T, targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+	t.Helper()
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
 	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0o755); err != nil {
 		return err
 	}
+	t.Cleanup(func() { _ = os.RemoveAll(targetDir) })
+
 	firmwarePath := filepath.Join(targetDir, bundleRoot, firmwareName)
 	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0o644); err != nil {
 		return err
@@ -367,4 +401,25 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 		return err
 	}
 	return nil
+}
+
+func copyToVM(t *testing.T, vm limavm.VM, sourcePath string) (string, error) {
+	t.Helper()
+	shortEnoughPath := filepath.Join("/tmp", filepath.Base(sourcePath))
+	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
+	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(shortEnoughPath) })
+
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(shortEnoughPath)+"/")
+	copyOutput, err := limaCopyCommand.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
+	}
+	t.Cleanup(func() {
+		limaCleanupCommand := exec.Command("limactl", "shell", vm.Name(), "rm", "-rf", shortEnoughPath)
+		_ = limaCleanupCommand.Run()
+	})
+	return shortEnoughPath, nil
 }
