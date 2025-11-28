@@ -369,10 +369,11 @@ func generateBundleInVM(t *testing.T, vm limavm.VM, remoteprocName string, names
 	}
 
 	bundlePathInVM, err := vm.Copy(bundlePathOnHost)
-	// Copy the bundle to the VM
+
 	if err != nil {
 		return "", err
 	}
 	t.Cleanup(func() { _ = vm.RemoveFile(bundlePathInVM) })
+
 	return bundlePathInVM, nil
 }
