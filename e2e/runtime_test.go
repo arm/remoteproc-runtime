@@ -412,7 +412,7 @@ func copyToVM(t *testing.T, vm limavm.VM, sourcePath string) (string, error) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(shortEnoughPath) })
 
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+shortEnoughPath)
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(shortEnoughPath)+"/")
 	copyOutput, err := limaCopyCommand.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
