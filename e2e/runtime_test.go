@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -43,14 +42,12 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := t.TempDir()
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", copiedBundlePathInVM,
+			"--bundle", bundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
@@ -79,12 +76,10 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := t.TempDir()
-		require.NoError(t, generateBundle(bundlePath, "other-processor"))
-		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		bundlePathInVM, err := generateBundleInVM(t, vm.VM, "other-processor")
 		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
 		assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor", "stderr: %s", stderr)
 	})
 
@@ -98,12 +93,10 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := t.TempDir()
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
 		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", copiedBundlePathInVM, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
 		pid, err := getContainerPid(installedRuntime, containerName)
@@ -129,15 +122,13 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := t.TempDir()
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
 		require.NoError(t, err)
 		pidFile := filepath.Join(dirMountedInVM, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", copiedBundlePathInVM,
+			"--bundle", bundlePathInVM,
 			"--pid-file", pidFile,
 			containerName,
 		)
@@ -164,17 +155,16 @@ func TestRuntime(t *testing.T) {
 
 			uniqueID := testID(t)
 			containerName := uniqueID
-			bundlePath := t.TempDir()
-			require.NoError(t, generateBundle(
-				bundlePath,
+			bundlePathInVM, err := generateBundleInVM(
+				t,
+				vm.VM,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
-			))
-			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			)
 			require.NoError(t, err)
 			_, stderr, err := installedRuntimeSudo.Run(
 				"create",
-				"--bundle", copiedBundlePathInVM,
+				"--bundle", bundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -201,19 +191,17 @@ func TestRuntime(t *testing.T) {
 			}
 			defer func() { _ = sim.Stop() }()
 
-			uniqueID := testID(t)
-			containerName := uniqueID
-			bundlePath := t.TempDir()
-			require.NoError(t, generateBundle(
-				bundlePath,
+			containerName := testID(t)
+			bundlePathInVM, err := generateBundleInVM(
+				t,
+				vm.VM,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
-			))
-			copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+			)
 			require.NoError(t, err)
 			_, stderr, err := installedRuntime.Run(
 				"create",
-				"--bundle", copiedBundlePathInVM,
+				"--bundle", bundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -241,16 +229,13 @@ func TestRuntime(t *testing.T) {
 		}
 		defer func() { _ = sim.Stop() }()
 
-		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := t.TempDir()
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		copiedBundlePathInVM, err := copyToVM(t, vm.VM, bundlePath)
+		containerName := testID(t)
+		bundlePathInVM, err := generateBundleInVM(t, vm.VM, remoteprocName)
 		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", copiedBundlePathInVM,
+			"--bundle", bundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
@@ -347,17 +332,18 @@ func getContainerState(runtime limavm.Runnable, containerName string) (specs.Sta
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+func generateBundleInVM(t *testing.T, vm limavm.VM, remoteprocName string, namespaces ...specs.LinuxNamespace) (string, error) {
+	bundlePathOnHost := t.TempDir()
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
-	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0o755); err != nil {
-		return err
+	if err := os.MkdirAll(filepath.Join(bundlePathOnHost, bundleRoot), 0o755); err != nil {
+		return "", err
 	}
 
-	firmwarePath := filepath.Join(targetDir, bundleRoot, firmwareName)
+	firmwarePath := filepath.Join(bundlePathOnHost, bundleRoot, firmwareName)
 	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0o644); err != nil {
-		return err
+		return "", err
 	}
 
 	spec := &specs.Spec{
@@ -374,35 +360,20 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 		Linux: &specs.Linux{Namespaces: namespaces},
 	}
 
-	specPath := filepath.Join(targetDir, "config.json")
+	specPath := filepath.Join(bundlePathOnHost, "config.json")
 	specData, err := json.Marshal(spec)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if err := os.WriteFile(specPath, specData, 0o644); err != nil {
-		return err
+		return "", err
 	}
-	return nil
-}
 
-func copyToVM(t *testing.T, vm limavm.VM, sourcePath string) (string, error) {
-	t.Helper()
-	shortEnoughPath := filepath.Join("/tmp", filepath.Base(filepath.Dir(sourcePath)))
-	fmt.Printf("Copying %s to VM at %s\n", sourcePath, shortEnoughPath)
-	copyCommand := exec.Command("cp", "-r", sourcePath, shortEnoughPath)
-	if copyOutput, err := copyCommand.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, copyOutput)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(shortEnoughPath) })
-
-	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", shortEnoughPath, vm.Name()+":"+filepath.Dir(shortEnoughPath)+"/")
-	copyOutput, err := limaCopyCommand.CombinedOutput()
+	bundlePathInVM, err := vm.Copy(bundlePathOnHost)
+	// Copy the bundle to the VM
 	if err != nil {
-		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
+		return "", err
 	}
-	t.Cleanup(func() {
-		limaCleanupCommand := exec.Command("limactl", "shell", vm.Name(), "rm", "-rf", shortEnoughPath)
-		_ = limaCleanupCommand.Run()
-	})
-	return shortEnoughPath, nil
+	t.Cleanup(func() { _ = vm.RemoveFile(bundlePathInVM) })
+	return bundlePathInVM, nil
 }
