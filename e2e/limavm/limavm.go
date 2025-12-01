@@ -3,7 +3,9 @@ package limavm
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
@@ -32,6 +34,32 @@ func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
 
 func (vm VM) Cleanup() {
 	_ = scripts.TeardownLimaVM(vm.name)
+}
+
+func (vm VM) Copy(sourcePathInHost string, destPathInVM string) (string, error) {
+	if err := os.CopyFS(destPathInVM, os.DirFS(sourcePathInHost)); err != nil {
+		return "", fmt.Errorf("failed to copy files to temporary location: %w: %s", err, destPathInVM)
+	}
+
+	limaCopyCommand := exec.Command("limactl", "copy", "--recursive", destPathInVM, vm.name+":"+filepath.Dir(destPathInVM)+"/")
+	copyOutput, err := limaCopyCommand.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to copy files to VM: %w: %s", err, copyOutput)
+	}
+
+	err = os.RemoveAll(destPathInVM)
+	if err != nil {
+		return "", fmt.Errorf("failed to remove temporary copied files: %w: %s", err, destPathInVM)
+	}
+	return destPathInVM, nil
+}
+
+func (vm VM) RemoveFile(pathInVM string) error {
+	_, stderr, err := vm.RunCommand("rm", "-rf", pathInVM)
+	if err != nil {
+		return fmt.Errorf("failed to remove file %s: %w: %s", pathInVM, err, stderr)
+	}
+	return nil
 }
 
 func (vm VM) cmd(name string, args ...string) *exec.Cmd {

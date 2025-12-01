@@ -42,12 +42,12 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", bundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateCreated)
@@ -76,10 +76,10 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, "other-processor"))
+		bundlePathInVM, err := generateBundleInVM(t, vm, "other-processor")
+		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
 		assert.ErrorContains(t, err, "remote processor other-processor does not exist, available remote processors: some-processor", "stderr: %s", stderr)
 	})
 
@@ -93,10 +93,10 @@ func TestRuntime(t *testing.T) {
 
 		uniqueID := testID(t)
 		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
+		require.NoError(t, err)
 
-		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePath, containerName)
+		_, stderr, err := installedRuntime.Run("create", "--bundle", bundlePathInVM, containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
 		pid, err := getContainerPid(installedRuntime, containerName)
@@ -120,15 +120,14 @@ func TestRuntime(t *testing.T) {
 		}
 		defer func() { _ = sim.Stop() }()
 
-		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
-		pidFile := filepath.Join(dirMountedInVM, uniqueID, "container.pid")
+		containerName := testID(t)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
+		require.NoError(t, err)
+		pidFile := filepath.Join(dirMountedInVM, "container.pid")
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", bundlePathInVM,
 			"--pid-file", pidFile,
 			containerName,
 		)
@@ -155,15 +154,16 @@ func TestRuntime(t *testing.T) {
 
 			uniqueID := testID(t)
 			containerName := uniqueID
-			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-			require.NoError(t, generateBundle(
-				bundlePath,
+			bundlePathInVM, err := generateBundleInVM(
+				t,
+				vm,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
-			))
+			)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntimeSudo.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", bundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -190,17 +190,17 @@ func TestRuntime(t *testing.T) {
 			}
 			defer func() { _ = sim.Stop() }()
 
-			uniqueID := testID(t)
-			containerName := uniqueID
-			bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-			require.NoError(t, generateBundle(
-				bundlePath,
+			containerName := testID(t)
+			bundlePathInVM, err := generateBundleInVM(
+				t,
+				vm,
 				remoteprocName,
 				specs.LinuxNamespace{Type: specs.MountNamespace},
-			))
+			)
+			require.NoError(t, err)
 			_, stderr, err := installedRuntime.Run(
 				"create",
-				"--bundle", bundlePath,
+				"--bundle", bundlePathInVM,
 				containerName)
 			require.NoError(t, err, "stderr: %s", stderr)
 			t.Cleanup(func() {
@@ -228,14 +228,13 @@ func TestRuntime(t *testing.T) {
 		}
 		defer func() { _ = sim.Stop() }()
 
-		uniqueID := testID(t)
-		containerName := uniqueID
-		bundlePath := filepath.Join(dirMountedInVM, uniqueID)
-		require.NoError(t, generateBundle(bundlePath, remoteprocName))
+		containerName := testID(t)
+		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
+		require.NoError(t, err)
 
 		_, stderr, err := installedRuntime.Run(
 			"create",
-			"--bundle", bundlePath,
+			"--bundle", bundlePathInVM,
 			containerName)
 		require.NoError(t, err, "stderr: %s", stderr)
 
@@ -332,16 +331,18 @@ func getContainerState(runtime limavm.Runnable, containerName string) (specs.Sta
 	return state, nil
 }
 
-func generateBundle(targetDir string, remoteprocName string, namespaces ...specs.LinuxNamespace) error {
+func generateBundleInVM(t *testing.T, vm limavm.Debian, remoteprocName string, namespaces ...specs.LinuxNamespace) (string, error) {
+	bundlePathOnHost := t.TempDir()
 	const bundleRoot = "rootfs"
 	const firmwareName = "hello_world.elf"
 
-	if err := os.MkdirAll(filepath.Join(targetDir, bundleRoot), 0o755); err != nil {
-		return err
+	if err := os.MkdirAll(filepath.Join(bundlePathOnHost, bundleRoot), 0o755); err != nil {
+		return "", err
 	}
-	firmwarePath := filepath.Join(targetDir, bundleRoot, firmwareName)
+
+	firmwarePath := filepath.Join(bundlePathOnHost, bundleRoot, firmwareName)
 	if err := os.WriteFile(firmwarePath, []byte("pretend binary"), 0o644); err != nil {
-		return err
+		return "", err
 	}
 
 	spec := &specs.Spec{
@@ -358,13 +359,20 @@ func generateBundle(targetDir string, remoteprocName string, namespaces ...specs
 		Linux: &specs.Linux{Namespaces: namespaces},
 	}
 
-	specPath := filepath.Join(targetDir, "config.json")
+	specPath := filepath.Join(bundlePathOnHost, "config.json")
 	specData, err := json.Marshal(spec)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if err := os.WriteFile(specPath, specData, 0o644); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+
+	bundlePathInVM, err := vm.Copy(bundlePathOnHost, filepath.Join("/tmp", testID(t)))
+	if err != nil {
+		return "", err
+	}
+	t.Cleanup(func() { _ = vm.RemoveFile(bundlePathInVM) })
+
+	return bundlePathInVM, nil
 }
