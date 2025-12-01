@@ -113,7 +113,7 @@ func TestRuntime(t *testing.T) {
 	})
 
 	t.Run("writes pid to file specified by --pid-file", func(t *testing.T) {
-		remoteprocName := "owa-device"
+		remoteprocName := "oh-what-a-device"
 		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
