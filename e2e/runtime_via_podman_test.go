@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -17,6 +18,10 @@ func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
 	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-podman")
+	cleaningPoint, err := ensureDir(rootpathPrefix)
+	require.NoError(t, err)
+	defer os.RemoveAll(cleaningPoint)
+
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 

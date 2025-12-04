@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,6 +20,10 @@ func TestDocker(t *testing.T) {
 	limavm.Require(t)
 
 	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-docker")
+	cleaningPoint, err := ensureDir(rootpathPrefix)
+	require.NoError(t, err)
+	defer os.RemoveAll(cleaningPoint)
+
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
