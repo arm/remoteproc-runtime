@@ -88,7 +88,7 @@ func (vm VM) RunCommand(name string, args ...string) (stdout, stderr string, err
 	return stdout, stderr, nil
 }
 
-func (vm VM) ReadFile(path string) (string, error) {
+func (vm VM) ReadFileAsString(path string) (string, error) {
 	stdout, stderr, err := vm.RunCommand("cat", path)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file %s: %w\nstderr:\n%s", path, err, stderr)
