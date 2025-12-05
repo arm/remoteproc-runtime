@@ -20,7 +20,7 @@ func TestPodman(t *testing.T) {
 	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-podman")
 	cleaningPoint, err := ensureDir(rootpathPrefix)
 	require.NoError(t, err)
-	defer os.RemoveAll(cleaningPoint)
+	defer func() { _ = os.RemoveAll(cleaningPoint) }()
 
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
