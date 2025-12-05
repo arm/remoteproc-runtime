@@ -15,7 +15,6 @@ func getTestNumber() uint {
 	return uint(testCounter.Add(1))
 }
 
-// ensureDir ensures the provided directory path exists, creating missing folders as needed.
 func ensureDir(path string) (string, error) {
 	cleaned := filepath.Clean(path)
 
