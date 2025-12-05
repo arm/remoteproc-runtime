@@ -78,7 +78,6 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
 	const repoURL = "https://github.com/arm/remoteproc-simulator.git"
 	const repoDirName = "remoteproc-simulator"
-	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
 
 	tempDir, err := os.MkdirTemp("", "remoteproc-simulator-*")
 	if err != nil {
@@ -88,15 +87,47 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 
 	repoDir := filepath.Join(tempDir, repoDirName)
 
+	err = gitClone(repoURL, repoDir, env)
+	if err != nil {
+		return "", err
+	}
+
+	err = gitCheckoutToLatestRelease(repoDir, env)
+	if err != nil {
+		return "", err
+	}
+
+	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
+	build := exec.Command(
+		"go", "build",
+		"-o", binOut,
+		"./cmd/remoteproc-simulator",
+	)
+	build.Dir = repoDir
+	build.Env = os.Environ()
+	for k, v := range env {
+		build.Env = append(build.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	if out, err := build.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("failed to build remoteproc simulator: %s\n%s", err, out)
+	}
+	return binOut, nil
+}
+
+func gitClone(repoURL, repoDir string, env map[string]string) error {
 	clone := exec.Command("git", "clone", "--quiet", repoURL, repoDir)
 	clone.Env = os.Environ()
 	for k, v := range env {
 		clone.Env = append(clone.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 	if out, err := clone.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to clone remoteproc simulator repository: %w\n%s", err, out)
+		return fmt.Errorf("failed to clone remoteproc simulator repository: %w\n%s", err, out)
 	}
+	return nil
+}
 
+func gitCheckoutToLatestRelease(repoDir string, env map[string]string) error {
 	tagCmd := exec.Command("git", "tag", "--list", "--sort=-version:refname")
 	tagCmd.Dir = repoDir
 	tagCmd.Env = os.Environ()
@@ -106,11 +137,11 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 
 	tagOutput, err := tagCmd.StdoutPipe()
 	if err != nil {
-		return "", fmt.Errorf("failed to create stdout pipe for tag listing: %w", err)
+		return fmt.Errorf("failed to create stdout pipe for tag listing: %w", err)
 	}
 
 	if err := tagCmd.Start(); err != nil {
-		return "", fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
+		return fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
 	}
 
 	var latestTag string
@@ -127,14 +158,14 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 		break
 	}
 	if err := scanner.Err(); err != nil {
-		return "", fmt.Errorf("failed to read tags for remoteproc simulator: %w", err)
+		return fmt.Errorf("failed to read tags for remoteproc simulator: %w", err)
 	}
 	if err := tagCmd.Wait(); err != nil {
-		return "", fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
+		return fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
 	}
 
 	if latestTag == "" {
-		return "", fmt.Errorf("no semantic version tag found in remoteproc simulator repository")
+		return fmt.Errorf("no semantic version tag found in remoteproc simulator repository")
 	}
 
 	checkout := exec.Command("git", "checkout", "--quiet", latestTag)
@@ -144,22 +175,7 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 		checkout.Env = append(checkout.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 	if out, err := checkout.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to checkout latest tag %s: %w\n%s", latestTag, err, out)
+		return fmt.Errorf("failed to checkout latest tag %s: %w\n%s", latestTag, err, out)
 	}
-
-	build := exec.Command(
-		"go", "build",
-		"-o", binOut,
-		"./cmd/remoteproc-simulator",
-	)
-	build.Dir = repoDir
-	build.Env = os.Environ()
-	for k, v := range env {
-		build.Env = append(build.Env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	if out, err := build.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to build remoteproc simulator: %s\n%s", err, out)
-	}
-	return binOut, nil
+	return nil
 }
