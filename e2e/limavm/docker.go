@@ -8,8 +8,8 @@ type Docker struct {
 	VM
 }
 
-func NewDocker(mountDir string) (Docker, error) {
-	vm, err := newVM("docker", mountDir)
+func NewDocker() (Docker, error) {
+	vm, err := newVM("docker")
 	if err != nil {
 		return Docker{}, err
 	}

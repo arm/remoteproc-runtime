@@ -8,9 +8,8 @@ TEMPLATE=""
 MOUNT_DIR=""
 
 usage() {
-    echo "Usage: $0 <template> <mount-dir>" >&2
+    echo "Usage: $0 <template>" >&2
     echo "  template:         Lima template to use (docker or podman)" >&2
-    echo "  mount-dir:        Directory attached in the vm" >&2
     exit 1
 }
 
@@ -22,7 +21,7 @@ cleanup_on_failure() {
 
 create_vm() {
     echo "Creating Lima VM..." >&2
-    if ! limactl create --tty=false --name "$VM_NAME" --set ".mounts += [{\"location\":\"$MOUNT_DIR\",\"writable\":true}]" "template://$TEMPLATE"; then
+    if ! limactl create --tty=false --name "$VM_NAME" "template://$TEMPLATE"; then
         echo "Error: Failed to create VM" >&2
         exit 1
     fi
@@ -38,12 +37,11 @@ start_vm() {
 }
 
 main() {
-    if [ $# -ne 2 ]; then
+    if [ $# -ne 1 ]; then
         usage
     fi
 
     TEMPLATE="$1"
-    MOUNT_DIR="$2"
 
     VM_NAME="remoteproc-test-vm-$(date +%s)"
     echo "Creating VM: $VM_NAME" >&2

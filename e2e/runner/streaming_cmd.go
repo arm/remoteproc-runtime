@@ -27,7 +27,7 @@ func (s *StreamingCmd) WithPrefix(prefix string) *StreamingCmd {
 	return s
 }
 
-func (s *StreamingCmd) Start() error {
+func (s *StreamingCmd) Start(output io.Writer) error {
 	s.cmd.Stdout = &s.stdout
 
 	stderr, err := s.cmd.StderrPipe()
@@ -39,7 +39,7 @@ func (s *StreamingCmd) Start() error {
 		return err
 	}
 
-	go s.streamOutput(stderr)
+	go s.streamOutput(stderr, output)
 
 	return nil
 }
@@ -61,13 +61,23 @@ func (s *StreamingCmd) Output() string {
 	return s.stdout.String()
 }
 
-func (s *StreamingCmd) streamOutput(reader io.Reader) {
+func (s *StreamingCmd) streamOutput(reader io.Reader, output io.Writer) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
+		text := scanner.Text()
+		var writable string
 		if s.prefix != "" {
-			fmt.Printf("%s: %s\n", s.prefix, scanner.Text())
+			writable = fmt.Sprintf("%s: %s", s.prefix, text)
 		} else {
-			fmt.Println(scanner.Text())
+			writable = text
 		}
+		fmt.Println(writable)
+		s.writeOutput(writable, output)
+	}
+}
+
+func (s *StreamingCmd) writeOutput(line string, output io.Writer) {
+	if output != nil {
+		_, _ = fmt.Fprintf(output, "%s\n", line)
 	}
 }
