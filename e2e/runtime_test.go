@@ -285,7 +285,7 @@ func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName 
 
 func assertFileContentInVM(t *testing.T, vm limavm.VM, path string, wantContent string) {
 	t.Helper()
-	gotContent, err := vm.ReadFile(path)
+	gotContent, err := vm.ReadFileAsString(path)
 	if assert.NoError(t, err) {
 		assert.Equal(t, wantContent, gotContent)
 	}

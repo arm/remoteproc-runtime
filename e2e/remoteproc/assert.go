@@ -31,7 +31,7 @@ func RequireState(t testing.TB, vm limavm.VM, deviceDir, wantState string) {
 }
 
 func assertFileContent(t assert.TestingT, vm limavm.VM, path, wantContent string) {
-	gotContent, err := vm.ReadFile(path)
+	gotContent, err := vm.ReadFileAsString(path)
 	if assert.NoError(t, err) {
 		assert.Equal(t, wantContent, gotContent)
 	}
