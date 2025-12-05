@@ -48,7 +48,7 @@ func TestPodman(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = sim.Stop() })
 
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 
 		stdout, stderr, err := vm.RunCommand(
 			"podman",
@@ -57,19 +57,19 @@ func TestPodman(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		containerID := strings.TrimSpace(stdout)
 		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 
 		_, stderr, err = vm.RunCommand("podman", "start", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 	})
 }

@@ -51,7 +51,7 @@ func TestDocker(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = sim.Stop() })
 
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 
 		containerID, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
@@ -59,20 +59,20 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 
 		_, stderr, err = vm.RunCommand("docker", "start", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 	})
 
@@ -107,7 +107,7 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), vm.VM, "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		stdout, stderr, err := vm.RunCommand("docker", "inspect", "--format={{.State.Pid}}", containerID)
 		require.NoError(t, err, "stderr: %s", stderr)
@@ -116,7 +116,7 @@ func TestDocker(t *testing.T) {
 
 		_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 		require.NoError(t, err)
-		remoteproc.RequireState(t, sim.DeviceDir(), vm.VM, "offline")
+		remoteproc.RequireState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 	})
 }
