@@ -66,20 +66,38 @@ func (r *Simulator) Start() error {
 func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeReader) error {
 	deadline := time.Now().Add(waitingTime)
 	scanner := bufio.NewScanner(outputBuf)
-	for scanner.Scan() {
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timeout waiting for simulator to create remoteproc device")
+	timer := time.NewTimer(time.Until(deadline))
+	defer timer.Stop()
+	scanCh := make(chan string)
+	errCh := make(chan error)
+
+	go func() {
+		for scanner.Scan() {
+			scanCh <- scanner.Text()
 		}
-		line := scanner.Text()
-		if strings.Contains(line, "Remoteproc initialized at") {
-			err := outputBuf.Close()
-			if err != nil {
-				return fmt.Errorf("failed to close output buffer: %w", err)
+		if err := scanner.Err(); err != nil {
+			errCh <- err
+		} else {
+			close(scanCh)
+		}
+	}()
+
+	for {
+		select {
+		case <-timer.C:
+			return fmt.Errorf("timeout waiting for simulator to create remoteproc device")
+		case line, ok := <-scanCh:
+			if !ok {
+				return fmt.Errorf("simulator output closed before remoteproc device was created")
 			}
-			return nil
+			if strings.Contains(line, "Remoteproc initialized at") {
+				_ = outputBuf.Close()
+				return nil
+			}
+		case err := <-errCh:
+			return fmt.Errorf("scanner error: %w", err)
 		}
 	}
-	panic("unreachable")
 }
 
 func (r *Simulator) Stop() error {
