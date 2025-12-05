@@ -8,7 +8,7 @@ TEMPLATE=""
 MOUNT_DIR=""
 
 usage() {
-    echo "Usage: $0 <template> <mount-dir>" >&2
+    echo "Usage: $0 <template>" >&2
     echo "  template:         Lima template to use (docker or podman)" >&2
     exit 1
 }
