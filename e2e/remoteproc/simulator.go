@@ -53,7 +53,10 @@ func (r *Simulator) Start() error {
 	r.cmd = streamer
 
 	if err := r.waitForBoot(15*time.Second, reader); err != nil {
-		_ = r.Stop()
+		stopError := r.Stop()
+		if stopError != nil {
+			return fmt.Errorf("simulator failed to create remoteproc device: %w: %s", err, stopError)
+		}
 		return fmt.Errorf("simulator failed to create remoteproc device: %w", err)
 	}
 
