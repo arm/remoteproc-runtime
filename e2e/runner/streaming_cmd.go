@@ -62,15 +62,14 @@ func (s *StreamingCmd) Output() string {
 }
 
 func (s *StreamingCmd) streamOutput(reader io.Reader, output io.Writer) {
+	format := "%s"
+	if s.prefix != "" {
+		format = s.prefix + ": %s"
+	}
+
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		text := scanner.Text()
-		var writable string
-		if s.prefix != "" {
-			writable = fmt.Sprintf("%s: %s", s.prefix, text)
-		} else {
-			writable = text
-		}
+		writable := fmt.Sprintf(format, scanner.Text())
 		fmt.Println(writable)
 		s.writeOutput(writable, output)
 	}
