@@ -64,6 +64,8 @@ func (r *Simulator) Start() error {
 }
 
 func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeReader) error {
+	const targetMessage = "Remoteproc initialized at"
+
 	deadline := time.Now().Add(waitingTime)
 	scanner := bufio.NewScanner(outputBuf)
 	timer := time.NewTimer(time.Until(deadline))
@@ -90,7 +92,7 @@ func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeRea
 			if !ok {
 				return fmt.Errorf("simulator output closed before remoteproc device was created")
 			}
-			if strings.Contains(line, "Remoteproc initialized at") {
+			if strings.Contains(line, targetMessage) {
 				_ = outputBuf.Close()
 				return nil
 			}
