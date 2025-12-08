@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
@@ -78,10 +79,12 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 	const version = "0.0.8"
 
 	artifactURL := fmt.Sprintf(
-		"https://github.com/arm/remoteproc-simulator/releases/download/v%s/remoteproc-simulator_%s_linux_arm64.tar.gz",
+		"https://github.com/arm/remoteproc-simulator/releases/download/v%s/remoteproc-simulator_%s_linux_%s.tar.gz",
 		version,
 		version,
+		runtime.GOARCH,
 	)
+	fmt.Println("runtime.GOARCH:", runtime.GOARCH)
 
 	downloader := exec.Command("curl", "-L", "-o", filepath.Join(binOutDir, "simulator.tar.gz"), artifactURL)
 	downloader.Env = os.Environ()
