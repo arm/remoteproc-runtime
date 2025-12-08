@@ -158,8 +158,8 @@ func TestRuntime(t *testing.T) {
 		pid, err := getContainerPid(installedRuntime, containerName)
 		require.NoError(t, err)
 		require.Greater(t, pid, 0)
-		requireFileExistsInVM(t, vm.VM, pidFile)
-		assertFileContentInVM(t, vm.VM, pidFile, fmt.Sprintf("%d", pid))
+		requireFileExistsInVM(t, vm, pidFile)
+		assertFileContentInVM(t, vm, pidFile, fmt.Sprintf("%d", pid))
 	})
 
 	t.Run("proxy process namespacing", func(t *testing.T) {
@@ -287,11 +287,11 @@ func TestRuntime(t *testing.T) {
 		require.NoError(t, err, "stderr: %s", stderr)
 		assertContainerStatus(t, installedRuntime, containerName, specs.StateRunning)
 
-		assertFirmwareFileExistsInVM(t, vm.VM, customFirmwareStorageDirectory)
+		assertFirmwareFileExistsInVM(t, vm, customFirmwareStorageDirectory)
 	})
 }
 
-func assertFirmwareFileExistsInVM(t *testing.T, vm limavm.VM, firmwareStorageDirectory string) {
+func assertFirmwareFileExistsInVM(t *testing.T, vm limavm.Debian, firmwareStorageDirectory string) {
 	t.Helper()
 	numberOfEntriesInString, _, err := vm.RunCommand("sh", "-c", fmt.Sprintf("ls -1 %s | wc -l", firmwareStorageDirectory))
 	require.NoError(t, err)
@@ -311,7 +311,7 @@ func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName 
 	assert.Equal(t, wantStatus, state.Status)
 }
 
-func assertFileContentInVM(t *testing.T, vm limavm.VM, path string, wantContent string) {
+func assertFileContentInVM(t *testing.T, vm limavm.Debian, path string, wantContent string) {
 	t.Helper()
 	gotContent, err := vm.ReadFileAsString(path)
 	if assert.NoError(t, err) {
@@ -319,7 +319,7 @@ func assertFileContentInVM(t *testing.T, vm limavm.VM, path string, wantContent 
 	}
 }
 
-func requireFileExistsInVM(t *testing.T, vm limavm.VM, path string) {
+func requireFileExistsInVM(t *testing.T, vm limavm.Debian, path string) {
 	t.Helper()
 	_, stderr, err := vm.RunCommand("test", "-e", path)
 	require.NoError(t, err, "failed to check file existence %s in VM: stderr: %s", path, stderr)
