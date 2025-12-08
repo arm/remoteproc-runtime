@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -77,11 +78,13 @@ func GithubRelease(ctx context.Context, owner, repoName, version, goos, goarch s
 }
 
 func getReleaseAssetURL(ctx context.Context, owner, repoName, version, goos, goarch string) (string, string, error) {
+	versionWithoutV := strings.TrimPrefix(version, "v")
+
 	var assetName string
 	if goos == "windows" {
-		assetName = fmt.Sprintf("%s_%s_%s_%s.zip", repoName, version, goos, goarch)
+		assetName = fmt.Sprintf("%s_%s_%s_%s.zip", repoName, versionWithoutV, goos, goarch)
 	} else {
-		assetName = fmt.Sprintf("%s_%s_%s_%s.tar.gz", repoName, version, goos, goarch)
+		assetName = fmt.Sprintf("%s_%s_%s_%s.tar.gz", repoName, versionWithoutV, goos, goarch)
 	}
 
 	releaseURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", owner, repoName, version)
@@ -124,7 +127,12 @@ func getReleaseAssetURL(ctx context.Context, owner, repoName, version, goos, goa
 		}
 	}
 
-	return "", "", fmt.Errorf("asset %s not found in release %s", assetName, version)
+	availableAssets := make([]string, len(release.Assets))
+	for i, asset := range release.Assets {
+		availableAssets[i] = asset.Name
+	}
+
+	return "", "", fmt.Errorf("asset %s not found in release %s, available assets: %v", assetName, version, availableAssets)
 }
 
 func downloadFile(ctx context.Context, url, targetPath string) error {
