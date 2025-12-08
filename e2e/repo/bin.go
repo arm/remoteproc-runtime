@@ -84,7 +84,6 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 		version,
 		runtime.GOARCH,
 	)
-	fmt.Println("runtime.GOARCH:", runtime.GOARCH)
 
 	downloader := exec.Command("curl", "-L", "-o", filepath.Join(binOutDir, "simulator.tar.gz"), artifactURL)
 	downloader.Env = os.Environ()
