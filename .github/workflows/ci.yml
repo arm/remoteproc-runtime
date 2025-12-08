@@ -54,15 +54,6 @@ jobs:
       - name: Run fast tests
         run: go test -v -race ./internal/...
 
-      - name: Download Remoteproc Simulator
-        uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
-        with:
-          repository: arm/remoteproc-simulator
-          tag: 'v0.0.8'
-          fileName: remoteproc-simulator_*_linux_amd64.tar.gz
-          out-file-path: remoteproc-simulator
-          extract: true
-
       - name: Install Remoteproc Simulator
         run: echo "$PWD/remoteproc-simulator" >> $GITHUB_PATH
 
