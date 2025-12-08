@@ -14,6 +14,8 @@ import (
 	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
+const Version = "v0.0.8"
+
 func DownloadSimulator(ctx context.Context, version, goos, goarch string) (string, error) {
 	return download.GithubRelease(ctx, "arm", "remoteproc-simulator", version, goos, goarch)
 }

@@ -33,6 +33,7 @@ func TestDocker(t *testing.T) {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
+
 	simulatorBin, err := remoteproc.DownloadSimulator(context.Background(), "v0.0.8", runtime.GOOS, runtime.GOARCH)
 	require.NoError(t, err)
 	installedSimulator, err := vm.InstallBin(simulatorBin)
