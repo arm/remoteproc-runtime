@@ -1,12 +1,10 @@
 package repo
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
@@ -78,6 +76,7 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
 	const repoURL = "https://github.com/arm/remoteproc-simulator.git"
 	const repoDirName = "remoteproc-simulator"
+	const tag = "v0.0.8"
 
 	tempDir, err := os.MkdirTemp("", "remoteproc-simulator-*")
 	if err != nil {
@@ -92,7 +91,7 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 		return "", err
 	}
 
-	err = gitCheckoutToLatestRelease(repoDir, env)
+	err = gitCheckoutToTag(repoDir, tag, env)
 	if err != nil {
 		return "", err
 	}
@@ -127,55 +126,15 @@ func gitClone(repoURL, repoDir string, env map[string]string) error {
 	return nil
 }
 
-func gitCheckoutToLatestRelease(repoDir string, env map[string]string) error {
-	tagCmd := exec.Command("git", "tag", "--list", "--sort=-version:refname")
-	tagCmd.Dir = repoDir
-	tagCmd.Env = os.Environ()
-	for k, v := range env {
-		tagCmd.Env = append(tagCmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	tagOutput, err := tagCmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to create stdout pipe for tag listing: %w", err)
-	}
-
-	if err := tagCmd.Start(); err != nil {
-		return fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
-	}
-
-	var latestTag string
-	scanner := bufio.NewScanner(tagOutput)
-	for scanner.Scan() {
-		tag := strings.TrimSpace(scanner.Text())
-		if tag == "" {
-			continue
-		}
-		if !strings.HasPrefix(tag, "v") {
-			continue
-		}
-		latestTag = tag
-		break
-	}
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("failed to read tags for remoteproc simulator: %w", err)
-	}
-	if err := tagCmd.Wait(); err != nil {
-		return fmt.Errorf("failed to list tags for remoteproc simulator: %w", err)
-	}
-
-	if latestTag == "" {
-		return fmt.Errorf("no semantic version tag found in remoteproc simulator repository")
-	}
-
-	checkout := exec.Command("git", "checkout", "--quiet", latestTag)
+func gitCheckoutToTag(repoDir, tag string, env map[string]string) error {
+	checkout := exec.Command("git", "checkout", "--quiet", tag)
 	checkout.Dir = repoDir
 	checkout.Env = os.Environ()
 	for k, v := range env {
 		checkout.Env = append(checkout.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 	if out, err := checkout.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to checkout latest tag %s: %w\n%s", latestTag, err, out)
+		return fmt.Errorf("failed to checkout tag %s: %w\n%s", tag, err, out)
 	}
 	return nil
 }
