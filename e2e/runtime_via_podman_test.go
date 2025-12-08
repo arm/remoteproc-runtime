@@ -17,10 +17,7 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-podman")
-	cleaningPoint, err := ensureDir(rootpathPrefix)
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(cleaningPoint) }()
+	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
 
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
 	require.NoError(t, err)
@@ -42,7 +39,7 @@ func TestPodman(t *testing.T) {
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-podman-device"
-		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefix).WithName(remoteprocName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}

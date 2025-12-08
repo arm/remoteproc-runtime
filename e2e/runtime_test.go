@@ -19,7 +19,8 @@ import (
 func TestRuntime(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefixInVM := filepath.Join("/tmp", "remoteproc-simulator-fake-root-for-standalone-runtime")
+	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
+
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
