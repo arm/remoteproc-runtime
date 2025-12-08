@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -31,7 +33,7 @@ func TestDocker(t *testing.T) {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
-	simulatorBin, err := repo.GetRemoteprocSimulator(t.TempDir())
+	simulatorBin, err := remoteproc.DownloadSimulator(context.Background(), "v0.0.8", runtime.GOOS, runtime.GOARCH)
 	require.NoError(t, err)
 	installedSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)

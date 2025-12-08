@@ -10,3 +10,6 @@ coverage.out
 # binaries
 /containerd-shim-remoteproc-v1
 /remoteproc-runtime
+
+# test downloads
+.downloads/

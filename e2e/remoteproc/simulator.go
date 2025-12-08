@@ -2,20 +2,27 @@ package remoteproc
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/arm/remoteproc-runtime/e2e/download"
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
+
+func DownloadSimulator(ctx context.Context, version, goos, goarch string) (string, error) {
+	return download.GithubRelease(ctx, "arm", "remoteproc-simulator", version, goos, goarch)
+}
 
 type Simulator struct {
 	vm      limavm.VM
 	bin     limavm.InstalledBin
 	cmd     *runner.StreamingCmd
+	binary  string
 	name    string
 	index   uint
 	rootDir string
