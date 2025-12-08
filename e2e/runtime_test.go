@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -293,15 +292,10 @@ func TestRuntime(t *testing.T) {
 
 func assertFirmwareFileExistsInVM(t *testing.T, vm limavm.Debian, firmwareStorageDirectory string) {
 	t.Helper()
-	numberOfEntriesInString, _, err := vm.RunCommand("sh", "-c", fmt.Sprintf("ls -1 %s | wc -l", firmwareStorageDirectory))
+	entries, err := vm.ReadDir(firmwareStorageDirectory)
 	require.NoError(t, err)
 
-	replacer := strings.NewReplacer(" ", "", "\t", "", "\n", "", "\r", "")
-	clean := replacer.Replace(numberOfEntriesInString)
-	numberOfEntries, err := strconv.Atoi(clean)
-	require.NoError(t, err)
-
-	require.Greater(t, numberOfEntries, 0, "expected at least one firmware file in %s", firmwareStorageDirectory)
+	require.Greater(t, len(entries), 0, "expected at least one firmware file in %s", firmwareStorageDirectory)
 }
 
 func assertContainerStatus(t testing.TB, runtime limavm.Runnable, containerName string, wantStatus specs.ContainerState) {

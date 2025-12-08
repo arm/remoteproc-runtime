@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/arm/remoteproc-runtime/e2e/limavm/scripts"
@@ -90,6 +91,21 @@ func (vm VM) ReadFileAsString(path string) (string, error) {
 		return "", fmt.Errorf("failed to read file %s: %w\nstderr:\n%s", path, err, stderr)
 	}
 	return stdout, nil
+}
+
+func (vm VM) ReadDir(path string) ([]string, error) {
+	stdout, stderr, err := vm.RunCommand("ls", "-1", path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory %s: %w\nstderr:\n%s", path, err, stderr)
+	}
+	entries := []string{}
+	for _, line := range strings.Split(stdout, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			entries = append(entries, line)
+		}
+	}
+	return entries, nil
 }
 
 type Runnable interface {
