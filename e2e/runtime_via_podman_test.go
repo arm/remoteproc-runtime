@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,7 +18,7 @@ func TestPodman(t *testing.T) {
 
 	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
 
-	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
 	vm, err := limavm.NewPodman()
@@ -28,7 +27,7 @@ func TestPodman(t *testing.T) {
 
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
-	simulatorBin, err := repo.BuildRemoteprocSimulator(rootpathPrefix, limavm.BinBuildEnv)
+	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
 	require.NoError(t, err)
 
 	vmSimulator, err := vm.InstallBin(simulatorBin)
