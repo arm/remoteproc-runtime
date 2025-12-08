@@ -13,19 +13,19 @@ import (
 )
 
 type Simulator struct {
-	installedVM limavm.InstalledBin
-	cmd         *runner.StreamingCmd
-	name        string
-	index       uint
-	rootDir     string
+	vm      limavm.InstalledBin
+	cmd     *runner.StreamingCmd
+	name    string
+	index   uint
+	rootDir string
 }
 
-func NewSimulator(installedVM limavm.InstalledBin, rootDir string) *Simulator {
+func NewSimulator(vm limavm.InstalledBin, rootDir string) *Simulator {
 	return &Simulator{
-		installedVM: installedVM,
-		rootDir:     rootDir,
-		index:       0,
-		name:        "some-cpu",
+		vm:      vm,
+		rootDir: rootDir,
+		index:   0,
+		name:    "some-cpu",
 	}
 }
 
@@ -40,7 +40,7 @@ func (r *Simulator) WithIndex(index uint) *Simulator {
 }
 
 func (r *Simulator) Start() error {
-	cmd := r.installedVM.Command(
+	cmd := r.vm.Command(
 		"--root-dir", r.rootDir,
 		"--index", fmt.Sprintf("%d", r.index),
 		"--name", r.name,
