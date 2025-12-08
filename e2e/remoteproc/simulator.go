@@ -34,11 +34,6 @@ func (r *Simulator) WithName(name string) *Simulator {
 	return r
 }
 
-func (r *Simulator) WithIndex(index uint) *Simulator {
-	r.index = index
-	return r
-}
-
 func (r *Simulator) Start() error {
 	cmd := r.vm.Command(
 		"--root-dir", r.rootDir,

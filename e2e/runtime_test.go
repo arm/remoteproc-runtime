@@ -40,7 +40,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-device"
-		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
@@ -78,7 +78,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
 		processorName := "some-processor"
-		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(processorName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(processorName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
@@ -101,7 +101,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
 		remoteprocName := "nice-processor"
-		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
@@ -133,7 +133,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("writes pid to file specified by --pid-file", func(t *testing.T) {
 		remoteprocName := "oh-what-a-device"
-		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
@@ -167,7 +167,7 @@ func TestRuntime(t *testing.T) {
 
 		t.Run("creates process in requested namespace when root", func(t *testing.T) {
 			remoteprocName := "lovely-blue-device"
-			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
@@ -208,7 +208,7 @@ func TestRuntime(t *testing.T) {
 
 		t.Run("creates process in user's namespace when not root", func(t *testing.T) {
 			remoteprocName := "lovely-green-device"
-			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+			sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
@@ -249,7 +249,7 @@ func TestRuntime(t *testing.T) {
 
 	t.Run("When a custom path is set in /sys/module/firmware_class/parameters/path, the firmware will be stored there", func(t *testing.T) {
 		remoteprocName := "nice-device"
-		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
+		sim := remoteproc.NewSimulator(installedSimulator, rootpathPrefixInVM).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
