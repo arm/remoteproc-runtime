@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
@@ -95,6 +97,8 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 	if err != nil {
 		return "", err
 	}
+
+	assert.DirExists(nil, repoDir, "remoteproc-simulator repo should be cloned")
 
 	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
 	build := exec.Command(
