@@ -91,6 +91,10 @@ func getReleaseAssetURL(ctx context.Context, owner, repoName, version, goos, goa
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
 	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -127,6 +131,10 @@ func downloadFile(ctx context.Context, url, targetPath string) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
+	}
+
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
 	client := &http.Client{Timeout: 5 * time.Minute}
