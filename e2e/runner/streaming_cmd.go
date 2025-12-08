@@ -9,10 +9,11 @@ import (
 )
 
 type StreamingCmd struct {
-	cmd    *exec.Cmd
-	prefix string
-	stdout bytes.Buffer
-	stopCh chan struct{}
+	cmd              *exec.Cmd
+	prefix           string
+	stdout           bytes.Buffer
+	additionalOutput io.Writer
+	stopCh           chan struct{}
 }
 
 func NewStreamingCmd(cmd *exec.Cmd) *StreamingCmd {
@@ -27,7 +28,7 @@ func (s *StreamingCmd) WithPrefix(prefix string) *StreamingCmd {
 	return s
 }
 
-func (s *StreamingCmd) Start(output io.Writer) error {
+func (s *StreamingCmd) Start() error {
 	s.cmd.Stdout = &s.stdout
 
 	stderr, err := s.cmd.StderrPipe()
@@ -39,7 +40,7 @@ func (s *StreamingCmd) Start(output io.Writer) error {
 		return err
 	}
 
-	go s.streamOutput(stderr, output)
+	go s.streamOutput(stderr, s.additionalOutput)
 
 	return nil
 }
@@ -79,4 +80,9 @@ func (s *StreamingCmd) writeOutput(line string, output io.Writer) {
 	if output != nil {
 		_, _ = fmt.Fprintf(output, "%s\n", line)
 	}
+}
+
+func (s *StreamingCmd) WithAdditionalOutput(output io.Writer) *StreamingCmd {
+	s.additionalOutput = output
+	return s
 }

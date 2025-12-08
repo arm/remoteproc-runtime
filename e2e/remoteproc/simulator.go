@@ -40,9 +40,9 @@ func (r *Simulator) Start() error {
 		"--index", fmt.Sprintf("%d", r.index),
 		"--name", r.name,
 	)
-	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator: " + r.name + ": ")
 	reader, writer := io.Pipe()
-	if err := streamer.Start(writer); err != nil {
+	streamer := runner.NewStreamingCmd(cmd).WithPrefix("simulator: " + r.name + ": ").WithAdditionalOutput(writer)
+	if err := streamer.Start(); err != nil {
 		return fmt.Errorf("failed to start simulator: %w", err)
 	}
 	r.cmd = streamer
