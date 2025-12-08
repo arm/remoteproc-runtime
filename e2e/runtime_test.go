@@ -44,7 +44,10 @@ func TestRuntime(t *testing.T) {
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		t.Cleanup(func() { _ = sim.Stop() })
+		t.Cleanup(func() {
+			_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+			_ = sim.Stop()
+		})
 
 		uniqueID := testID(t)
 		containerName := uniqueID
@@ -79,7 +82,10 @@ func TestRuntime(t *testing.T) {
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		t.Cleanup(func() { _ = sim.Stop() })
+		t.Cleanup(func() {
+			_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+			_ = sim.Stop()
+		})
 
 		uniqueID := testID(t)
 
@@ -99,7 +105,10 @@ func TestRuntime(t *testing.T) {
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		t.Cleanup(func() { _ = sim.Stop() })
+		t.Cleanup(func() {
+			_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+			_ = sim.Stop()
+		})
 
 		uniqueID := testID(t)
 		containerName := uniqueID
@@ -128,7 +137,10 @@ func TestRuntime(t *testing.T) {
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		t.Cleanup(func() { _ = sim.Stop() })
+		t.Cleanup(func() {
+			_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+			_ = sim.Stop()
+		})
 
 		containerName := testID(t)
 		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
@@ -159,7 +171,10 @@ func TestRuntime(t *testing.T) {
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
-			t.Cleanup(func() { _ = sim.Stop() })
+			t.Cleanup(func() {
+				_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+				_ = sim.Stop()
+			})
 
 			uniqueID := testID(t)
 			containerName := uniqueID
@@ -197,7 +212,10 @@ func TestRuntime(t *testing.T) {
 			if err := sim.Start(); err != nil {
 				t.Fatalf("failed to run simulator: %s", err)
 			}
-			t.Cleanup(func() { _ = sim.Stop() })
+			t.Cleanup(func() {
+				_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+				_ = sim.Stop()
+			})
 
 			containerName := testID(t)
 			bundlePathInVM, err := generateBundleInVM(
@@ -235,7 +253,10 @@ func TestRuntime(t *testing.T) {
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		t.Cleanup(func() { _ = sim.Stop() })
+		t.Cleanup(func() {
+			_, _, _ = vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+			_ = sim.Stop()
+		})
 
 		containerName := testID(t)
 		bundlePathInVM, err := generateBundleInVM(t, vm, remoteprocName)
