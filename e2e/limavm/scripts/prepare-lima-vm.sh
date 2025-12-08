@@ -43,7 +43,8 @@ main() {
 
     TEMPLATE="$1"
 
-    VM_NAME="remoteproc-test-vm-$(date +%s)"
+    unique_id="$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c8 2>/dev/null)"
+    VM_NAME="remoteproc-test-vm-${unique_id:-$(date +%s)}"
     echo "Creating VM: $VM_NAME" >&2
 
     create_vm
