@@ -5,8 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
@@ -76,69 +74,35 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 }
 
 func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
-	const repoURL = "https://github.com/arm/remoteproc-simulator.git"
 	const repoDirName = "remoteproc-simulator"
-	const tag = "v0.0.8"
+	const version = "0.0.8"
 
-	tempDir, err := os.MkdirTemp("", "remoteproc-simulator-*")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer func() { _ = os.RemoveAll(tempDir) }()
-
-	repoDir := filepath.Join(tempDir, repoDirName)
-
-	err = gitClone(repoURL, repoDir, env)
-	if err != nil {
-		return "", err
-	}
-
-	err = gitCheckoutToTag(repoDir, tag, env)
-	if err != nil {
-		return "", err
-	}
-
-	assert.DirExists(nil, repoDir, "remoteproc-simulator repo should be cloned")
-
-	binOut := filepath.Join(binOutDir, "remoteproc-simulator")
-	build := exec.Command(
-		"go", "build",
-		"-o", binOut,
-		"./cmd/remoteproc-simulator",
+	artifactURL := fmt.Sprintf(
+		"https://github.com/arm/remoteproc-simulator/releases/download/v%s/remoteproc-simulator_%s_linux_arm64.tar.gz",
+		version,
+		version,
 	)
-	build.Dir = repoDir
-	build.Env = os.Environ()
+
+	downloader := exec.Command("curl", "-L", "-o", filepath.Join(binOutDir, "simulator.tar.gz"), artifactURL)
+	downloader.Env = os.Environ()
 	for k, v := range env {
-		build.Env = append(build.Env, fmt.Sprintf("%s=%s", k, v))
+		downloader.Env = append(downloader.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	if out, err := build.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("failed to build remoteproc simulator: %s\n%s", err, out)
+	if out, err := downloader.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("failed to download remoteproc-simulator: %s\n%s", err, out)
 	}
-	return binOut, nil
-}
 
-func gitClone(repoURL, repoDir string, env map[string]string) error {
-	clone := exec.Command("git", "clone", "--quiet", repoURL, repoDir)
-	clone.Env = os.Environ()
+	extractor := exec.Command("tar", "-xzf", filepath.Join(binOutDir, "simulator.tar.gz"), "-C", binOutDir)
+	extractor.Env = os.Environ()
 	for k, v := range env {
-		clone.Env = append(clone.Env, fmt.Sprintf("%s=%s", k, v))
+		extractor.Env = append(extractor.Env, fmt.Sprintf("%s=%s", k, v))
 	}
-	if out, err := clone.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to clone remoteproc simulator repository: %w\n%s", err, out)
-	}
-	return nil
-}
 
-func gitCheckoutToTag(repoDir, tag string, env map[string]string) error {
-	checkout := exec.Command("git", "checkout", "--quiet", tag)
-	checkout.Dir = repoDir
-	checkout.Env = os.Environ()
-	for k, v := range env {
-		checkout.Env = append(checkout.Env, fmt.Sprintf("%s=%s", k, v))
+	if out, err := extractor.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("failed to extract remoteproc-simulator: %s\n%s", err, out)
 	}
-	if out, err := checkout.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to checkout tag %s: %w\n%s", tag, err, out)
-	}
-	return nil
+
+	simulatorPath := filepath.Join(binOutDir, repoDirName)
+	return simulatorPath, nil
 }
