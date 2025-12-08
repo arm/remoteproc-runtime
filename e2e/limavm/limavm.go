@@ -24,10 +24,6 @@ func newVM(template string) (VM, error) {
 	return VM{name: vmName}, err
 }
 
-func (vm VM) Name() string {
-	return vm.name
-}
-
 func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
 	installPath, err := scripts.InstallBin(vm.name, binToInstall)
 	if err != nil {
