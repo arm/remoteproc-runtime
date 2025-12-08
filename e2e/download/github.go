@@ -68,7 +68,7 @@ func GithubRelease(ctx context.Context, owner, repoName, version, goos, goarch s
 		return "", fmt.Errorf("failed to extract archive: %w", err)
 	}
 
-	os.Remove(archivePath)
+	_ = os.Remove(archivePath)
 
 	if err := os.Chmod(executablePath, 0o755); err != nil {
 		return "", fmt.Errorf("failed to make file executable: %w", err)
@@ -103,7 +103,7 @@ func getReleaseAssetURL(ctx context.Context, owner, repoName, version, goos, goa
 	if err != nil {
 		return "", "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -150,7 +150,7 @@ func downloadFile(ctx context.Context, url, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -162,15 +162,15 @@ func downloadFile(ctx context.Context, url, targetPath string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return err
 	}
 
 	if err := out.Close(); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return err
 	}
 
@@ -189,13 +189,13 @@ func extractTarGz(archivePath, extractDir string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	gzr, err := gzip.NewReader(f)
 	if err != nil {
 		return err
 	}
-	defer gzr.Close()
+	defer func() { _ = gzr.Close() }()
 
 	tr := tar.NewReader(gzr)
 
@@ -226,10 +226,12 @@ func extractTarGz(archivePath, extractDir string) error {
 			}
 
 			if _, err := io.Copy(outFile, tr); err != nil {
-				outFile.Close()
+				_ = outFile.Close()
 				return err
 			}
-			outFile.Close()
+			if err := outFile.Close(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -241,7 +243,7 @@ func extractZip(archivePath, extractDir string) error {
 	if err != nil {
 		return err
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	for _, f := range r.File {
 		target := filepath.Join(extractDir, f.Name)
@@ -264,13 +266,15 @@ func extractZip(archivePath, extractDir string) error {
 
 		rc, err := f.Open()
 		if err != nil {
-			outFile.Close()
+			_ = outFile.Close()
 			return err
 		}
 
 		_, err = io.Copy(outFile, rc)
-		rc.Close()
-		outFile.Close()
+		_ = rc.Close()
+		if closeErr := outFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 
 		if err != nil {
 			return err
