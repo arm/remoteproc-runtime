@@ -19,9 +19,13 @@ var BinBuildEnv = map[string]string{
 	"GOOS": "linux",
 }
 
-func newVM(template string, mountDir string) (VM, error) {
-	vmName, err := scripts.PrepareLimaVM(template, mountDir)
+func newVM(template string) (VM, error) {
+	vmName, err := scripts.PrepareLimaVM(template)
 	return VM{name: vmName}, err
+}
+
+func (vm VM) Name() string {
+	return vm.name
 }
 
 func (vm VM) InstallBin(binToInstall string) (InstalledBin, error) {
@@ -84,6 +88,14 @@ func (vm VM) RunCommand(name string, args ...string) (stdout, stderr string, err
 	return stdout, stderr, nil
 }
 
+func (vm VM) ReadFileAsString(path string) (string, error) {
+	stdout, stderr, err := vm.RunCommand("cat", path)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file %s: %w\nstderr:\n%s", path, err, stderr)
+	}
+	return stdout, nil
+}
+
 type Runnable interface {
 	Run(args ...string) (stdout, stderr string, err error)
 }
@@ -95,6 +107,10 @@ type InstalledBin struct {
 
 func (b InstalledBin) Run(args ...string) (stdout, stderr string, err error) {
 	return b.vm.RunCommand(b.pathToBin, args...)
+}
+
+func (b InstalledBin) Command(args ...string) *exec.Cmd {
+	return b.vm.cmd(b.pathToBin, args...)
 }
 
 func (b InstalledBin) Path() string {

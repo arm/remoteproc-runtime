@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -17,11 +18,12 @@ import (
 func TestDocker(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefix := t.TempDir()
-	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefix, limavm.BinBuildEnv)
+	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
+
+	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
 
-	vm, err := limavm.NewDocker(rootpathPrefix)
+	vm, err := limavm.NewDocker()
 	require.NoError(t, err)
 	defer vm.Cleanup()
 
@@ -29,19 +31,23 @@ func TestDocker(t *testing.T) {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
+	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	require.NoError(t, err)
+	vmSimulator, err := vm.InstallBin(simulatorBin)
+	require.NoError(t, err)
 
 	imageName := "test-image"
 	require.NoError(t, vm.BuildImage("../testdata", imageName))
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
-		remoteprocName := "yolo-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		remoteprocName := "yolo-docker-device"
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 
 		containerID, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
@@ -49,29 +55,29 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 
 		_, stderr, err = vm.RunCommand("docker", "start", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		_, stderr, err = vm.RunCommand("docker", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 	})
 
 	t.Run("errors when requested remoteproc name doesn't exist", func(t *testing.T) {
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName("a-processor")
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefixInVM).WithName("a-processor").WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
-		defer func() { _ = sim.Stop() }()
+		t.Cleanup(func() { _ = sim.Stop() })
 
 		_, stderr, err := vm.RunCommand(
 			"docker", "run", "-d",
@@ -79,12 +85,13 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
 			imageName)
 		assert.Error(t, err)
-		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: a-processor")
+		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: ")
+		assert.Contains(t, stderr, "a-processor")
 	})
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
-		remoteprocName := "yolo-device"
-		sim := remoteproc.NewSimulator(rootpathPrefix).WithName(remoteprocName)
+		remoteprocName := "another-yolo-docker-device"
+		sim := remoteproc.NewSimulator(vmSimulator, rootpathPrefixInVM).WithName(remoteprocName).WithIndex(getTestNumber())
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
@@ -96,7 +103,7 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
 
 		stdout, stderr, err := vm.RunCommand("docker", "inspect", "--format={{.State.Pid}}", containerID)
 		require.NoError(t, err, "stderr: %s", stderr)
@@ -105,7 +112,7 @@ func TestDocker(t *testing.T) {
 
 		_, _, err = vm.RunCommand("kill", "-TERM", fmt.Sprintf("%d", pid))
 		require.NoError(t, err)
-		remoteproc.RequireState(t, sim.DeviceDir(), "offline")
+		remoteproc.RequireState(t, vm.VM, sim.DeviceDir(), "offline")
 		requireRecentFinishOfDockerContainer(t, vm, containerID)
 	})
 }

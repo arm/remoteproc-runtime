@@ -8,8 +8,8 @@ type Podman struct {
 	VM
 }
 
-func NewPodman(mountDir string) (Podman, error) {
-	vm, err := newVM("podman", mountDir)
+func NewPodman() (Podman, error) {
+	vm, err := newVM("podman")
 	if err != nil {
 		return Podman{}, err
 	}

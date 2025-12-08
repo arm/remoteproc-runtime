@@ -18,11 +18,11 @@ var (
 	teardownLimaVMScript = filepath.Join(scriptsDir, "teardown-lima-vm.sh")
 )
 
-func PrepareLimaVM(template string, mountDir string) (string, error) {
-	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
+func PrepareLimaVM(template string) (string, error) {
+	prepareCmd := exec.Command(prepareLimaVMScript, template)
 	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
-	if err := prepareStreamer.Start(); err != nil {
+	if err := prepareStreamer.Start(nil); err != nil {
 		return "", fmt.Errorf("failed to start prepare-lima script: %w", err)
 	}
 
@@ -42,7 +42,7 @@ func InstallBin(vmName string, binToInstall string) (string, error) {
 	installCmd := exec.Command(installBinScript, vmName, binToInstall)
 	installStreamer := runner.NewStreamingCmd(installCmd).WithPrefix("install-bin")
 
-	if err := installStreamer.Start(); err != nil {
+	if err := installStreamer.Start(nil); err != nil {
 		return "", fmt.Errorf("failed to start install-bin script: %w", err)
 	}
 
@@ -67,7 +67,7 @@ func BuildImage(vmName string, template string, buildContext string, imageName s
 	buildCmd := exec.Command(buildImageScript, vmName, template, buildContext, imageName)
 	buildStreamer := runner.NewStreamingCmd(buildCmd).WithPrefix("build-image")
 
-	if err := buildStreamer.Start(); err != nil {
+	if err := buildStreamer.Start(nil); err != nil {
 		return fmt.Errorf("failed to start build-image script: %w", err)
 	}
 
