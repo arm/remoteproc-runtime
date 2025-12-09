@@ -13,7 +13,7 @@ import (
 )
 
 type Simulator struct {
-	vm      limavm.InstalledBin
+	bin     limavm.InstalledBin
 	cmd     *runner.StreamingCmd
 	name    string
 	index   uint

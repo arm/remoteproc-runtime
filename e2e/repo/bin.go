@@ -74,7 +74,7 @@ func BuildBothBins(binOutDir string, rootPathPrefix string, env map[string]strin
 	return []string{runtime, shim}, nil
 }
 
-func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, error) {
+func GetRemoteprocSimulator(binOutDir string) (string, error) {
 	const repoDirName = "remoteproc-simulator"
 	const version = "0.0.8"
 
@@ -87,20 +87,12 @@ func BuildRemoteprocSimulator(binOutDir string, env map[string]string) (string, 
 
 	downloader := exec.Command("curl", "-L", "-o", filepath.Join(binOutDir, "simulator.tar.gz"), artifactURL)
 	downloader.Env = os.Environ()
-	for k, v := range env {
-		downloader.Env = append(downloader.Env, fmt.Sprintf("%s=%s", k, v))
-	}
-
 	if out, err := downloader.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to download remoteproc-simulator: %s\n%s", err, out)
 	}
 
 	extractor := exec.Command("tar", "-xzf", filepath.Join(binOutDir, "simulator.tar.gz"), "-C", binOutDir)
 	extractor.Env = os.Environ()
-	for k, v := range env {
-		extractor.Env = append(extractor.Env, fmt.Sprintf("%s=%s", k, v))
-	}
-
 	if out, err := extractor.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to extract remoteproc-simulator: %s\n%s", err, out)
 	}

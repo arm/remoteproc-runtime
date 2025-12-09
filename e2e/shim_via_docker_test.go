@@ -18,7 +18,7 @@ import (
 func TestDocker(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
+	rootpathPrefixInVM := filepath.Join("/tmp", "fake-root")
 
 	bins, err := repo.BuildBothBins(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
@@ -31,7 +31,7 @@ func TestDocker(t *testing.T) {
 		_, err := vm.InstallBin(bin)
 		require.NoError(t, err)
 	}
-	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	simulatorBin, err := repo.GetRemoteprocSimulator(t.TempDir())
 	require.NoError(t, err)
 	installedSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)

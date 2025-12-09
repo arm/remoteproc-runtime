@@ -16,7 +16,7 @@ import (
 func TestPodman(t *testing.T) {
 	limavm.Require(t)
 
-	rootpathPrefixInVM := filepath.Join("/tmp", fmt.Sprintf("remoteproc-fake-root-%s", testID(t)))
+	rootpathPrefixInVM := filepath.Join("/tmp", "fake-root")
 
 	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
 	require.NoError(t, err)
@@ -27,7 +27,7 @@ func TestPodman(t *testing.T) {
 
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
-	simulatorBin, err := repo.BuildRemoteprocSimulator(t.TempDir(), limavm.BinBuildEnv)
+	simulatorBin, err := repo.GetRemoteprocSimulator(t.TempDir())
 	require.NoError(t, err)
 
 	installedSimulator, err := vm.InstallBin(simulatorBin)
