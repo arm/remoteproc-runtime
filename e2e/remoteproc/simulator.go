@@ -20,9 +20,9 @@ type Simulator struct {
 	rootDir string
 }
 
-func NewSimulator(vm limavm.InstalledBin, rootDir string) *Simulator {
+func NewSimulator(bin limavm.InstalledBin, rootDir string) *Simulator {
 	return &Simulator{
-		vm:      vm,
+		bin:     bin,
 		rootDir: rootDir,
 		index:   0,
 		name:    "some-cpu",
@@ -35,7 +35,7 @@ func (r *Simulator) WithName(name string) *Simulator {
 }
 
 func (r *Simulator) Start() error {
-	cmd := r.vm.Command(
+	cmd := r.bin.Command(
 		"--root-dir", r.rootDir,
 		"--index", fmt.Sprintf("%d", r.index),
 		"--name", r.name,
