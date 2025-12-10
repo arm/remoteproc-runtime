@@ -91,8 +91,7 @@ func TestDocker(t *testing.T) {
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", "other-processor"),
 			imageName)
 		assert.Error(t, err)
-		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: ")
-		assert.Contains(t, stderr, "a-processor")
+		assert.Contains(t, stderr, "remote processor other-processor does not exist, available remote processors: a-processor")
 	})
 
 	t.Run("killing process by pid stops the running container", func(t *testing.T) {
