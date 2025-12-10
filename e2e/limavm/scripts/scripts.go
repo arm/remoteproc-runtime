@@ -18,8 +18,8 @@ var (
 	teardownLimaVMScript = filepath.Join(scriptsDir, "teardown-lima-vm.sh")
 )
 
-func PrepareLimaVM(template string, mountDir string) (string, error) {
-	prepareCmd := exec.Command(prepareLimaVMScript, template, mountDir)
+func PrepareLimaVM(template string) (string, error) {
+	prepareCmd := exec.Command(prepareLimaVMScript, template)
 	prepareStreamer := runner.NewStreamingCmd(prepareCmd).WithPrefix("prepare-vm")
 
 	if err := prepareStreamer.Start(); err != nil {

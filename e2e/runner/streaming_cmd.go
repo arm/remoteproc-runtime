@@ -9,10 +9,11 @@ import (
 )
 
 type StreamingCmd struct {
-	cmd    *exec.Cmd
-	prefix string
-	stdout bytes.Buffer
-	stopCh chan struct{}
+	cmd              *exec.Cmd
+	prefix           string
+	stdout           bytes.Buffer
+	additionalOutput io.Writer
+	stopCh           chan struct{}
 }
 
 func NewStreamingCmd(cmd *exec.Cmd) *StreamingCmd {
@@ -39,7 +40,7 @@ func (s *StreamingCmd) Start() error {
 		return err
 	}
 
-	go s.streamOutput(stderr)
+	go s.streamOutput(stderr, s.additionalOutput)
 
 	return nil
 }
@@ -61,13 +62,27 @@ func (s *StreamingCmd) Output() string {
 	return s.stdout.String()
 }
 
-func (s *StreamingCmd) streamOutput(reader io.Reader) {
+func (s *StreamingCmd) streamOutput(reader io.Reader, output io.Writer) {
+	format := "%s"
+	if s.prefix != "" {
+		format = s.prefix + ": %s"
+	}
+
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		if s.prefix != "" {
-			fmt.Printf("%s: %s\n", s.prefix, scanner.Text())
-		} else {
-			fmt.Println(scanner.Text())
-		}
+		writable := fmt.Sprintf(format, scanner.Text())
+		fmt.Println(writable)
+		s.writeOutput(writable, output)
 	}
+}
+
+func (s *StreamingCmd) writeOutput(line string, output io.Writer) {
+	if output != nil {
+		_, _ = fmt.Fprintf(output, "%s\n", line)
+	}
+}
+
+func (s *StreamingCmd) WithAdditionalOutput(output io.Writer) *StreamingCmd {
+	s.additionalOutput = output
+	return s
 }
