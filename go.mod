@@ -9,6 +9,7 @@ require (
 	github.com/containerd/log v0.1.0
 	github.com/containerd/plugin v1.0.0
 	github.com/containerd/ttrpc v1.2.7
+	github.com/mholt/archiver/v4 v4.0.0-alpha.9
 	github.com/opencontainers/runtime-spec v1.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.10.1
@@ -45,7 +46,6 @@ require (
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
 	github.com/mdlayher/vsock v1.2.1 // indirect
-	github.com/mholt/archiver/v4 v4.0.0-alpha.9 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.4 // indirect
