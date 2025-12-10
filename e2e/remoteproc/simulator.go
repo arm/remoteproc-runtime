@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -14,10 +15,11 @@ import (
 	"github.com/arm/remoteproc-runtime/e2e/runner"
 )
 
-const Version = "v0.0.8"
-
-func DownloadSimulator(ctx context.Context, version, goos, goarch string) (string, error) {
-	return download.GithubRelease(ctx, "arm", "remoteproc-simulator", version, goos, goarch)
+func DownloadSimulator(ctx context.Context) (string, error) {
+	const version = "v0.0.8"
+	const goos = "linux"   // we only use simulator in linux VM
+	arch := runtime.GOARCH // vm inherits the host's arch
+	return download.GithubRelease(ctx, "arm", "remoteproc-simulator", version, goos, arch)
 }
 
 type Simulator struct {

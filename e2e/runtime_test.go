@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -33,7 +32,7 @@ func TestRuntime(t *testing.T) {
 	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
-	simulatorBin, err := remoteproc.DownloadSimulator(context.Background(), "v0.0.8", runtime.GOOS, runtime.GOARCH)
+	simulatorBin, err := remoteproc.DownloadSimulator(context.Background())
 	require.NoError(t, err)
 	installedSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)
