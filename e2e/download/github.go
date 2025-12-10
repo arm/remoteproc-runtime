@@ -1,9 +1,6 @@
 package download
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,6 +13,7 @@ import (
 	"time"
 
 	"github.com/arm/remoteproc-runtime/e2e/repo"
+	"github.com/mholt/archiver/v4"
 )
 
 var downloadLocks sync.Map
@@ -178,110 +176,50 @@ func downloadFile(ctx context.Context, url, targetPath string) error {
 }
 
 func extractArchive(archivePath, extractDir, goos string) error {
-	if goos == "windows" {
-		return extractZip(archivePath, extractDir)
-	}
-	return extractTarGz(archivePath, extractDir)
-}
-
-func extractTarGz(archivePath, extractDir string) error {
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = f.Close() }()
 
-	gzr, err := gzip.NewReader(f)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = gzr.Close() }()
-
-	tr := tar.NewReader(gzr)
-
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
+	handler := func(ctx context.Context, file archiver.FileInfo) error {
+		if file.IsDir() {
+			return nil
 		}
 
-		target := filepath.Join(extractDir, header.Name)
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0o755); err != nil {
-				return err
-			}
-		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-				return err
-			}
-
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(header.Mode))
-			if err != nil {
-				return err
-			}
-
-			if _, err := io.Copy(outFile, tr); err != nil {
-				_ = outFile.Close()
-				return err
-			}
-			if err := outFile.Close(); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func extractZip(archivePath, extractDir string) error {
-	r, err := zip.OpenReader(archivePath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = r.Close() }()
-
-	for _, f := range r.File {
-		target := filepath.Join(extractDir, f.Name)
-
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(target, 0o755); err != nil {
-				return err
-			}
-			continue
-		}
-
+		target := filepath.Join(extractDir, file.NameInArchive)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
 
-		outFile, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, file.Mode())
 		if err != nil {
 			return err
 		}
+		defer func() { _ = out.Close() }()
 
-		rc, err := f.Open()
-		if err != nil {
-			_ = outFile.Close()
-			return err
-		}
-
-		_, err = io.Copy(outFile, rc)
-		_ = rc.Close()
-		if closeErr := outFile.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-
+		rc, err := file.Open()
 		if err != nil {
 			return err
 		}
+		defer func() { _ = rc.Close() }()
+
+		_, err = io.Copy(out, rc)
+		return err
 	}
 
-	return nil
+	if goos == "windows" {
+		return archiver.Zip{}.Extract(context.Background(), f, handler)
+	}
+
+	gz := archiver.Gz{}
+	gzReader, err := gz.OpenReader(f)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = gzReader.Close() }()
+
+	return archiver.Tar{}.Extract(context.Background(), gzReader, handler)
 }
 
 func fileExists(path string) bool {
