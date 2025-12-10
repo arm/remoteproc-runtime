@@ -24,7 +24,6 @@ type Simulator struct {
 	vm      limavm.VM
 	bin     limavm.InstalledBin
 	cmd     *runner.StreamingCmd
-	binary  string
 	name    string
 	index   uint
 	rootDir string
