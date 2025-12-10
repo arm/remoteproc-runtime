@@ -100,12 +100,22 @@ func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeRea
 }
 
 func (r *Simulator) Stop() error {
-	if r.cmd != nil {
-		return r.cmd.Stop()
+	var killErr error
+	_, stderr, err := r.vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+	if err != nil {
+		killErr = fmt.Errorf("pkill failed: %w: stderr: %s", err, stderr)
 	}
-	_, _, err := r.vm.RunCommand("pkill", "-f", "remoteproc-simulator")
 
-	return err
+	if r.cmd != nil {
+		if err := r.cmd.Stop(); err != nil {
+			if killErr != nil {
+				return fmt.Errorf("multiple errors: %v; %v", killErr, err)
+			}
+			return err
+		}
+	}
+
+	return killErr
 }
 
 func (r *Simulator) DeviceDir() string {
