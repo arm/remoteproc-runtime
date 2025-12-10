@@ -17,9 +17,8 @@ import (
 
 func DownloadSimulator(ctx context.Context) (string, error) {
 	const version = "v0.0.8"
-	const goos = "linux"   // we only use simulator in linux VM
 	arch := runtime.GOARCH // vm inherits the host's arch
-	return download.GithubRelease(ctx, "arm", "remoteproc-simulator", version, goos, arch)
+	return download.RemoteprocSimulator(ctx, version, arch)
 }
 
 type Simulator struct {

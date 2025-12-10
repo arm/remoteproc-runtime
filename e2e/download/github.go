@@ -2,7 +2,6 @@ package download
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,14 +21,9 @@ func cacheDir() string {
 	return filepath.Join(repo.MustFindRootDir(), ".downloads")
 }
 
-func GithubRelease(ctx context.Context, owner, repoName, version, goos, goarch string) (string, error) {
-	executableName := repoName
-	if goos == "windows" {
-		executableName += ".exe"
-	}
-
-	extractDir := filepath.Join(cacheDir(), repoName, goos, goarch, version)
-	executablePath := filepath.Join(extractDir, executableName)
+func RemoteprocSimulator(ctx context.Context, version, goarch string) (string, error) {
+	extractDir := filepath.Join(cacheDir(), goarch, version)
+	executablePath := filepath.Join(extractDir, "remoteproc-simulator")
 
 	if fileExists(executablePath) {
 		return executablePath, nil
@@ -46,23 +40,22 @@ func GithubRelease(ctx context.Context, owner, repoName, version, goos, goarch s
 		return executablePath, nil
 	}
 
-	fmt.Printf("Downloading %s/%s %s for %s/%s...\n", owner, repoName, version, goos, goarch)
-
-	assetURL, assetName, err := getReleaseAssetURL(ctx, owner, repoName, version, goos, goarch)
-	if err != nil {
-		return "", err
-	}
+	fmt.Printf("Downloading remoteproc-simulator %s for %s...\n", version, goarch)
 
 	if err := os.MkdirAll(extractDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
+	versionWithoutV := strings.TrimPrefix(version, "v")
+	assetName := fmt.Sprintf("remoteproc-simulator_%s_linux_%s.tar.gz", versionWithoutV, goarch)
+	assetURL := fmt.Sprintf("https://github.com/arm/remoteproc-simulator/releases/download/%s/%s", version, assetName)
 	archivePath := filepath.Join(extractDir, assetName)
+
 	if err := downloadFile(ctx, assetURL, archivePath); err != nil {
 		return "", fmt.Errorf("failed to download file: %w", err)
 	}
 
-	if err := extractArchive(archivePath, extractDir, goos); err != nil {
+	if err := extractTarGz(archivePath, extractDir); err != nil {
 		return "", fmt.Errorf("failed to extract archive: %w", err)
 	}
 
@@ -75,72 +68,10 @@ func GithubRelease(ctx context.Context, owner, repoName, version, goos, goarch s
 	return executablePath, nil
 }
 
-func getReleaseAssetURL(ctx context.Context, owner, repoName, version, goos, goarch string) (string, string, error) {
-	versionWithoutV := strings.TrimPrefix(version, "v")
-
-	var assetName string
-	if goos == "windows" {
-		assetName = fmt.Sprintf("%s_%s_%s_%s.zip", repoName, versionWithoutV, goos, goarch)
-	} else {
-		assetName = fmt.Sprintf("%s_%s_%s_%s.tar.gz", repoName, versionWithoutV, goos, goarch)
-	}
-
-	releaseURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", owner, repoName, version)
-	req, err := http.NewRequestWithContext(ctx, "GET", releaseURL, nil)
-	if err != nil {
-		return "", "", err
-	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	client := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", "", err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", "", fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var release struct {
-		Assets []struct {
-			Name               string `json:"name"`
-			BrowserDownloadURL string `json:"browser_download_url"`
-		} `json:"assets"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", "", err
-	}
-
-	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			return asset.BrowserDownloadURL, assetName, nil
-		}
-	}
-
-	availableAssets := make([]string, len(release.Assets))
-	for i, asset := range release.Assets {
-		availableAssets[i] = asset.Name
-	}
-
-	return "", "", fmt.Errorf("asset %s not found in release %s, available assets: %v", assetName, version, availableAssets)
-}
-
 func downloadFile(ctx context.Context, url, targetPath string) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
-	}
-
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
 	client := &http.Client{Timeout: 5 * time.Minute}
@@ -175,7 +106,7 @@ func downloadFile(ctx context.Context, url, targetPath string) error {
 	return os.Rename(tmpPath, targetPath)
 }
 
-func extractArchive(archivePath, extractDir, goos string) error {
+func extractTarGz(archivePath, extractDir string) error {
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return err
@@ -206,10 +137,6 @@ func extractArchive(archivePath, extractDir, goos string) error {
 
 		_, err = io.Copy(out, rc)
 		return err
-	}
-
-	if goos == "windows" {
-		return archiver.Zip{}.Extract(context.Background(), f, handler)
 	}
 
 	gz := archiver.Gz{}
