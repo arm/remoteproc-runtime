@@ -86,13 +86,11 @@ func GetRemoteprocSimulator(binOutDir string) (string, error) {
 	)
 
 	downloader := exec.Command("curl", "-L", "-o", filepath.Join(binOutDir, "simulator.tar.gz"), artifactURL)
-	downloader.Env = os.Environ()
 	if out, err := downloader.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to download remoteproc-simulator: %s\n%s", err, out)
 	}
 
 	extractor := exec.Command("tar", "-xzf", filepath.Join(binOutDir, "simulator.tar.gz"), "-C", binOutDir)
-	extractor.Env = os.Environ()
 	if out, err := extractor.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("failed to extract remoteproc-simulator: %s\n%s", err, out)
 	}
