@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 )
 
 func BuildRuntimeBin(binOutDir string, rootPathPrefix string, env map[string]string) (string, error) {
