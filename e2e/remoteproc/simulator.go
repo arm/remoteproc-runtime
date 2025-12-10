@@ -13,6 +13,7 @@ import (
 )
 
 type Simulator struct {
+	vm      limavm.VM
 	bin     limavm.InstalledBin
 	cmd     *runner.StreamingCmd
 	name    string
@@ -20,8 +21,9 @@ type Simulator struct {
 	rootDir string
 }
 
-func NewSimulator(bin limavm.InstalledBin, rootDir string) *Simulator {
+func NewSimulator(bin limavm.InstalledBin, vm limavm.VM, rootDir string) *Simulator {
 	return &Simulator{
+		vm:      vm,
 		bin:     bin,
 		rootDir: rootDir,
 		index:   0,
@@ -101,7 +103,9 @@ func (r *Simulator) Stop() error {
 	if r.cmd != nil {
 		return r.cmd.Stop()
 	}
-	return nil
+	_, _, err := r.vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+
+	return err
 }
 
 func (r *Simulator) DeviceDir() string {
