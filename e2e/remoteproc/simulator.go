@@ -153,10 +153,6 @@ func DownloadSimulator(ctx context.Context) (string, error) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	if fileExists(executablePath) {
-		return executablePath, nil
-	}
-
 	fmt.Printf("Downloading remoteproc-simulator %s for %s...\n", version, arch)
 
 	if err := os.MkdirAll(extractDir, 0o755); err != nil {
