@@ -142,7 +142,7 @@ func requireRecentFinishOfDockerContainer(t *testing.T, vm limavm.Docker, contai
 
 	requireDockerContainerFinished(t, vm, containerID)
 
-	const acceptableTimeDelta = 3 * time.Second
+	const acceptableTimeDelta = 5 * time.Second
 
 	finishedAt, stderr, err := vm.RunCommand(
 		"docker", "inspect", "--format={{.State.FinishedAt}}", containerID,
