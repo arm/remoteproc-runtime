@@ -1,7 +1,9 @@
 package remoteproc
 
 import (
+	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -16,7 +18,6 @@ import (
 	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/arm/remoteproc-runtime/e2e/runner"
-	"github.com/mholt/archiver/v4"
 )
 
 type Simulator struct {
@@ -229,40 +230,45 @@ func extractTarGz(archivePath, extractDir string) error {
 	}
 	defer func() { _ = f.Close() }()
 
-	handler := func(ctx context.Context, file archiver.FileInfo) error {
-		if file.IsDir() {
-			return nil
+	gzr, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = gzr.Close() }()
+
+	tr := tar.NewReader(gzr)
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
 		}
 
-		target := filepath.Join(extractDir, file.NameInArchive)
+		if header.Typeflag == tar.TypeDir {
+			continue
+		}
+
+		target := filepath.Join(extractDir, header.Name)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
 
-		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, file.Mode())
+		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(header.Mode))
 		if err != nil {
 			return err
 		}
-		defer func() { _ = out.Close() }()
 
-		rc, err := file.Open()
-		if err != nil {
+		if _, err := io.Copy(out, tr); err != nil {
+			_ = out.Close()
 			return err
 		}
-		defer func() { _ = rc.Close() }()
-
-		_, err = io.Copy(out, rc)
-		return err
+		_ = out.Close()
 	}
 
-	gz := archiver.Gz{}
-	gzReader, err := gz.OpenReader(f)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = gzReader.Close() }()
-
-	return archiver.Tar{}.Extract(context.Background(), gzReader, handler)
+	return nil
 }
 
 func fileExists(path string) bool {
