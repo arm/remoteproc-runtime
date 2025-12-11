@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -27,9 +28,9 @@ func TestPodman(t *testing.T) {
 
 	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
-	simulatorBin, err := repo.GetRemoteprocSimulator(t.TempDir())
-	require.NoError(t, err)
 
+	simulatorBin, err := remoteproc.DownloadSimulator(context.Background())
+	require.NoError(t, err)
 	installedSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)
 

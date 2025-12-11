@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,9 +32,8 @@ func TestRuntime(t *testing.T) {
 	installedRuntime, err := vm.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
-	simulatorBin, err := repo.GetRemoteprocSimulator(t.TempDir())
+	simulatorBin, err := remoteproc.DownloadSimulator(context.Background())
 	require.NoError(t, err)
-
 	installedSimulator, err := vm.InstallBin(simulatorBin)
 	require.NoError(t, err)
 
