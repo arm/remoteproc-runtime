@@ -55,7 +55,6 @@ cat /sys/class/remoteproc/remoteproc0/name
 docker run \
     --runtime io.containerd.remoteproc.v1 \
     --annotation remoteproc.name="my-remote-processor" \
-    --network=host \
     my-firmware:latest
 
 # 5. See your firmware running as a container
