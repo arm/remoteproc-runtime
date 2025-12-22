@@ -59,13 +59,10 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
    <details open>
    <summary id="using-docker"><ins>Using Docker</ins></summary>
 
-   ⚠️ Docker network must be set to 'Host' (`--network=host`), as the remoteproc proxy process runs in the host's network namespace.
-
    ```sh
    docker run \
        --runtime io.containerd.remoteproc.v1 \
        --annotation remoteproc.name="<target-processor-name>" \
-       --network=host \
        <image-name>
    ```
 
