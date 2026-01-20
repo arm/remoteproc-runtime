@@ -71,7 +71,6 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - name: Install WSL (Windows)
-        if: runner.os == 'Windows' && runner.arch == 'X64'
         uses: Vampire/setup-wsl@v6
         with:
           distribution: Ubuntu-24.04
@@ -80,7 +79,6 @@ jobs:
             docker.io
       
       - name: Setup SSH (Windows - WSL)
-        if: runner.os == 'Windows' && runner.arch == 'X64'
         shell: wsl-bash {0}
         run: |
           useradd -G kvm,docker -m -s /bin/bash test
