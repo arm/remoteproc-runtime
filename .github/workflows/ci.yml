@@ -70,6 +70,20 @@ jobs:
     name: WSL Test
     runs-on: windows-11-arm
     steps:
+      - name: Check
+        run: |
+          # 1) Is virtualization exposed to the VM?
+          systeminfo | findstr /i "Hyper-V Requirements"
+
+          # 2) Are the required Windows optional features enabled?
+          Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux,VirtualMachinePlatform,Microsoft-Hyper-V-All |
+            Select FeatureName, State
+
+          # 3) Is the hypervisor set to launch?
+          bcdedit /enum | findstr /i hypervisorlaunchtype
+
+          # 4) What does WSL itself say?
+          wsl --status
       - name: Install WSL (Windows)
         uses: Vampire/setup-wsl@v6
         with:
