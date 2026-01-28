@@ -63,7 +63,7 @@ Remoteproc Runtime supports several container engines:
 
 1. **Restart the container engine**
 
-   Containerd must be restarted to discover the new shim (e.g., `systemctl restart docker`).
+   Containerd must be restarted to discover the new shim (e.g., `systemctl restart containerd`).
 
 1. **Run the image**
 
