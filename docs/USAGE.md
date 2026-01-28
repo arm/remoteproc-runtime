@@ -42,7 +42,9 @@ Make note of this value - you'll need it in the deployment steps below.
 
 ## Running Your Container
 
-Remoteproc Runtime supports several container engines, but the specifics of integration vary slightly:
+Pre-built binaries are available on the [GitHub Releases](https://github.com/arm/remoteproc-runtime/releases) page. Copy the appropriate binaries to your target Linux host as described in the sections below.
+
+Remoteproc Runtime supports several container engines:
 
 - **[Containerd Shim](#containerd-shim-docker-k3s-etc)** - For Docker, K3S, and other containerd-based runtimes
 - **[Container Runtime (Podman)](#container-runtime-podman)** - For Podman deployments
@@ -52,7 +54,7 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
 
 1. **Install the shim and runtime**
 
-   Daemon-based engines like Docker and K3S require both a containerd shim and the remoteproc runtime. Make the `containerd-shim-remoteproc-v1` and `remoteproc-runtime` binaries available in the `$PATH` of your target Linux host (i.e. the remoteproc-enabled device).
+   Daemon-based engines like Docker and K3S require both a containerd shim and the remoteproc runtime. Copy `containerd-shim-remoteproc-v1` and `remoteproc-runtime` to a directory in `$PATH` on your target Linux host (e.g., `/usr/local/bin`). Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
 
 1. **Run the image**
 
