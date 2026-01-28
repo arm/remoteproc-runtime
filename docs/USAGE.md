@@ -54,7 +54,12 @@ Remoteproc Runtime supports several container engines:
 
 1. **Install the shim and runtime**
 
-   Copy `containerd-shim-remoteproc-v1` and `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`). Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
+   Install both binaries to a directory in `$PATH`. Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
+
+   ```sh
+   install -m 0755 containerd-shim-remoteproc-v1 /usr/local/bin/
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
 
 1. **Restart the container engine**
 
@@ -157,7 +162,11 @@ Remoteproc Runtime supports several container engines:
 
 1. **Install the runtime**
 
-   Copy `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`).
+   Install the binary to a directory in `$PATH`:
+
+   ```sh
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
 
 1. **Run the image**
 
@@ -173,7 +182,11 @@ Remoteproc Runtime supports several container engines:
 
 1. **Install the runtime**
 
-   Copy `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`).
+   Install the binary to a directory in `$PATH`:
+
+   ```sh
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
 
 1. **Prepare an OCI bundle**
 
