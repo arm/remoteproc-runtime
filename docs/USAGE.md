@@ -56,6 +56,10 @@ Remoteproc Runtime supports several container engines:
 
    Copy `containerd-shim-remoteproc-v1` and `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`). Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
 
+1. **Restart the container engine**
+
+   Containerd must be restarted to discover the new shim (e.g., `systemctl restart docker`).
+
 1. **Run the image**
 
    <details open>
