@@ -42,7 +42,7 @@ Make note of this value - you'll need it in the deployment steps below.
 
 ## Running Your Container
 
-Pre-built binaries are available on the [GitHub Releases](https://github.com/arm/remoteproc-runtime/releases) page. Copy the appropriate binaries to your target Linux host as described in the sections below.
+Pre-built binaries are available on the [GitHub Releases](https://github.com/arm/remoteproc-runtime/releases) page. All binaries must be installed on your remoteproc-enabled target board, not your development machine.
 
 Remoteproc Runtime supports several container engines:
 
@@ -54,7 +54,7 @@ Remoteproc Runtime supports several container engines:
 
 1. **Install the shim and runtime**
 
-   Daemon-based engines like Docker and K3S require both a containerd shim and the remoteproc runtime. Copy `containerd-shim-remoteproc-v1` and `remoteproc-runtime` to a directory in `$PATH` on your target Linux host (e.g., `/usr/local/bin`). Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
+   Copy `containerd-shim-remoteproc-v1` and `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`). Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
 
 1. **Run the image**
 
@@ -153,9 +153,7 @@ Remoteproc Runtime supports several container engines:
 
 1. **Install the runtime**
 
-   Make `remoteproc-runtime` binary available on the target machine.
-
-   ℹ️ Install the binary on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `podman`, install the binary on the remote machine where podman is actually executing the containers.
+   Copy `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`).
 
 1. **Run the image**
 
@@ -168,6 +166,10 @@ Remoteproc Runtime supports several container engines:
    ```
 
 ### Container Runtime (standalone)
+
+1. **Install the runtime**
+
+   Copy `remoteproc-runtime` to a directory in `$PATH` (e.g., `/usr/local/bin`).
 
 1. **Prepare an OCI bundle**
 
