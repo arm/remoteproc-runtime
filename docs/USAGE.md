@@ -42,7 +42,9 @@ Make note of this value - you'll need it in the deployment steps below.
 
 ## Running Your Container
 
-Remoteproc Runtime supports several container engines, but the specifics of integration vary slightly:
+Pre-built binaries are available on the [GitHub Releases](https://github.com/arm/remoteproc-runtime/releases) page. All binaries must be installed on your remoteproc-enabled target board, not your development machine.
+
+Remoteproc Runtime supports several container engines:
 
 - **[Containerd Shim](#containerd-shim-docker-k3s-etc)** - For Docker, K3S, and other containerd-based runtimes
 - **[Container Runtime (Podman)](#container-runtime-podman)** - For Podman deployments
@@ -52,7 +54,16 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
 
 1. **Install the shim and runtime**
 
-   Daemon-based engines like Docker and K3S require both a containerd shim and the remoteproc runtime. Make the `containerd-shim-remoteproc-v1` and `remoteproc-runtime` binaries available in the `$PATH` of your target Linux host (i.e. the remoteproc-enabled device).
+   Install both binaries to a directory in `$PATH`. Containerd discovers the shim by name, exposing it as `io.containerd.remoteproc.v1`.
+
+   ```sh
+   install -m 0755 containerd-shim-remoteproc-v1 /usr/local/bin/
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
+
+1. **Restart the container engine**
+
+   Containerd must be restarted to discover the new shim (e.g., `systemctl restart containerd`).
 
 1. **Run the image**
 
@@ -151,9 +162,11 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
 
 1. **Install the runtime**
 
-   Make `remoteproc-runtime` binary available on the target machine.
+   Install the binary to a directory in `$PATH`:
 
-   ℹ️ Install the binary on the machine that physically runs the containers, not on the client machine. For example, if you're managing containers on a remote machine via `podman`, install the binary on the remote machine where podman is actually executing the containers.
+   ```sh
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
 
 1. **Run the image**
 
@@ -166,6 +179,14 @@ Remoteproc Runtime supports several container engines, but the specifics of inte
    ```
 
 ### Container Runtime (standalone)
+
+1. **Install the runtime**
+
+   Install the binary to a directory in `$PATH`:
+
+   ```sh
+   install -m 0755 remoteproc-runtime /usr/local/bin/
+   ```
 
 1. **Prepare an OCI bundle**
 
