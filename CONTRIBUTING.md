@@ -2,7 +2,7 @@
 
 The Arm Remoteproc Runtime project is open for external contributors, and welcomes contributions.
 
-Remoteproc Runtime is licensed under the [MIT](https://spdx.org/licenses/MIT.html) license and all accepted contributions must have the same license.
+Remoteproc Runtime is licensed under the [Apache 2.0](https://spdx.org/licenses/Apache-2.0.html) license and all accepted contributions must have the same license.
 
 ## Contributing code to Remoteproc Runtime
 
