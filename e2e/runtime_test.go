@@ -318,6 +318,7 @@ func testID(t testing.TB) string {
 	name := strings.ToLower(t.Name())
 	name = strings.ReplaceAll(name, "/", "-")
 	name = strings.ReplaceAll(name, " ", "-")
+	name = strings.ReplaceAll(name, "'", "")
 	return name
 }
 
