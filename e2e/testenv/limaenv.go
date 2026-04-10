@@ -180,4 +180,3 @@ func (e *limaEnv) BuildImage(engine, contextDir, imageName string) error {
 	_, _, _ = e.RunCommand("rm", "-rf", tmpCtx)
 	return nil
 }
-

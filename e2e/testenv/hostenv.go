@@ -39,10 +39,7 @@ func (e *hostEnv) InstallBin(binPath string) (InstalledBin, error) {
 }
 
 func (e *hostEnv) CopyDir(src, dst string) error {
-	if out, err := exec.Command("cp", "-r", src, dst).CombinedOutput(); err != nil {
-		return fmt.Errorf("copy %s to %s: %w: %s", src, dst, err, out)
-	}
-	return nil
+	return os.CopyFS(dst, os.DirFS(src))
 }
 
 func (e *hostEnv) RemoveAll(path string) error {
