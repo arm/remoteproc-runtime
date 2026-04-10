@@ -29,11 +29,15 @@ func (e *hostEnv) Command(name string, args ...string) *exec.Cmd {
 func (e *hostEnv) InstallBin(binPath string) (InstalledBin, error) {
 	name := filepath.Base(binPath)
 	dst := filepath.Join("/usr/local/bin", name)
-	if out, err := exec.Command("sudo", "cp", binPath, dst).CombinedOutput(); err != nil {
+	tmp := dst + ".tmp"
+	if out, err := exec.Command("sudo", "cp", binPath, tmp).CombinedOutput(); err != nil {
 		return InstalledBin{}, fmt.Errorf("install %s: %w: %s", name, err, out)
 	}
-	if out, err := exec.Command("sudo", "chmod", "+x", dst).CombinedOutput(); err != nil {
+	if out, err := exec.Command("sudo", "chmod", "+x", tmp).CombinedOutput(); err != nil {
 		return InstalledBin{}, fmt.Errorf("chmod %s: %w: %s", name, err, out)
+	}
+	if out, err := exec.Command("sudo", "mv", tmp, dst).CombinedOutput(); err != nil {
+		return InstalledBin{}, fmt.Errorf("mv %s: %w: %s", name, err, out)
 	}
 	return InstalledBin{env: e, pathToBin: dst}, nil
 }
