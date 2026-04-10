@@ -15,23 +15,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
 	"github.com/arm/remoteproc-runtime/e2e/runner"
+	"github.com/arm/remoteproc-runtime/e2e/testenv"
 )
 
 type Simulator struct {
-	vm      limavm.VM
-	bin     limavm.InstalledBin
+	env     testenv.Env
+	bin     testenv.InstalledBin
 	cmd     *runner.StreamingCmd
 	name    string
 	index   uint
 	rootDir string
 }
 
-func NewSimulator(bin limavm.InstalledBin, vm limavm.VM, rootDir string) *Simulator {
+func NewSimulator(bin testenv.InstalledBin, env testenv.Env, rootDir string) *Simulator {
 	return &Simulator{
-		vm:      vm,
+		env:     env,
 		bin:     bin,
 		rootDir: rootDir,
 		index:   0,
@@ -109,7 +109,7 @@ func (r *Simulator) waitForBoot(waitingTime time.Duration, outputBuf *io.PipeRea
 
 func (r *Simulator) Stop() error {
 	var killErr error
-	_, stderr, err := r.vm.RunCommand("pkill", "-f", "remoteproc-simulator")
+	_, stderr, err := r.env.RunCommand("pkill", "-f", "remoteproc-simulator")
 	if err != nil {
 		killErr = fmt.Errorf("pkill failed: %w: stderr: %s", err, stderr)
 	}

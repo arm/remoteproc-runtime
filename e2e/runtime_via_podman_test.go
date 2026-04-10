@@ -7,66 +7,62 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arm/remoteproc-runtime/e2e/limavm"
 	"github.com/arm/remoteproc-runtime/e2e/remoteproc"
 	"github.com/arm/remoteproc-runtime/e2e/repo"
+	"github.com/arm/remoteproc-runtime/e2e/testenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPodman(t *testing.T) {
-	limavm.Require(t)
+	rootpathPrefix := filepath.Join("/tmp", "fake-root")
 
-	rootpathPrefixInVM := filepath.Join("/tmp", "fake-root")
+	env := testenv.New(t)
 
-	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefixInVM, limavm.BinBuildEnv)
+	runtimeBin, err := repo.BuildRuntimeBin(t.TempDir(), rootpathPrefix, testenv.BuildEnv())
 	require.NoError(t, err)
 
-	vm, err := limavm.NewPodman()
-	require.NoError(t, err)
-	defer vm.Cleanup()
-
-	installedRuntimeBin, err := vm.InstallBin(runtimeBin)
+	installedRuntimeBin, err := env.InstallBin(runtimeBin)
 	require.NoError(t, err)
 
 	simulatorBin, err := remoteproc.DownloadSimulator(context.Background())
 	require.NoError(t, err)
-	installedSimulator, err := vm.InstallBin(simulatorBin)
+	installedSimulator, err := env.InstallBin(simulatorBin)
 	require.NoError(t, err)
 
 	imageName := "fancy-image"
-	require.NoError(t, vm.BuildImage("../testdata", imageName))
+	require.NoError(t, env.BuildImage("podman", "../testdata", imageName))
 
 	t.Run("basic container lifecycle", func(t *testing.T) {
 		remoteprocName := "yolo-podman-device"
-		sim := remoteproc.NewSimulator(installedSimulator, vm.VM, rootpathPrefixInVM).WithName(remoteprocName)
+		sim := remoteproc.NewSimulator(installedSimulator, env, rootpathPrefix).WithName(remoteprocName)
 		if err := sim.Start(); err != nil {
 			t.Fatalf("failed to run simulator: %s", err)
 		}
 		defer func() { _ = sim.Stop() }()
 
-		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, env, sim.DeviceDir(), "offline")
 
-		stdout, stderr, err := vm.RunCommand(
+		stdout, stderr, err := env.RunCommand(
 			"podman",
 			fmt.Sprintf("--runtime=%s", installedRuntimeBin.Path()),
 			"run", "-d",
 			"--annotation", fmt.Sprintf("remoteproc.name=%s", remoteprocName),
 			imageName)
 		require.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, env, sim.DeviceDir(), "running")
 
 		containerID := strings.TrimSpace(stdout)
-		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+		_, stderr, err = env.RunCommand("podman", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, env, sim.DeviceDir(), "offline")
 
-		_, stderr, err = vm.RunCommand("podman", "start", containerID)
+		_, stderr, err = env.RunCommand("podman", "start", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "running")
+		remoteproc.AssertState(t, env, sim.DeviceDir(), "running")
 
-		_, stderr, err = vm.RunCommand("podman", "stop", containerID)
+		_, stderr, err = env.RunCommand("podman", "stop", containerID)
 		assert.NoError(t, err, "stderr: %s", stderr)
-		remoteproc.AssertState(t, vm.VM, sim.DeviceDir(), "offline")
+		remoteproc.AssertState(t, env, sim.DeviceDir(), "offline")
 	})
 }
