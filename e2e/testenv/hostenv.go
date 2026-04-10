@@ -74,4 +74,3 @@ func (e *hostEnv) BuildImage(engine, contextDir, imageName string) error {
 	return nil
 }
 
-func (e *hostEnv) Cleanup() {}

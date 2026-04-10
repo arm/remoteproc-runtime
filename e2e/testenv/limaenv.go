@@ -181,4 +181,3 @@ func (e *limaEnv) BuildImage(engine, contextDir, imageName string) error {
 	return nil
 }
 
-func (e *limaEnv) Cleanup() {}

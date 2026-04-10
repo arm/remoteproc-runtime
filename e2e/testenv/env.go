@@ -15,7 +15,6 @@ type Env interface {
 	ReadFile(path string) (string, error)
 	ReadDir(path string) ([]string, error)
 	BuildImage(engine, contextDir, imageName string) error
-	Cleanup()
 }
 
 func New(t *testing.T) Env {
