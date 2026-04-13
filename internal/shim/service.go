@@ -356,7 +356,10 @@ func (s *remoteprocTaskService) Wait(ctx context.Context, r *taskAPI.WaitRequest
 				return nil, err
 			}
 			if state.Status == specs.StateStopped {
-				response := &taskAPI.WaitResponse{ExitStatus: 0}
+				response := &taskAPI.WaitResponse{
+					ExitStatus: 0,
+					ExitedAt:   protobuf.ToTimestamp(time.Now().UTC()),
+				}
 				s.logPayload("<- service.Wait", response)
 				return response, nil
 			}
