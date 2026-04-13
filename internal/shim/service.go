@@ -406,6 +406,7 @@ func (s *remoteprocTaskService) startProcessWatcher(containerID string, pid int)
 				ContainerID: containerID,
 				ID:          containerID,
 				Pid:         uint32(pid),
+				ExitedAt:    protobuf.ToTimestamp(time.Now().UTC()),
 			})
 
 			s.shutdown.Shutdown()
