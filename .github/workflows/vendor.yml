@@ -1,3 +1,8 @@
+# WARNING: pull_request_target runs with write permissions and access to base
+# branch secrets. This is safe here because the actor check restricts it to
+# dependabot and we only run `go mod vendor` — never build or test PR code.
+# Do not add build/test steps or remove the actor check without understanding
+# the security implications.
 name: Vendor
 
 on:
