@@ -22,6 +22,9 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Check vendor is tidy
+        run: go mod vendor && git diff --exit-code vendor/
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
         with:
@@ -47,9 +50,6 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
-
-      - name: Check vendor is tidy
-        run: go mod vendor && git diff --exit-code vendor/
 
       - name: Run fast tests
         run: go test -v -race ./internal/...
