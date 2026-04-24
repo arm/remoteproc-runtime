@@ -48,8 +48,8 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Download dependencies
-        run: go mod download
+      - name: Check vendor is tidy
+        run: go mod vendor && git diff --exit-code vendor/
 
       - name: Run fast tests
         run: go test -v -race ./internal/...
