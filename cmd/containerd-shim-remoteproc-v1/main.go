@@ -9,5 +9,5 @@ import (
 
 func main() {
 	manager := shim.NewManager("io.containerd.remoteproc.v1")
-	containerdshim.Run(context.Background(), manager)
+	containerdshim.RunShim(context.Background(), manager)
 }

@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/arm/remoteproc-runtime/internal/version"
+	bootapi "github.com/containerd/containerd/api/runtime/bootstrap/v1"
 	apitypes "github.com/containerd/containerd/api/types"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
 
-func NewManager(name string) containerdshim.Manager {
+func NewManager(name string) containerdshim.Shim {
 	return manager{name: name}
 }
 
@@ -25,18 +26,18 @@ func (m manager) Name() string {
 	return m.name
 }
 
-func (m manager) Start(ctx context.Context, id string, opts containerdshim.StartOpts) (containerdshim.BootstrapParams, error) {
-	var params containerdshim.BootstrapParams
+func (m manager) Start(ctx context.Context, opts *bootapi.BootstrapParams) (*bootapi.BootstrapResult, error) {
+	var params bootapi.BootstrapResult
 	params.Version = 2
 	params.Protocol = "ttrpc"
 
-	socket, err := newShimSocket(ctx, opts.Address, id)
+	socket, err := newShimSocket(ctx, opts.GetContainerdTtrpcAddress(), opts.GetInstanceID())
 	if err != nil {
 		if errors.Is(err, errSocketAlreadyExists) {
 			params.Address = socket.addr
-			return params, nil
+			return &params, nil
 		}
-		return params, fmt.Errorf("failed to create socket: %w", err)
+		return &params, fmt.Errorf("failed to create socket: %w", err)
 	}
 
 	var retErr error
@@ -46,9 +47,9 @@ func (m manager) Start(ctx context.Context, id string, opts containerdshim.Start
 		}
 	}()
 
-	cmd, retErr := newCommand(ctx, opts.Address, id, opts.Debug)
+	cmd, retErr := newCommand(ctx, opts.GetContainerdTtrpcAddress(), opts.GetInstanceID(), opts.GetLogLevel())
 	if retErr != nil {
-		return params, fmt.Errorf("failed to create command: %w", err)
+		return &params, fmt.Errorf("failed to create command: %w", err)
 	}
 
 	// ⚠️ Shim framework expects socket attached as file descriptor 3.
@@ -56,11 +57,11 @@ func (m manager) Start(ctx context.Context, id string, opts containerdshim.Start
 
 	retErr = cmd.Start()
 	if retErr != nil {
-		return params, fmt.Errorf("failed to daemonise shim: %w", err)
+		return &params, fmt.Errorf("failed to daemonise shim: %w", err)
 	}
 
 	params.Address = socket.addr
-	return params, nil
+	return &params, nil
 }
 
 func (m manager) Stop(ctx context.Context, id string) (containerdshim.StopStatus, error) {

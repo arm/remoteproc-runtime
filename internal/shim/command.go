@@ -6,10 +6,11 @@ import (
 	"os/exec"
 	"syscall"
 
+	bootapi "github.com/containerd/containerd/api/runtime/bootstrap/v1"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 )
 
-func newCommand(ctx context.Context, containerdAddress, id string, debug bool) (*exec.Cmd, error) {
+func newCommand(ctx context.Context, containerdAddress, id string, debug bootapi.LogLevel) (*exec.Cmd, error) {
 	namespace, err := namespaces.NamespaceRequired(ctx)
 	if err != nil {
 		return nil, err
@@ -28,7 +29,7 @@ func newCommand(ctx context.Context, containerdAddress, id string, debug bool) (
 		"-address", containerdAddress,
 		"-publish-binary", self,
 	}
-	if debug {
+	if debug < bootapi.LogLevel_LOG_LEVEL_INFO {
 		args = append(args, "-debug")
 	}
 	cmd := exec.Command(self, args...)
