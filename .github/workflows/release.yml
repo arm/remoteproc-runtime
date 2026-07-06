@@ -28,6 +28,10 @@ jobs:
   release:
     needs: ci
     runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.version.outputs.release-version }}
+      archive-artifact-name: ${{ steps.version.outputs.archive-artifact-name }}
+      archive-uploadable: ${{ steps.version.outputs.archive-uploadable }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -36,11 +40,80 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
+      - name: Set release names
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive_uploadable="remoteproc-runtime_${version}_linux_arm64"
+
+          echo "release-version=${version}" >> "$GITHUB_OUTPUT"
+          echo "archive-artifact-name=remoteproc-runtime-${version}-linux" >> "$GITHUB_OUTPUT"
+          echo "archive-uploadable=${archive_uploadable}" >> "$GITHUB_OUTPUT"
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --config .goreleaser.yaml
+          args: release --clean --skip=publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ inputs['release-tag'] || github.ref_name }}
+      - name: Unpack release archive for publishing
+        run: |
+          mkdir -p "dist/${{ steps.version.outputs.archive-uploadable }}"
+          tar -xzf "dist/${{ steps.version.outputs.archive-uploadable }}.tar.gz" \
+            -C "dist/${{ steps.version.outputs.archive-uploadable }}"
+      - name: Upload release archive input
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.archive-artifact-name }}
+          path: dist/${{ steps.version.outputs.archive-uploadable }}
+          if-no-files-found: error
+
+  publish-to-artifactory:
+    needs: release
+    uses: arm/remoteproc-publisher/.github/workflows/upload-to-artifactory.yaml@main
+    with:
+      source-run-id: ${{ github.run_id }}
+      archive-name: ${{ needs.release.outputs.archive-artifact-name }}
+      release-version: ${{ needs.release.outputs.release-version }}
+      repo-name: remoteproc-runtime
+      org-name: arm
+      artifactory-uploadables: ${{ needs.release.outputs.archive-uploadable }}
+      archive-format: tar.gz
+      executables: ./${{ needs.release.outputs.archive-uploadable }}/remoteproc-runtime ./${{ needs.release.outputs.archive-uploadable }}/containerd-shim-remoteproc-v1
+      artifactory-host: https://arm.jfrog.io
+      artifactory-repo-name: devx-remoteproc-runtime
+      download-base: https://artifacts.tools.arm.com/remoteproc-runtime
+      subdir-path: linux
+    secrets: inherit
+
+  publish-github-release:
+    needs:
+      - release
+      - publish-to-artifactory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub release with Artifactory links
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          ARTIFACT_URLS: ${{ needs.publish-to-artifactory.outputs.artifact-urls }}
+        run: |
+          gh api repos/{owner}/{repo}/releases/generate-notes \
+            -f tag_name="$RELEASE_TAG" \
+            --jq .body > existing_body.md
+
+          {
+            printf '## Downloads\n\n'
+            printf '%s\n' "$ARTIFACT_URLS" | while IFS= read -r url; do
+              if [ -n "$url" ]; then
+                filename="${url##*/}"
+                printf -- '- [%s](%s)\n' "$filename" "$url"
+              fi
+            done
+            printf '\n\n## Changelog\n'
+            cat existing_body.md
+          } > combined_notes.md
+
+          gh release create "$RELEASE_TAG" \
+            --title "$RELEASE_TAG" \
+            --notes-file combined_notes.md
