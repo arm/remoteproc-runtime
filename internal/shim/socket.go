@@ -28,8 +28,8 @@ func (s *shimSocket) Close() {
 
 var errSocketAlreadyExists = errors.New("socket already exists")
 
-func newShimSocket(ctx context.Context, path, id string) (*shimSocket, error) {
-	address, err := containerdshim.SocketAddress(ctx, path, id, false)
+func newShimSocket(ctx context.Context, socketRoot, path, id string) (*shimSocket, error) {
+	address, err := containerdshim.CreateSocketAddress(ctx, socketRoot, path, id, false)
 	if err != nil {
 		return nil, err
 	}

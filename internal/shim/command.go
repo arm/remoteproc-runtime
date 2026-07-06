@@ -9,7 +9,7 @@ import (
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 )
 
-func newCommand(ctx context.Context, containerdAddress, id string, debug bool) (*exec.Cmd, error) {
+func newCommand(ctx context.Context, containerdAddress, containerdTTRPCAddress, id string, debug bool) (*exec.Cmd, error) {
 	namespace, err := namespaces.NamespaceRequired(ctx)
 	if err != nil {
 		return nil, err
@@ -33,6 +33,10 @@ func newCommand(ctx context.Context, containerdAddress, id string, debug bool) (
 	}
 	cmd := exec.Command(self, args...)
 	cmd.Dir = cwd
+	cmd.Env = append(os.Environ(),
+		"GRPC_ADDRESS="+containerdAddress,
+		"TTRPC_ADDRESS="+containerdTTRPCAddress,
+	)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}

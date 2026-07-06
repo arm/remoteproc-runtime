@@ -4,7 +4,7 @@ This guide covers how to build, test, and contribute to this project.
 
 ## Prerequisites
 
-- Go 1.25 or higher
+- Go 1.26 or higher
 - [LimaVM](https://lima-vm.io) (for e2e testing)
 - [Remoteproc Simulator](https://github.com/arm/remoteproc-simulator) (for e2e testing and manual testing without hardware)
 
@@ -57,7 +57,7 @@ go test -v -race ./internal/...
 If you're developing on a non-Linux operating system, you can run the tests using Docker:
 
 ```bash
-docker run --rm -v $(pwd):/app -w /app golang:1.25 go test -v ./internal/...
+docker run --rm -v $(pwd):/app -w /app golang:1.26 go test -v ./internal/...
 ```
 
 To improve feedback loop performance, you can use Docker volumes to cache Go modules and build artifacts:
@@ -73,7 +73,7 @@ docker run --rm \
   -w /app \
   -v go-mod-cache:/go/pkg/mod \
   -v go-build-cache:/root/.cache/go-build \
-  golang:1.25 \
+  golang:1.26 \
   go test -v ./internal/...
 ```
 
