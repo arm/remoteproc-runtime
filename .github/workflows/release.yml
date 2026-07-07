@@ -10,6 +10,11 @@ on:
         description: Release tag, for example v1.2.3 or v1.2.3-rc1
         required: true
         type: string
+      pre-release:
+        description: Pre-release
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: release-${{ github.head_ref || github.run_id }}
@@ -84,6 +89,7 @@ jobs:
       artifactory-repo-name: devx-remoteproc-runtime
       download-base: https://artifacts.tools.arm.com/remoteproc-runtime
       subdir-path: linux
+      pre-release: ${{ inputs.pre-release || false }}
     secrets: inherit
 
   publish-github-release:
@@ -97,6 +103,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
           ARTIFACT_URLS: ${{ needs.publish-to-artifactory.outputs.artifact-urls }}
+          PRE_RELEASE: ${{ inputs.pre-release || false }}
         run: |
           gh api repos/{owner}/{repo}/releases/generate-notes \
             -f tag_name="$RELEASE_TAG" \
@@ -114,6 +121,13 @@ jobs:
             cat existing_body.md
           } > combined_notes.md
 
-          gh release create "$RELEASE_TAG" \
-            --title "$RELEASE_TAG" \
-            --notes-file combined_notes.md
+          if [ "$PRE_RELEASE" = "true" ]; then
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --prerelease \
+              --notes-file combined_notes.md
+          else
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --notes-file combined_notes.md
+          fi
