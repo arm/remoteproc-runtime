@@ -8,6 +8,7 @@ on:
   workflow_call:
     inputs:
       checkout-ref:
+        description: Git ref to check out when this workflow is called by another workflow.
         required: false
         type: string
         default: ''
