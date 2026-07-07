@@ -41,23 +41,21 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
-      - name: Configure GoReleaser release type
+      - name: Select GoReleaser config
+        id: goreleaser-config
         env:
           PRE_RELEASE: ${{ inputs['pre-release'] || false }}
         run: |
-          cp .goreleaser.yaml .goreleaser.release.yaml
           if [ "$PRE_RELEASE" = "true" ]; then
-            {
-              printf '\n'
-              printf 'release:\n'
-              printf '  prerelease: true\n'
-            } >> .goreleaser.release.yaml
+            echo "config=.goreleaser.prerelease.yaml" >> "$GITHUB_OUTPUT"
+          else
+            echo "config=.goreleaser.yaml" >> "$GITHUB_OUTPUT"
           fi
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --config .goreleaser.release.yaml
+          args: release --clean --config ${{ steps.goreleaser-config.outputs.config }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ inputs['release-tag'] || github.ref_name }}
