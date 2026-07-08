@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - v[0-9].[0-9]+.[0-9]+
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: Release tag, for example v1.2.3 or v1.2.3-rc1
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.head_ref || github.run_id }}
@@ -15,15 +21,18 @@ permissions:
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
+    with:
+      checkout-ref: ${{ inputs['release-tag'] || github.ref }}
     secrets: inherit
 
   release:
     needs: ci
     runs-on: ubuntu-latest
-    steps: 
+    steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
+          ref: ${{ inputs['release-tag'] || github.ref }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
@@ -31,6 +40,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean --config .goreleaser.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ inputs['release-tag'] || github.ref_name }}

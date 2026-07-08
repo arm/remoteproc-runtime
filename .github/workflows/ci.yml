@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main ]
   workflow_call:
+    inputs:
+      checkout-ref:
+        description: Git ref to check out when this workflow is called by another workflow.
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: ci-${{ github.head_ref || github.run_id }}
@@ -17,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          ref: ${{ inputs.checkout-ref || github.ref }}
 
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
@@ -46,6 +54,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          ref: ${{ inputs.checkout-ref || github.ref }}
 
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:

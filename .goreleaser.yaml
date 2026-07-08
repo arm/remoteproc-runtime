@@ -35,6 +35,9 @@ builds:
       - -X github.com/arm/remoteproc-runtime/internal/version.Version={{.Version}}
       - -X github.com/arm/remoteproc-runtime/internal/version.GitCommit={{.Commit}}
 
+release:
+    prerelease: auto
+
 archives:
   - formats: [tar.gz]
     name_template: "remoteproc-runtime_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

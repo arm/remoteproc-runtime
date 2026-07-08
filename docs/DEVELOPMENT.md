@@ -189,7 +189,7 @@ PRs must have semantic commit titles (enforced by GitHub Actions).
 
 ### Releases
 
-Releases are automated using GoReleaser when a new tag is pushed:
+Releases are automated using GoReleaser when a release tag is pushed:
 
 ```bash
 # Create and push a new version tag
@@ -204,3 +204,22 @@ The release workflow will:
 1. Build binaries for multiple platforms
 
 1. Create a GitHub release with artifacts
+
+You can also start the release from GitHub Actions:
+
+1. Open the **Release** workflow.
+
+1. Select **Run workflow**.
+
+1. Enter the release tag, for example `v0.1.0` or `v0.1.0-rc1`.
+
+To create a pre-release, use an `-rc<number>` tag:
+
+```bash
+git tag v0.1.0-rc1
+git push origin v0.1.0-rc1
+```
+
+Then run the **Release** workflow with **release-tag** set to `v0.1.0-rc1`.
+GoReleaser marks the GitHub release as a pre-release automatically from the
+tag.
