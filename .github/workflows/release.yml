@@ -22,7 +22,7 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
     with:
-      checkout-ref: ${{ inputs['release-tag'] || github.ref }}
+      checkout-ref: ${{ github.ref }}
     secrets: inherit
 
   release:
@@ -34,7 +34,6 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
-          ref: ${{ inputs['release-tag'] || github.ref }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
@@ -46,6 +45,18 @@ jobs:
           version="${RELEASE_TAG#v}"
 
           echo "release-version=${version}" >> "$GITHUB_OUTPUT"
+      - name: Set git config
+        if: ${{ inputs['release-tag'] != '' }}
+        run: |
+          git config --global user.email "remoteproc-runtime-release@users.noreply.github.com"
+          git config --global user.name "remoteproc-runtime-release"
+      - name: Create tag
+        if: ${{ inputs['release-tag'] != '' }}
+        env:
+          RELEASE_TAG: ${{ inputs['release-tag'] }}
+        run: |
+          git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           distribution: goreleaser
