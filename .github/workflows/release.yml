@@ -29,11 +29,7 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     outputs:
-      release-tag: ${{ steps.version.outputs.release-tag }}
       release-version: ${{ steps.version.outputs.release-version }}
-      archive-artifact-name: ${{ steps.version.outputs.archive-artifact-name }}
-      archive-uploadable: ${{ steps.version.outputs.archive-uploadable }}
-      pre-release: ${{ steps.version.outputs.pre-release }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -48,92 +44,35 @@ jobs:
           RELEASE_TAG: ${{ inputs['release-tag'] || github.ref_name }}
         run: |
           version="${RELEASE_TAG#v}"
-          archive_uploadable="remoteproc-runtime_${version}_linux_arm64"
-          pre_release=false
 
-          if [[ "$RELEASE_TAG" =~ -rc[0-9]+$ ]]; then
-            pre_release=true
-          fi
-
-          echo "release-tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
           echo "release-version=${version}" >> "$GITHUB_OUTPUT"
-          echo "archive-artifact-name=remoteproc-runtime-${version}-linux" >> "$GITHUB_OUTPUT"
-          echo "archive-uploadable=${archive_uploadable}" >> "$GITHUB_OUTPUT"
-          echo "pre-release=${pre_release}" >> "$GITHUB_OUTPUT"
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --skip=publish
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Unpack release archive for publishing
-        run: |
-          mkdir -p "dist/${{ steps.version.outputs.archive-uploadable }}"
-          tar -xzf "dist/${{ steps.version.outputs.archive-uploadable }}.tar.gz" \
-            -C "dist/${{ steps.version.outputs.archive-uploadable }}"
-      - name: Upload release archive input
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.version.outputs.archive-artifact-name }}
-          path: dist/${{ steps.version.outputs.archive-uploadable }}
-          if-no-files-found: error
 
   publish-to-artifactory:
     needs: release
-    uses: arm/remoteproc-publisher/.github/workflows/upload-to-artifactory.yaml@main
-    with:
-      source-run-id: ${{ github.run_id }}
-      archive-name: ${{ needs.release.outputs.archive-artifact-name }}
-      release-version: ${{ needs.release.outputs.release-version }}
-      repo-name: remoteproc-runtime
-      org-name: arm
-      artifactory-uploadables: ${{ needs.release.outputs.archive-uploadable }}
-      archive-format: tar.gz
-      executables: ./${{ needs.release.outputs.archive-uploadable }}/remoteproc-runtime ./${{ needs.release.outputs.archive-uploadable }}/containerd-shim-remoteproc-v1
-      artifactory-host: https://arm.jfrog.io
-      artifactory-repo-name: devx-remoteproc-runtime
-      download-base: https://artifacts.tools.arm.com/remoteproc-runtime
-      subdir-path: linux
-      pre-release: ${{ needs.release.outputs.pre-release }}
-    secrets: inherit
-
-  publish-github-release:
-    needs:
-      - release
-      - publish-to-artifactory
     runs-on: ubuntu-latest
     steps:
-      - name: Create GitHub release with Artifactory links
+      - name: Create GitHub App token for publisher
+        id: publisher-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ML_REPO_ACCESS_APP_ID }}
+          private-key: ${{ secrets.ML_REPO_ACCESS_PRIVATE_KEY }}
+          owner: Arm-Debug
+          repositories: remoteproc-runtime-publisher
+
+      - name: Trigger Artifactory publisher
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ needs.release.outputs.release-tag }}
-          ARTIFACT_URLS: ${{ needs.publish-to-artifactory.outputs.artifact-urls }}
-          PRE_RELEASE: ${{ needs.release.outputs.pre-release }}
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
         run: |
-          gh api repos/{owner}/{repo}/releases/generate-notes \
-            -f tag_name="$RELEASE_TAG" \
-            --jq .body > existing_body.md
-
-          {
-            printf '## Downloads\n\n'
-            printf '%s\n' "$ARTIFACT_URLS" | while IFS= read -r url; do
-              if [ -n "$url" ]; then
-                filename="${url##*/}"
-                printf -- '- [%s](%s)\n' "$filename" "$url"
-              fi
-            done
-            printf '\n\n## Changelog\n'
-            cat existing_body.md
-          } > combined_notes.md
-
-          if [ "$PRE_RELEASE" = "true" ]; then
-            gh release create "$RELEASE_TAG" \
-              --title "$RELEASE_TAG" \
-              --prerelease \
-              --notes-file combined_notes.md
-          else
-            gh release create "$RELEASE_TAG" \
-              --title "$RELEASE_TAG" \
-              --notes-file combined_notes.md
-          fi
+          gh workflow run upload-to-artifactory.yaml \
+            --repo Arm-Debug/remoteproc-runtime-publisher \
+            --ref main \
+            --field release-version="${{ needs.release.outputs.release-version }}" \
+            --field artifactory-uploadables="remoteproc-runtime_${{ needs.release.outputs.release-version }}_linux_arm64.tar.gz"
