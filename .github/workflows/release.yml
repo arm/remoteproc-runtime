@@ -7,14 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       release-tag:
-        description: Release tag, for example v1.2.3
+        description: Release tag, for example v1.2.3 or v1.2.3-rc1
         required: true
         type: string
-      pre-release:
-        description: Pre-release
-        required: false
-        type: boolean
-        default: false
 
 concurrency:
   group: release-${{ github.head_ref || github.run_id }}
@@ -41,17 +36,6 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version-file: 'go.mod'
-      - name: Check release tag for pre-release
-        env:
-          PRE_RELEASE: ${{ inputs['pre-release'] || false }}
-          RELEASE_TAG: ${{ inputs['release-tag'] || github.ref_name }}
-        run: |
-          if [ "$PRE_RELEASE" = "true" ]; then
-            if [[ ! "$RELEASE_TAG" =~ -rc[0-9]+$ ]]; then
-              echo "::error::Pre-release tags must end with -rc<number>, for example v1.2.3-rc1"
-              exit 1
-            fi
-          fi
       - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           distribution: goreleaser
