@@ -67,5 +67,11 @@ jobs:
       - name: Install podman
         run: sudo apt-get update -qq && sudo apt-get install -y podman
 
+      - name: Report container runtime versions
+        run: |
+          containerd --version || true
+          docker --version || true
+          podman --version || true
+
       - name: Run e2e tests
         run: go test -v -timeout 5m ./e2e/...
