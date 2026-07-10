@@ -85,9 +85,9 @@ func runStartCompat(ctx context.Context, manager containerdshim.Shim) (bool, err
 		return true, err
 	}
 
-	buildResponse := buildLegacyResponse
+	buildResponse := buildJSONBootstrapResponse
 	if parsed.modern {
-		buildResponse = buildModernResponse
+		buildResponse = buildProtobufBootstrapResponse
 	}
 	data, err := buildResponse(result)
 	if err != nil {
@@ -97,7 +97,7 @@ func runStartCompat(ctx context.Context, manager containerdshim.Shim) (bool, err
 	return true, err
 }
 
-func buildModernResponse(result *bootapi.BootstrapResult) ([]byte, error) {
+func buildProtobufBootstrapResponse(result *bootapi.BootstrapResult) ([]byte, error) {
 	data, err := proto.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal bootstrap result: %w", err)
@@ -105,7 +105,7 @@ func buildModernResponse(result *bootapi.BootstrapResult) ([]byte, error) {
 	return data, nil
 }
 
-func buildLegacyResponse(result *bootapi.BootstrapResult) ([]byte, error) {
+func buildJSONBootstrapResponse(result *bootapi.BootstrapResult) ([]byte, error) {
 	legacy := legacyBootstrapParams{
 		Version:  int(result.GetVersion()),
 		Address:  result.GetAddress(),
