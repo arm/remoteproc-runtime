@@ -42,9 +42,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs['release-tag'] || github.ref_name }}
         run: |
-          version="${RELEASE_TAG#v}"
-
-          echo "release-version=${version}" >> "$GITHUB_OUTPUT"
+          echo "release-version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
       - name: Set git config
         if: ${{ inputs['release-tag'] != '' }}
         run: |
