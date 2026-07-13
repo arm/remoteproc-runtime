@@ -80,8 +80,11 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
         run: |
-          gh workflow run upload-to-artifactory.yaml \
+          run_url="$(gh workflow run upload-to-artifactory.yaml \
             --repo Arm-Debug/remoteproc-runtime-publisher \
             --ref main \
             --field release-version="${{ needs.release.outputs.release-version }}" \
-            --field artifactory-uploadables="remoteproc-runtime_${{ needs.release.outputs.release-version }}_linux_arm64.tar.gz"
+            --field artifactory-uploadables="remoteproc-runtime_${{ needs.release.outputs.release-version }}_linux_arm64.tar.gz")"
+          gh run watch "${run_url##*/}" \
+            --repo Arm-Debug/remoteproc-runtime-publisher \
+            --exit-status
