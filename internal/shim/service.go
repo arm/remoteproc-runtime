@@ -53,7 +53,7 @@ func init() {
 	})
 }
 
-func newTaskService(ctx context.Context, publisher containerdshim.Publisher, sd shutdown.Service) (taskAPI.TaskService, error) {
+func newTaskService(ctx context.Context, publisher containerdshim.Publisher, sd shutdown.Service) (taskAPI.TTRPCTaskService, error) {
 	// The containerdshim.Publisher and shutdown.Service are usually useful for your task service,
 	// but we don't need them in the exampleTaskService.
 	service := &remoteprocTaskService{
@@ -86,7 +86,7 @@ type remoteprocTaskService struct {
 
 // RegisterTTRPC allows TTRPC services to be registered with the underlying server
 func (s *remoteprocTaskService) RegisterTTRPC(server *ttrpc.Server) error {
-	taskAPI.RegisterTaskService(server, s)
+	taskAPI.RegisterTTRPCTaskService(server, s)
 	return nil
 }
 

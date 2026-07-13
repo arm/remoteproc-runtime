@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/arm/remoteproc-runtime/internal/version"
+	bootapi "github.com/containerd/containerd/api/runtime/bootstrap/v1"
 	apitypes "github.com/containerd/containerd/api/types"
+	"github.com/containerd/containerd/v2/defaults"
 	containerdshim "github.com/containerd/containerd/v2/pkg/shim"
 )
 
-func NewManager(name string) containerdshim.Manager {
+func NewManager(name string) containerdshim.Shim {
 	return manager{name: name}
 }
 
@@ -25,38 +28,45 @@ func (m manager) Name() string {
 	return m.name
 }
 
-func (m manager) Start(ctx context.Context, id string, opts containerdshim.StartOpts) (containerdshim.BootstrapParams, error) {
-	var params containerdshim.BootstrapParams
-	params.Version = 2
-	params.Protocol = "ttrpc"
+func (m manager) Start(ctx context.Context, opts *bootapi.BootstrapParams) (_ *bootapi.BootstrapResult, retErr error) {
+	params := &bootapi.BootstrapResult{
+		Version:  2,
+		Protocol: "ttrpc",
+	}
 
-	socket, err := newShimSocket(ctx, opts.Address, id)
+	id := opts.GetInstanceID()
+	containerdAddress := opts.GetContainerdGrpcAddress()
+	socketDir := opts.GetSocketDir()
+	if socketDir == "" {
+		socketDir = filepath.Join(defaults.DefaultStateDir, "s")
+	}
+
+	socket, err := newShimSocket(ctx, socketDir, containerdAddress, id)
 	if err != nil {
 		if errors.Is(err, errSocketAlreadyExists) {
 			params.Address = socket.addr
 			return params, nil
 		}
-		return params, fmt.Errorf("failed to create socket: %w", err)
+		return nil, fmt.Errorf("failed to create socket: %w", err)
 	}
 
-	var retErr error
 	defer func() {
 		if retErr != nil {
 			socket.Close()
 		}
 	}()
 
-	cmd, retErr := newCommand(ctx, opts.Address, id, opts.Debug)
-	if retErr != nil {
-		return params, fmt.Errorf("failed to create command: %w", err)
+	debug := opts.GetLogLevel() <= bootapi.LogLevel_LOG_LEVEL_DEBUG
+	cmd, err := newCommand(ctx, containerdAddress, opts.GetContainerdTtrpcAddress(), id, debug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create command: %w", err)
 	}
 
 	// ⚠️ Shim framework expects socket attached as file descriptor 3.
 	cmd.ExtraFiles = append(cmd.ExtraFiles, socket.file)
 
-	retErr = cmd.Start()
-	if retErr != nil {
-		return params, fmt.Errorf("failed to daemonise shim: %w", err)
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("failed to daemonise shim: %w", err)
 	}
 
 	params.Address = socket.addr
