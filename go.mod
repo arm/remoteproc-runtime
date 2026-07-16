@@ -1,6 +1,6 @@
 module github.com/arm/remoteproc-runtime
 
-go 1.26.3
+go 1.26.5
 
 require (
 	github.com/containerd/containerd/api v1.11.1
