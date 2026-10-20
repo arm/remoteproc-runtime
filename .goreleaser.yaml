@@ -38,7 +38,7 @@ builds:
 release:
     prerelease: auto
     extra_files:
-      - glob: '{{ .Env.RUNNER_TEMP }}/remoteproc-runtime-sbom-source.json'
+      - glob: out/remoteproc-runtime-sbom-source.json
 
 archives:
   - formats: [tar.gz]
