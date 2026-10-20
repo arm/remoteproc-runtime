@@ -3,7 +3,7 @@ module github.com/arm/remoteproc-runtime
 go 1.26.6
 
 require (
-	github.com/containerd/containerd/api v1.11.1
+	github.com/containerd/containerd/api v1.12.0
 	github.com/containerd/containerd/v2 v2.3.2
 	github.com/containerd/errdefs v1.0.0
 	github.com/containerd/log v0.2.0
@@ -25,8 +25,7 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
 	github.com/containerd/go-runc v1.1.0 // indirect
-	github.com/containerd/typeurl/v2 v2.2.3 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/containerd/typeurl/v2 v2.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
