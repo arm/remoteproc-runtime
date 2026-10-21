@@ -37,6 +37,8 @@ builds:
 
 release:
     prerelease: auto
+    extra_files:
+      - glob: out/remoteproc-runtime-sbom-source.json
 
 archives:
   - formats: [tar.gz]
